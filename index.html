@@ -1,0 +1,2257 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Portfólio de Projetos — Acompanhamento Semanal</title>
+<style>
+  :root{
+    --ink:#101826; --navy:#0F2A4A; --blue:#2758A8; --blue-soft:#E8EFFA;
+    --red:#B23A2E; --red-soft:#FBEAE7; --amber:#B9791A; --amber-soft:#FCF1E0;
+    --green:#2C7A4B; --green-soft:#E8F4EC; --purple:#5B3FA0; --purple-soft:#EDE7F8;
+    --gray:#5B6472; --line:#E3E7EE; --bg:#F3F5F9; --card:#FFFFFF;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:var(--bg);color:var(--ink)}
+  header{background:var(--navy);color:#fff;padding:18px 28px}
+  header h1{margin:0;font-size:19px;font-weight:800}
+  header .sub{font-size:12.5px;color:#B9C7DC;margin-top:3px}
+  .header-top{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap}
+  .header-actions{display:flex;gap:8px;flex-wrap:wrap}
+  nav{display:flex;gap:2px;background:#0C2138;padding:0 24px;overflow-x:auto}
+  nav button{background:none;border:none;color:#AFC1DA;font:inherit;font-weight:700;font-size:13px;
+    padding:12px 16px;cursor:pointer;border-bottom:3px solid transparent;white-space:nowrap}
+  nav button.on{color:#fff;border-bottom-color:#5B9BF0}
+  nav button:hover{color:#fff}
+  main{max-width:1600px;margin:0 auto;padding:24px 24px 80px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:20px;margin-bottom:16px}
+  .card h2{margin:0 0 4px;font-size:16px;font-weight:800}
+  .card .desc{font-size:12.5px;color:var(--gray);margin-bottom:14px}
+  .hide{display:none !important}
+  label{display:block;font-size:11.5px;font-weight:700;color:var(--gray);text-transform:uppercase;
+    letter-spacing:.04em;margin-bottom:5px}
+  select,input[type=text],input[type=date],input[type=number],textarea{
+    width:100%;border:1.5px solid var(--line);border-radius:8px;padding:9px 11px;font:inherit;
+    font-size:13.5px;color:var(--ink);background:#fff}
+  textarea{resize:vertical;min-height:60px}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .field{margin-bottom:14px}
+  .btn{border:none;border-radius:8px;padding:10px 18px;font:inherit;font-weight:700;font-size:13.5px;
+    cursor:pointer;background:var(--blue);color:#fff}
+  .btn:hover{background:#1F4B90}
+  .btn:disabled{background:#C7D2E0;cursor:not-allowed}
+  .btn-soft{background:var(--blue-soft);color:var(--blue)}
+  .btn-soft:hover{background:#DCE7F8}
+  .btn-soft:disabled{background:#EDEFF3;color:#AAB2BE;cursor:not-allowed}
+  .btn-sm{padding:6px 12px;font-size:12px;border-radius:6px}
+  .btn-ghost{background:none;color:var(--gray);text-decoration:underline;padding:4px 0}
+  .icon-btn{background:none;border:none;cursor:pointer;color:var(--gray);font-size:14px;padding:2px 6px}
+  .icon-btn:hover{color:var(--red)}
+  .toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:14px}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th{text-align:left;padding:8px 10px;font-size:11px;text-transform:uppercase;letter-spacing:.03em;
+    color:var(--gray);border-bottom:2px solid var(--line)}
+  td{padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:middle}
+  td select, td input{padding:5px 7px;font-size:12.5px}
+  .pill{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:999px;
+    font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.03em;white-space:nowrap}
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:6px}
+  .kpi{background:#fff;border:1px solid var(--line);border-top:4px solid var(--blue);border-radius:10px;
+    padding:14px 16px}
+  .kpi .n{font-size:26px;font-weight:800}
+  .kpi .l{font-size:11px;color:var(--gray);font-weight:700;text-transform:uppercase}
+  .empty{text-align:center;padding:36px 20px;color:var(--gray)}
+  .empty b{color:var(--ink)}
+  .modal-bg{position:fixed;inset:0;background:rgba(15,20,30,.5);display:flex;align-items:center;
+    justify-content:center;z-index:50;padding:20px}
+  .modal{background:#fff;border-radius:12px;padding:22px;max-width:480px;width:100%;max-height:88vh;overflow-y:auto}
+  .modal h3{margin:0 0 14px;font-size:15px}
+  .row-item{border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin-bottom:10px;background:#fff}
+  .compact-list .row-item{padding:9px 12px;margin-bottom:7px;border-radius:8px}
+  .compact-list .ri-proj{font-size:12px}
+  .compact-list .ri-nota{font-size:11.5px;margin-bottom:4px}
+  .compact-list .ri-meta{font-size:10.5px;gap:8px}
+  .side-by-side{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start}
+  @media (max-width:820px){ .side-by-side{grid-template-columns:1fr} }
+  .ri-top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:6px}
+  .ri-proj{font-weight:800;font-size:13.5px;color:var(--navy);display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .ri-nota{font-size:13px;line-height:1.5;margin-bottom:8px;white-space:pre-wrap}
+  .ri-meta{display:flex;flex-wrap:wrap;gap:12px;font-size:11.5px;color:var(--gray)}
+  .ri-meta b{color:var(--ink)}
+  .ri-actions{display:flex;gap:8px;margin-top:8px}
+  .task-track{position:relative;height:16px;background:#EEF1F6;border-radius:99px;overflow:hidden;margin:6px 0 2px}
+  .task-bar{position:absolute;top:0;bottom:0;border-radius:99px}
+  .task-bar.nao_iniciado{background:#E6E0F5}
+  .task-bar.em_andamento{background:#A996DE}
+  .task-bar.concluido{background:#5B3FA0}
+  .task-bar.atrasado{background:#C0392B}
+  .task-bar.marco{background:repeating-linear-gradient(45deg,var(--navy),var(--navy) 4px,#3A5A85 4px,#3A5A85 8px)}
+  .task-bar.marco.concluido{background:repeating-linear-gradient(45deg,var(--purple),var(--purple) 4px,#8B72C9 4px,#8B72C9 8px)}
+  .task-bar.marco.atrasado{background:repeating-linear-gradient(45deg,var(--red),var(--red) 4px,#D97166 4px,#D97166 8px)}
+
+  /* ---- grade de Gantt diária (igual à aba Gantt do Excel) ---- */
+  .gantt-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:8px}
+  table.gantt-grade{border-collapse:collapse;font-size:10px;white-space:nowrap}
+  table.gantt-grade th, table.gantt-grade td{border:1px solid #D8DEE8;padding:0;text-align:center}
+  .gantt-label-col{text-align:left !important;font-size:12px;padding:6px 10px !important;
+    position:sticky;left:0;background:#fff;z-index:3;min-width:300px;max-width:300px;white-space:normal}
+  .gantt-sub-col{position:sticky;background:#fff;z-index:2;font-size:11px;padding:4px 8px !important;min-width:130px;
+    border-right:3px solid var(--navy) !important}
+  .gantt-week-head{background:var(--navy);color:#fff;font-weight:800;font-size:10.5px;padding:4px 0 !important}
+  .gantt-week-head.b{background:#24405F}
+  .gantt-day-head{width:17px;min-width:17px;color:#fff;font-weight:700;font-size:8px;line-height:1.3;padding:2px 0 !important}
+  .gantt-day-head.b{background:#24405F}
+  .gantt-day-head.a{background:var(--navy)}
+  .gantt-day-cell{width:17px;min-width:17px;height:20px;position:relative}
+  .gantt-day-cell.fds::after{content:"";position:absolute;inset:0;pointer-events:none;
+    background:repeating-linear-gradient(45deg, rgba(0,0,0,.22) 0 3px, transparent 3px 6px)}
+  .gantt-day-head.fds{filter:brightness(.8)}
+  .gantt-day-cell.hoje{box-shadow:inset 0 0 0 2px var(--red)}
+  .gc-nao_iniciado{background:#E6E0F5}
+  .gc-em_andamento{background:#A996DE}
+  .gc-concluido{background:#5B3FA0}
+  .gc-atrasado{background:#C0392B}
+  .gc-marco{background:var(--navy)}
+  .gc-marco-concluido{background:var(--purple)}
+  .gc-marco-atrasado{background:var(--red)}
+  .gc-pop{background:#3B4499}
+  .gc-pop-concluido{background:#2A3170}
+  .gc-pop-atrasado{background:#C0392B}
+  .gantt-legenda{display:flex;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--gray);margin-top:10px;align-items:center}
+  .gantt-legenda .sw{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:5px;vertical-align:middle}
+
+  /* ---- kanban do pipeline (one-page) ---- */
+  .kanban-wrap{overflow-x:auto;padding-bottom:6px}
+  .kanban-board{display:flex;gap:10px;min-width:min-content}
+  .kanban-col{min-width:215px;max-width:215px;background:var(--bg);border-radius:10px;padding:10px;flex-shrink:0}
+  .kanban-col-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;padding-bottom:6px;border-bottom:2px solid #DDE2EA}
+  .kanban-col-nome{font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.02em;color:var(--navy)}
+  .kanban-col-count{font-size:11px;font-weight:800;color:#fff;background:var(--navy);border-radius:999px;padding:1px 8px;min-width:20px;text-align:center}
+  .kanban-card{background:#fff;border-radius:8px;padding:8px 10px;margin-bottom:8px;border-left:4px solid var(--gray);
+    box-shadow:0 1px 2px rgba(16,24,38,.08);cursor:pointer}
+  .kanban-card:hover{box-shadow:0 2px 6px rgba(16,24,38,.14)}
+  .kanban-card .kc-nome{font-weight:700;font-size:12px;line-height:1.3;margin-bottom:3px}
+  .kanban-card .kc-fase{font-size:10.5px;color:var(--gray);line-height:1.3}
+  .kanban-empty{font-size:11px;color:#AAB2BE;text-align:center;padding:14px 0}
+  .task-hoje{position:absolute;top:-3px;bottom:-3px;width:2px;background:var(--red)}
+  .task-marco{position:absolute;top:50%;width:12px;height:12px;background:var(--navy);
+    transform:translate(-50%,-50%) rotate(45deg);border-radius:2px}
+  .task-marco.concluido{background:var(--purple)}
+  .task-marco.atrasado{background:var(--red)}
+
+  @media print{
+    header, nav, .no-print{ display:none !important; }
+    body{ background:#fff }
+    main{ max-width:100%; padding:0 }
+    .card{ border:none; box-shadow:none; padding:8px 0; margin-bottom:10px; page-break-inside:avoid }
+    /* a aba .hide já esconde as inativas normalmente — aqui só garante isso também na impressão */
+    section.hide{ display:none !important; }
+    .kanban-wrap{ overflow:visible !important; }
+    .kanban-board{ flex-wrap:wrap !important; }
+    .kanban-col{ min-width:150px !important; max-width:150px !important; }
+    .gantt-wrap{ overflow:visible !important; }
+    .gantt-label-col, .gantt-sub-col{ position:static !important; }
+    table.gantt-grade{ font-size:9px !important; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-top">
+    <div>
+      <h1>Portfólio de Projetos — Acompanhamento Semanal</h1>
+      <div class="sub">Fase, farol, histórico e cronograma dos 35 projetos, num lugar só</div>
+      <div class="sub" style="margin-top:4px;font-style:italic">Uso com mais de uma pessoa: configure a sincronização com o GitHub (botão "🔗 GitHub" ao lado) — os dados passam a ficar num repositório compartilhado, e cada pessoa que abrir a ferramenta vê as atualizações das outras.</div>
+    </div>
+    <div class="header-actions">
+      <span id="ghSyncStatus" style="font-size:11px;color:#B9C7DC;white-space:nowrap;align-self:center"></span>
+      <button class="btn btn-soft btn-sm" id="btnAtualizarAgora" title="Busca agora mesmo o que outras pessoas já gravaram">🔄 Atualizar dados</button>
+      <button class="btn btn-soft btn-sm" id="btnGhConfig" title="Configurar sincronização com o GitHub, pra mais de uma pessoa usar">🔗 GitHub</button>
+      <button class="btn btn-soft btn-sm" id="btnExportarBackup">💾 Salvar backup</button>
+      <button class="btn btn-ghost btn-sm" id="btnEscolherLocalBackup" title="Escolher outro arquivo/pasta pro backup" style="color:#B9C7DC">📁 Trocar local</button>
+      <button class="btn btn-soft btn-sm" id="btnImportarBackup">⬆ Restaurar backup</button>
+      <input type="file" id="fileBackup" accept=".json" hidden>
+    </div>
+  </div>
+</header>
+
+<nav>
+  <button class="on" data-tab="portfolio">Portfólio</button>
+  <button data-tab="onepage">One-Page (Sexta)</button>
+  <button data-tab="ficha">Ficha do Projeto</button>
+  <button data-tab="historico">Histórico</button>
+  <button data-tab="cronograma">Cronograma</button>
+  <button data-tab="milestones">Milestones</button>
+</nav>
+
+<main>
+
+  <!-- ===== PORTFÓLIO ===== -->
+  <section id="tab-portfolio">
+    <div class="card">
+      <div class="toolbar" style="justify-content:space-between">
+        <div>
+          <h2 style="margin-bottom:2px">Projetos (<span id="totalProjetos">0</span>)</h2>
+          <div class="desc" style="margin-bottom:0">Fase, Prazo, Responsável e Bloqueio editáveis direto na tabela. Farol calcula sozinho.</div>
+        </div>
+        <button class="btn" id="btnNovoProjeto">+ Novo projeto</button>
+      </div>
+      <div style="overflow-x:auto">
+      <table>
+        <thead><tr>
+          <th style="min-width:200px;position:sticky;left:0;background:var(--card);z-index:2">Projeto</th><th>Fase Atual</th><th>Prazo Previsto</th>
+          <th>Responsável</th><th style="min-width:260px">Anotação</th><th>Farol</th><th></th>
+        </tr></thead>
+        <tbody id="tabelaPortfolio"></tbody>
+      </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== ONE-PAGE (SEXTA) ===== -->
+  <section id="tab-onepage" class="hide">
+    <div class="card no-print">
+      <div class="toolbar" style="justify-content:space-between">
+        <div>
+          <h2 style="margin-bottom:2px">Semana de <b id="opData"></b></h2>
+          <div class="desc" style="margin-bottom:0">Exporta a página inteira (KPIs, bloqueados, pipeline, atenção) em PDF pra apresentação.</div>
+        </div>
+        <button class="btn btn-soft btn-sm" id="btnImprimirOnePage">🖨 Imprimir / Exportar PDF</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="toolbar" style="justify-content:space-between">
+        <div>
+          <h2 style="margin-bottom:2px">Status do Portfólio</h2>
+          <div class="desc" style="margin-bottom:0">Semana de <b id="opData2"></b></div>
+        </div>
+        <button class="btn btn-soft btn-sm no-print" id="btnExportarStatusCSV">⬇ Exportar status (CSV)</button>
+      </div>
+      <div class="kpis" id="kpisFarol"></div>
+      <div id="resumoPorEtapa" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:14px"></div>
+    </div>
+    <div class="side-by-side">
+      <div class="card" id="cardBloqueadosOnePage">
+        <h2>🛑 Projetos Bloqueados/Parados</h2>
+        <div class="desc">Precisam de uma decisão: reativar, cancelar de vez, ou redirecionar recurso pra outro lugar.</div>
+        <div id="listaBloqueadosOnePage" class="compact-list"></div>
+      </div>
+      <div class="card" id="cardImpedimentosOnePage">
+        <h2>🟡 Projetos com Impedimento</h2>
+        <div class="desc">O projeto continua ativo, mas está travado por algo específico até isso ser resolvido.</div>
+        <div id="listaImpedimentosOnePage" class="compact-list"></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="toolbar" style="justify-content:space-between">
+        <div>
+          <h2 style="margin-bottom:2px">Atrasados por Responsável</h2>
+          <div class="desc" style="margin-bottom:0">Pronto pra responder "quem tem o quê atrasado" numa reunião.</div>
+        </div>
+        <button class="btn btn-soft btn-sm no-print" id="btnExportarAtrasadosCSV">⬇ Exportar (CSV)</button>
+      </div>
+      <table id="tabelaAtrasadosResp"></table>
+    </div>
+    <div class="card">
+      <div class="toolbar" style="justify-content:space-between">
+        <div>
+          <h2 style="margin-bottom:2px">Pipeline do Portfólio</h2>
+          <div class="desc" style="margin-bottom:0">Uma coluna por etapa, um card por projeto. Cor da barra lateral = farol. Clique num card pra abrir a Ficha dele.</div>
+        </div>
+        <button class="btn btn-soft btn-sm no-print" id="btnExportarVisaoGeralCSV">⬇ Exportar (CSV)</button>
+      </div>
+      <div class="kanban-wrap"><div class="kanban-board" id="kanbanPipeline"></div></div>
+    </div>
+    <div class="card">
+      <h2>Atividade da Semana</h2>
+      <div class="desc">Tudo que foi registrado no Histórico nos últimos 7 dias — inclusive projetos que atrasaram e já recuperaram, que não aparecem mais em "Pontos de atenção" porque o Farol reflete só o estado de agora.</div>
+      <div id="listaAtividadeSemana"></div>
+    </div>
+    <div class="card">
+      <h2>Pontos de atenção (Amarelo / Laranja / Vermelho)</h2>
+      <div class="desc">Só os projetos que precisam de decisão ou ação da gestão agora.</div>
+      <div id="listaAtencao"></div>
+    </div>
+  </section>
+
+  <!-- ===== FICHA DO PROJETO (one-page individual) ===== -->
+  <section id="tab-ficha" class="hide">
+    <div class="card no-print">
+      <div class="toolbar" style="justify-content:space-between">
+        <div class="toolbar" style="margin:0">
+          <button class="btn btn-soft btn-sm" id="btnFichaAnterior">◀ Anterior</button>
+          <span id="fichaContagem" style="font-size:12.5px;color:var(--gray);font-weight:700;white-space:nowrap"></span>
+          <button class="btn btn-soft btn-sm" id="btnFichaProximo">Próximo ▶</button>
+        </div>
+        <select id="fichaProjeto" style="max-width:300px"><option value="">— selecione um projeto —</option></select>
+        <button class="btn btn-soft btn-sm" id="btnImprimirFicha">🖨 Imprimir / Exportar PDF</button>
+      </div>
+    </div>
+
+    <div class="card" id="fichaSemProjeto"><div class="empty">Selecione um projeto acima, ou use "Anterior/Próximo" pra passar por todos — modo apresentação pra reunião gerencial.</div></div>
+
+    <div id="fichaConteudo" class="hide">
+      <div class="card" id="fichaCabecalho"></div>
+      <div class="card">
+        <h2>Milestone atual — condição do gate</h2>
+        <div id="fichaGate"></div>
+      </div>
+      <div class="card">
+        <h2>Compliance de Qualidade (BPx)</h2>
+        <div class="desc">Farmacêutica: se o projeto impacta Boas Práticas (BPx), os itens abaixo (incluindo POP) são obrigatórios — Início/Fim/Real, cada um vira barra no Cronograma.</div>
+        <div class="field" style="max-width:280px">
+          <label>Este projeto impacta BPx?</label>
+          <select id="fichaBpxImpacto"><option value="">— a avaliar —</option><option>Sim</option><option>Não</option></select>
+        </div>
+        <div id="fichaComplianceItens"></div>
+      </div>
+      <div class="card" id="fichaVscCard">
+        <h2>VSC — Validação de Sistemas Computadorizados</h2>
+        <div class="desc">Só existe em projetos que mexem em sistema computadorizado. É uma validação do projeto como um todo — QI/QO/QD. Cada etapa aparece também como barra no Cronograma.</div>
+        <div class="field" style="max-width:280px">
+          <label>Este projeto requer VSC?</label>
+          <select id="fichaVscRequerido"><option value="">— a avaliar —</option><option>Sim</option><option>Não</option></select>
+        </div>
+        <div id="fichaVscConteudo"></div>
+      </div>
+      <div class="card" id="fichaPlanoMarcosCard">
+        <div class="toolbar no-print" style="justify-content:space-between">
+          <h2 style="margin:0">Plano de Marcos (baseline x real)</h2>
+          <div id="fichaPlanoAcoes"></div>
+        </div>
+        <div class="desc">Planejado x realizado, milestone a milestone — disponível a partir de "Escopo em assinatura" (G2), quando já existe um cronograma pra basear as datas.</div>
+        <div id="fichaPlanoMarcos"></div>
+      </div>
+      <div class="card">
+        <h2>Histórico completo</h2>
+        <div id="fichaHistorico"></div>
+      </div>
+      <div class="card">
+        <h2>Cronograma</h2>
+        <div id="fichaCronograma"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== HISTÓRICO ===== -->
+  <section id="tab-historico" class="hide">
+    <div class="card">
+      <div class="toolbar" style="justify-content:space-between">
+        <div>
+          <h2 style="margin-bottom:2px">Histórico de atualizações</h2>
+          <div class="desc" style="margin-bottom:0">Uma linha por evento. Um mesmo milestone pode ter quantas anotações precisar.</div>
+        </div>
+        <button class="btn" id="btnNovoRegistro">+ Novo registro</button>
+      </div>
+      <div class="toolbar">
+        <select id="filtroHistProjeto" style="max-width:280px"><option value="">Todos os projetos</option></select>
+      </div>
+      <div id="listaHistorico"></div>
+    </div>
+  </section>
+
+  <!-- ===== CRONOGRAMA ===== -->
+  <section id="tab-cronograma" class="hide">
+    <div class="card no-print">
+      <div class="toolbar" style="justify-content:space-between">
+        <div>
+          <h2 style="margin-bottom:2px">Cronograma por projeto</h2>
+          <div class="desc" style="margin-bottom:0">Use nos projetos que já saíram de Escopo e têm tarefas reais definidas.</div>
+        </div>
+        <button class="btn btn-soft btn-sm" id="btnImprimirCronograma">🖨 Imprimir / Exportar PDF</button>
+      </div>
+      <div class="toolbar">
+        <select id="cronoProjeto" style="max-width:320px"><option value="">— selecione um projeto —</option></select>
+        <label style="margin:0;text-transform:none;font-weight:600;color:var(--ink);display:flex;align-items:center;gap:6px">
+          Início do cronograma: <input type="date" id="cronoDataInicio" style="width:auto">
+        </label>
+      </div>
+    </div>
+    <div class="card" id="cronoTituloImpresso" style="display:none"></div>
+    <div class="card" id="cronoSemProjeto"><div class="empty">Selecione um projeto acima.</div></div>
+    <div id="cronoConteudo" class="hide">
+      <div class="card no-print">
+        <h2>Nova tarefa</h2>
+        <div class="grid2">
+          <div class="field"><label>Código (ex.: 5.6.1)</label><input type="text" id="tfCodigo" placeholder="opcional"></div>
+          <div class="field"><label>Tarefa</label><input type="text" id="tfNome" placeholder="Ex.: Compra do domínio"></div>
+        </div>
+        <div class="grid2">
+          <div class="field"><label>Responsável</label><input type="text" id="tfResp" placeholder="nome"></div>
+          <div class="field"><label>Início Previsto</label><input type="date" id="tfInicio"></div>
+        </div>
+        <div class="grid2">
+          <div class="field"><label>Término Previsto</label><input type="date" id="tfFim"></div>
+          <div class="field"><label>Milestone Associado</label><select id="tfMilestone"><option value="">— selecione —</option></select></div>
+        </div>
+        <div class="grid2">
+          <div class="field"><label>Status</label>
+            <select id="tfStatus"><option>Não iniciado</option><option>Em andamento</option><option>Concluído</option><option>Atrasado</option></select>
+          </div>
+          <div></div>
+        </div>
+        <button class="btn" id="btnAddTarefa">+ Adicionar tarefa</button>
+      </div>
+      <div class="card">
+        <h2>Tarefas (<span id="totalTarefas">0</span>)</h2>
+        <div id="listaTarefas"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== MILESTONES (REFERÊNCIA) ===== -->
+  <section id="tab-milestones" class="hide">
+    <div class="card">
+      <h2>Modelo de Stage-Gate</h2>
+      <div class="desc">Referência fixa — mesma tabela usada nos dropdowns de Fase/Milestone em todo o app.</div>
+      <table id="tabelaMilestonesRef">
+        <thead><tr><th>Etapa</th><th>Milestone</th><th>Na prática</th><th>Quality Gate</th><th>Condição Mínima</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </section>
+
+  <div style="text-align:center;color:var(--gray);font-size:11.5px;padding:20px 0 4px">Desenvolvido por Josmar Valentini</div>
+</main>
+
+<!-- ===== MODAL: NOVO/EDITAR PROJETO ===== -->
+<div class="modal-bg hide" id="modalProjeto">
+  <div class="modal">
+    <h3 id="mpTitulo">Novo projeto</h3>
+    <div class="field"><label>Nome do projeto</label><input type="text" id="mpNome"></div>
+    <div class="grid2">
+      <div class="field"><label>Fase Atual</label><select id="mpFase"><option value="">— sem fase —</option></select></div>
+      <div class="field"><label>Prazo Previsto</label><input type="date" id="mpPrazo"></div>
+    </div>
+    <div class="grid2">
+      <div class="field"><label>Responsável</label><input type="text" id="mpResp"></div>
+      <div class="field"><label>Bloqueio (se houver)</label><input type="text" id="mpBloqueio"></div>
+    </div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:6px">
+      <button class="btn btn-soft btn-sm" id="mpCancelar">Cancelar</button>
+      <button class="btn btn-sm" id="mpSalvar">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MODAL: SINCRONIZAÇÃO COM O GITHUB ===== -->
+<div class="modal-bg hide" id="modalGhConfig">
+  <div class="modal" style="max-width:520px">
+    <h3>Sincronização com o GitHub</h3>
+    <div class="desc" style="margin-top:-8px">Os dados passam a ser gravados automaticamente num arquivo dentro de um repositório privado, e todo mundo que abrir esta ferramenta com a mesma configuração vê e edita a mesma base.</div>
+    <div class="field">
+      <label>Personal Access Token (com permissão de escrita nesse repositório)</label>
+      <input type="password" id="ghToken" placeholder="github_pat_xxxxxxxxxxxxxxxxxxxx">
+    </div>
+    <div class="grid2">
+      <div class="field">
+        <label>Organização / usuário</label>
+        <input type="text" id="ghOwner" placeholder="ex.: myralis-architecture">
+      </div>
+      <div class="field">
+        <label>Repositório</label>
+        <input type="text" id="ghRepo" placeholder="ex.: gestao-portfolio">
+      </div>
+    </div>
+    <div class="field">
+      <label>Caminho do arquivo de dados dentro do repositório</label>
+      <input type="text" id="ghPath" placeholder="dados/portfolio.json">
+    </div>
+    <div class="field">
+      <label>Branch (opcional — deixe em branco para usar a branch padrão do repositório)</label>
+      <input type="text" id="ghBranch" placeholder="main">
+    </div>
+    <div style="background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:10px 12px;margin-bottom:10px">
+      <div style="font-size:11px;font-weight:700;color:var(--gray);text-transform:uppercase;margin-bottom:4px">Resumo da configuração atual (compare com a da outra pessoa, letra por letra)</div>
+      <div id="ghResumoConfig" style="font-size:12.5px;font-family:ui-monospace,Consolas,monospace;color:var(--ink);word-break:break-all">— nada configurado ainda —</div>
+      <button class="btn btn-ghost btn-sm" id="ghCopiarResumo" style="margin-top:4px;padding:2px 0">Copiar resumo</button>
+    </div>
+    <div id="ghConfigMsg" style="font-size:12.5px;color:var(--gray);min-height:18px"></div>
+    <div style="display:flex;gap:8px;justify-content:space-between;flex-wrap:wrap;margin-top:10px">
+      <button class="btn btn-ghost btn-sm" id="ghDesconectar" style="color:var(--red)">Desconectar</button>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-soft btn-sm" id="ghTestar">🧪 Testar leitura/escrita</button>
+        <button class="btn btn-soft btn-sm" id="ghCancelar">Fechar</button>
+        <button class="btn btn-sm" id="ghSalvarConfig">Salvar e sincronizar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MODAL: EDITAR TAREFA DO CRONOGRAMA ===== -->
+<div class="modal-bg hide" id="modalTarefa">
+  <div class="modal">
+    <h3>Editar tarefa</h3>
+    <div class="grid2">
+      <div class="field"><label>Código</label><input type="text" id="tfeCodigo" placeholder="ex.: 5.6.1"></div>
+      <div class="field"><label>Tarefa</label><input type="text" id="tfeNome"></div>
+    </div>
+    <div class="grid2">
+      <div class="field"><label>Responsável</label><input type="text" id="tfeResp"></div>
+      <div class="field"><label>Milestone Associado</label><select id="tfeMilestone"><option value="">— selecione —</option></select></div>
+    </div>
+    <div class="grid2">
+      <div class="field"><label>Início Previsto</label><input type="date" id="tfeInicio"></div>
+      <div class="field"><label>Término Previsto</label><input type="date" id="tfeFim"></div>
+    </div>
+    <div class="field"><label>Status</label>
+      <select id="tfeStatus"><option>Não iniciado</option><option>Em andamento</option><option>Concluído</option><option>Atrasado</option></select>
+    </div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:6px">
+      <button class="btn btn-soft btn-sm" id="tfeCancelar">Cancelar</button>
+      <button class="btn btn-sm" id="tfeSalvar">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MODAL: NOVO/EDITAR REGISTRO DE HISTÓRICO ===== -->
+<div class="modal-bg hide" id="modalRegistro">
+  <div class="modal">
+    <h3 id="mrTitulo">Novo registro</h3>
+    <div class="grid2">
+      <div class="field"><label>Projeto</label><select id="mrProjeto"></select></div>
+      <div class="field"><label>Data</label><input type="date" id="mrData"></div>
+    </div>
+    <div class="field"><label>Fase / Milestone</label><select id="mrFase"><option value="">— selecione —</option></select></div>
+    <div class="field"><label>O que mudou</label><textarea id="mrNota" placeholder="Ex.: aguardando aprovação do fornecedor, previsão de fechar até quinta"></textarea></div>
+    <div class="grid2">
+      <div class="field"><label>Bloqueio atual</label><input type="text" id="mrBloqueio"></div>
+      <div class="field"><label>Próxima ação</label><input type="text" id="mrProximaAcao"></div>
+    </div>
+    <div class="grid2">
+      <div class="field"><label>Responsável</label><input type="text" id="mrResp"></div>
+      <div class="field">
+        <label style="display:flex;align-items:center;gap:6px;margin-bottom:5px">
+          <input type="checkbox" id="mrDecisao" style="width:auto">Precisa de decisão
+        </label>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:6px">
+      <button class="btn btn-soft btn-sm" id="mrCancelar">Cancelar</button>
+      <button class="btn btn-sm" id="mrSalvar">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+const LS_PROJ="portfolioApp_projetos_v1", LS_HIST="portfolioApp_historico_v1", LS_TAR="portfolioApp_tarefas_v1", LS_PLANOS="portfolioApp_planos_v1";
+const hojeISO = ()=> new Date().toISOString().slice(0,10);
+const brDate = iso => { if(!iso) return "—"; const [y,m,d]=iso.split("-"); return `${d}/${m}/${y}`; };
+function esc(s){ return String(s||"").replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+function novoId(){ return Date.now()+"_"+Math.random().toString(36).slice(2,7); }
+function diasEntreDatas(a,b){ return Math.round((new Date(b)-new Date(a))/86400000); }
+
+/* ---------- modelo de stage-gate (referência fixa) ---------- */
+const MILESTONES_REF = [
+  ["Captação","Projeto em registro","G0 – Priorização","Objetivo, justificativa, sponsor e prioridade confirmados"],
+  ["Captação","Responsáveis em nomeação","G1 – Prontidão inicial","Sponsor, GP/PO, áreas envolvidas e responsável de negócio definidos"],
+  ["Discovery","Escopo preliminar não emitido","—","Documento disponibilizado para validação"],
+  ["Discovery","Escopo em validação","—","Áreas participantes devolveram suas considerações"],
+  ["Discovery","Escopo em assinatura","G2 – Aprovação do escopo","Objetivo, entregáveis, limites, critérios de aceite, premissas, dependências e aprovações definidos"],
+  ["Prepare","Cronograma em elaboração","—","Tasks, milestones, responsáveis e dependências registrados"],
+  ["Prepare","Cronograma em aprovação","G3 – Prontidão para execução","Escopo, cronograma, recursos, orçamento, riscos, comunicação e governança aprovados"],
+  ["Explore","Requisitos/desenho em aprovação","G4 – Aprovação da solução","Requisitos funcionais, técnicos, integrações, dados, segurança e qualidade validados"],
+  ["Realize","Construção/configuração em andamento","G5 – Prontidão para testes","Solução construída, documentação disponível e testes unitários concluídos"],
+  ["Realize","Teste do produto","—","Produto testado individualmente antes da integração com os demais componentes"],
+  ["Realize","Testes integrados em andamento","G6 – Prontidão para homologação","Ambiente, massa, cenários e usuários preparados; falhas críticas tratadas"],
+  ["Realize","Homologação em andamento","G7 – Aceite da solução","Aceite formal do negócio e pendências residuais controladas"],
+  ["Realize","VSC - QI/QO","—","Qualificação de Instalação e Operação do sistema computadorizado concluídas"],
+  ["Realize","VSC - QD","—","Qualificação de Desempenho do sistema computadorizado concluída"],
+  ["Deploy","Implantação em preparação","G8 – Go/No-Go","Cutover, rollback, suporte, treinamento, comunicação e aprovações concluídos"],
+  ["Deploy","Go-live em execução","G9 – Entrada em produção","Implantação executada e operação assistida iniciada"],
+  ["Run","Hypercare em andamento","G10 – Encerramento","Solução estável, aceite final, documentação e pendências transferidas"],
+  ["Run","Projeto Encerrado","—","Lições aprendidas, financeiro e documentação encerrados"],
+];
+const MILESTONES = MILESTONES_REF.map(m=>m[1]);
+// Descrição curta em linguagem prática — pra quem olha o Kanban entender de cara "o que tá rolando",
+// sem precisar decifrar o nome formal do milestone. Confirmado com o usuário: Escopo (3 fases) e
+// a transição pro Cronograma em elaboração. As demais são um rascunho a partir da Condição Mínima da
+// tabela de referência — ajustar conforme a prática real.
+const DESCRICOES_PRATICAS = {
+  "Projeto em registro": "Priorizado, aguardando estruturação",
+  "Responsáveis em nomeação": "Sponsor e time definidos",
+  "Escopo preliminar não emitido": "Área usuária ainda não entregou o escopo",
+  "Escopo em validação": "Em validação técnica",
+  "Escopo em assinatura": "Aprovado tecnicamente, em fase de assinatura",
+  "Cronograma em elaboração": "Escopo já assinado, cronograma sendo montado",
+  "Cronograma em aprovação": "Cronograma/recursos aprovados, pronto pra começar",
+  "Requisitos/desenho em aprovação": "Solução desenhada e validada tecnicamente",
+  "Construção/configuração em andamento": "Sistema construído, testes unitários feitos",
+  "Teste do produto": "Produto sendo testado individualmente antes da integração",
+  "Testes integrados em andamento": "Testado ponta a ponta, pronto pra homologação",
+  "Homologação em andamento": "Negócio validou e aceitou a solução",
+  "VSC - QI/QO": "Validando instalação e operação do sistema computadorizado",
+  "VSC - QD": "Validando desempenho do sistema computadorizado",
+  "Implantação em preparação": "Tudo pronto pro go-live",
+  "Go-live em execução": "No ar, em operação assistida",
+  "Hypercare em andamento": "Estabilizado, pronto pra encerrar",
+  "Projeto Encerrado": "Encerrado, lições aprendidas documentadas",
+};
+const MILESTONE_FINAL = MILESTONES[MILESTONES.length-1];
+const IDX_ESCOPO_APROVADO = MILESTONES.indexOf("Escopo em assinatura");
+const ETAPAS_UNICAS = [...new Set(MILESTONES_REF.map(m=>m[0]))];
+const COMPLIANCE_ITENS_SIMPLES = ["ERU - GQ", "CM"];
+const POP_ETAPAS = ["Revisar POP","Aprovar POP","Treinar time","Disponibilizar registros de treinamento","Homologar POP"];
+function bpxPendente(p){
+  if(p.bpxImpacto!=="Sim") return false;
+  const it = p.bpxItens || {};
+  const simplesPend = COMPLIANCE_ITENS_SIMPLES.some(nome=>{ const linha=it[nome]; return !linha || !linha.real; });
+  const pop = it["POP"];
+  const popPend = !pop || !pop.steps || POP_ETAPAS.some(step=>{ const s=pop.steps[step]; return !s || !s.real; });
+  return simplesPend || popPend;
+}
+
+const VSC_ETAPAS = [
+  {key:"QI", label:"QI — Qualificação de Instalação"},
+  {key:"QO", label:"QO — Qualificação de Operação"},
+  {key:"QD", label:"QD — Qualificação de Desempenho"},
+];
+function vscPendente(p){
+  if(p.vscRequerido!=="Sim") return false;
+  const et = p.vscEtapas || {};
+  return VSC_ETAPAS.some(e=>{ const it = et[e.key]; return !it || !it.real; });
+}
+function etapaDoMilestone(nome){ const m = MILESTONES_REF.find(x=>x[1]===nome); return m?m[0]:""; }
+
+/* ---------- estado ---------- */
+let PROJETOS = JSON.parse(localStorage.getItem(LS_PROJ) || "[]");
+let HISTORICO = JSON.parse(localStorage.getItem(LS_HIST) || "[]");
+let TAREFAS = JSON.parse(localStorage.getItem(LS_TAR) || "[]");
+let PLANOS = JSON.parse(localStorage.getItem(LS_PLANOS) || "{}"); // {projetoId: [{milestone,planejada,real}, ...]}
+
+const LS_TOMBSTONES = "portfolioApp_tombstones_v1";
+// lápides de exclusão — {tipo: {id: timestampDaExclusao}} — permitem que uma exclusão
+// sobreviva à sincronização (senão, mesclar com o remoto ressuscitaria o item apagado)
+let TOMBSTONES = JSON.parse(localStorage.getItem(LS_TOMBSTONES) || '{"projetos":{},"tarefas":{},"historico":{}}');
+
+const LS_GH_TOKEN="portfolioApp_gh_token", LS_GH_OWNER="portfolioApp_gh_owner", LS_GH_REPO="portfolioApp_gh_repo",
+      LS_GH_PATH="portfolioApp_gh_path", LS_GH_SHA="portfolioApp_gh_sha", LS_GH_BRANCH="portfolioApp_gh_branch";
+let GH_TOKEN = localStorage.getItem(LS_GH_TOKEN) || "";
+let GH_OWNER = localStorage.getItem(LS_GH_OWNER) || "";
+let GH_REPO  = localStorage.getItem(LS_GH_REPO)  || "";
+let GH_PATH  = localStorage.getItem(LS_GH_PATH)  || "";
+let GH_BRANCH = localStorage.getItem(LS_GH_BRANCH) || "";
+let GH_SHA   = localStorage.getItem(LS_GH_SHA)   || null;
+let ghSyncEmAndamento = false;
+let ghSyncTimeout = null;
+
+// carimba atualizadoEm automaticamente em QUALQUER registro cujo conteúdo mudou desde o
+// último salvar() — comparando uma "assinatura" do objeto (sem o próprio timestamp) contra
+// a assinatura salva da última vez. Isso evita ter que carimbar manualmente em cada uma das
+// dezenas de telas que editam Projetos/Tarefas/Histórico.
+let ULTIMO_SNAPSHOT = {projetos:{}, tarefas:{}, historico:{}};
+function assinaturaSemTimestamp(obj){
+  const {atualizadoEm, ...resto} = obj;
+  return JSON.stringify(resto);
+}
+function marcarAtualizados(lista, mapa){
+  lista.forEach(item=>{
+    const sig = assinaturaSemTimestamp(item);
+    if(mapa[item.id] !== sig){ item.atualizadoEm = Date.now(); mapa[item.id] = sig; }
+  });
+}
+
+let temMudancasSemBackup = false;
+function salvar(){
+  marcarAtualizados(PROJETOS, ULTIMO_SNAPSHOT.projetos);
+  marcarAtualizados(TAREFAS, ULTIMO_SNAPSHOT.tarefas);
+  marcarAtualizados(HISTORICO, ULTIMO_SNAPSHOT.historico);
+  localStorage.setItem(LS_PROJ, JSON.stringify(PROJETOS));
+  localStorage.setItem(LS_HIST, JSON.stringify(HISTORICO));
+  localStorage.setItem(LS_TAR, JSON.stringify(TAREFAS));
+  localStorage.setItem(LS_PLANOS, JSON.stringify(PLANOS));
+  localStorage.setItem(LS_TOMBSTONES, JSON.stringify(TOMBSTONES));
+  temMudancasSemBackup = true;
+  ghAgendarPush();
+}
+window.addEventListener("beforeunload", e=>{
+  if(temMudancasSemBackup){
+    e.preventDefault();
+    e.returnValue = ""; // o texto customizado não aparece na maioria dos navegadores, mas o aviso sim
+    return "";
+  }
+});
+
+/* ---------- sincronização com o GitHub (repositório privado compartilhado entre pessoas) ----------
+   Regra de conflito: cada registro tem atualizadoEm (timestamp). Ao mesclar dois lados com o MESMO
+   id, quem tiver o timestamp mais recente vence, registro inteiro (sem mistura de campo a campo).
+   Exclusão vira "lápide" (TOMBSTONES) e é permanente, a não ser que o outro lado tenha uma edição
+   comprovadamente posterior à exclusão (aí a edição desfaz a exclusão). */
+function ghConfigurado(){ return !!(GH_TOKEN && GH_OWNER && GH_REPO && GH_PATH); }
+function ghUrl(){
+  const caminho = GH_PATH.split("/").filter(Boolean).map(encodeURIComponent).join("/");
+  let url = `https://api.github.com/repos/${encodeURIComponent(GH_OWNER)}/${encodeURIComponent(GH_REPO)}/contents/${caminho}`;
+  if(GH_BRANCH) url += `?ref=${encodeURIComponent(GH_BRANCH)}`;
+  return url;
+}
+function ghHeaders(){
+  // O token nunca é gravado no HTML nem em nenhum arquivo do repositório — fica só no
+  // localStorage deste navegador (o mesmo lugar onde ficam os dados locais da ferramenta).
+  return {Authorization:`Bearer ${GH_TOKEN}`, Accept:"application/vnd.github+json"};
+}
+async function ghGet(){
+  let res;
+  try{ res = await fetch(ghUrl(), {headers: ghHeaders()}); }
+  catch(e){ const err = new Error("Falha de rede ao contatar o GitHub — confira sua internet."); err.status=0; throw err; }
+  if(res.status===404) return {content:null, sha:null};
+  if(res.status===401){ const e = new Error("Token inválido ou expirado (401)."); e.status=401; throw e; }
+  if(res.status===403){ const e = new Error("Sem permissão nesse repositório, ou limite de requisições do GitHub atingido (403)."); e.status=403; throw e; }
+  if(!res.ok){ const e = new Error(`GitHub respondeu ${res.status} ao ler o arquivo.`); e.status=res.status; throw e; }
+  const data = await res.json();
+  const texto = decodeURIComponent(escape(atob(data.content.replace(/\n/g,""))));
+  let json;
+  try{ json = JSON.parse(texto); }
+  catch(e){ throw new Error("O arquivo de dados no GitHub está corrompido ou não é um JSON válido."); }
+  return {content: json, sha: data.sha};
+}
+async function ghPut(conteudo, sha){
+  const body = {
+    message: `Portfólio — atualização — ${new Date().toLocaleString("pt-BR")}`,
+    content: btoa(unescape(encodeURIComponent(JSON.stringify(conteudo, null, 2)))),
+  };
+  if(sha) body.sha = sha;
+  if(GH_BRANCH) body.branch = GH_BRANCH;
+  let res;
+  try{ res = await fetch(ghUrl().split("?")[0], {method:"PUT", headers:{...ghHeaders(), "Content-Type":"application/json"}, body: JSON.stringify(body)}); }
+  catch(e){ const err = new Error("Falha de rede ao gravar no GitHub — confira sua internet."); err.status=0; throw err; }
+  if(res.status===401){ const e = new Error("Token inválido ou expirado (401) — não consegue nem se autenticar."); e.status=401; throw e; }
+  if(res.status===403){ const e = new Error("Autenticado, mas SEM PERMISSÃO DE ESCRITA nesse repositório (403) — o token provavelmente só tem 'Read' e precisa de 'Read and write' em Contents."); e.status=403; throw e; }
+  if(!res.ok){
+    const err = await res.json().catch(()=>({}));
+    const e = new Error(err.message || `GitHub respondeu ${res.status} ao gravar o arquivo.`);
+    e.status = res.status;
+    throw e;
+  }
+  const data = await res.json();
+  return data.content.sha;
+}
+function pacoteAtual(){
+  return {tipo:"portfolio_app_backup", versao:2, exportadoEm:new Date().toISOString(),
+    projetos:PROJETOS, historico:HISTORICO, tarefas:TAREFAS, planos:PLANOS, tombstones:TOMBSTONES};
+}
+
+// mescla o conteúdo remoto DENTRO do estado local em memória (por referência — os arrays globais
+// continuam os mesmos, só com itens adicionados/atualizados/removidos). Nunca é um "wholesale
+// replace" da base local.
+function mesclarRemoto(remoto){
+  if(!remoto) return;
+
+  // lápides remotas entram no nosso conjunto (união, mantendo sempre o timestamp mais recente)
+  ["projetos","tarefas","historico"].forEach(tipo=>{
+    const remotoTomb = (remoto.tombstones && remoto.tombstones[tipo]) || {};
+    Object.keys(remotoTomb).forEach(id=>{
+      if(!TOMBSTONES[tipo][id] || remotoTomb[id] > TOMBSTONES[tipo][id]) TOMBSTONES[tipo][id] = remotoTomb[id];
+    });
+  });
+
+  // Projetos: casados por id; na ausência de id igual, casa por NOME (evita duplicar os 35
+  // projetos padrão quando duas pessoas abrem a ferramenta pela 1ª vez em computadores
+  // diferentes, cada uma com ids internos próprios pros mesmos projetos-semente)
+  const porNomeLocal = {};
+  PROJETOS.forEach(p=> porNomeLocal[(p.nome||"").trim()] = p);
+  const idsProjLocais = new Set(PROJETOS.map(p=>p.id));
+  const remapProjeto = {}; // id remoto -> id local equivalente (quando casados por nome)
+
+  (remoto.projetos||[]).forEach(p=>{
+    if(TOMBSTONES.projetos[p.id] && TOMBSTONES.projetos[p.id] >= (p.atualizadoEm||0)) return; // já apagamos, e é mais novo
+    const existenteLocal = PROJETOS.find(x=>x.id===p.id);
+    if(existenteLocal){
+      if((p.atualizadoEm||0) > (existenteLocal.atualizadoEm||0)) Object.assign(existenteLocal, p);
+      return;
+    }
+    const nome = (p.nome||"").trim();
+    const existentePorNome = porNomeLocal[nome];
+    if(existentePorNome){
+      if(p.id!==existentePorNome.id) remapProjeto[p.id] = existentePorNome.id;
+      return;
+    }
+    if(!idsProjLocais.has(p.id)){ PROJETOS.push(p); porNomeLocal[nome]=p; idsProjLocais.add(p.id); }
+  });
+  PROJETOS = PROJETOS.filter(p=> !(TOMBSTONES.projetos[p.id] && TOMBSTONES.projetos[p.id] >= (p.atualizadoEm||0)));
+
+  function mesclarLista(localLista, remotaLista, tipoTomb){
+    const porId = {}; localLista.forEach(x=> porId[x.id]=x);
+    (remotaLista||[]).forEach(r=>{
+      if(remapProjeto[r.projetoId]) r.projetoId = remapProjeto[r.projetoId];
+      if(TOMBSTONES[tipoTomb][r.id] && TOMBSTONES[tipoTomb][r.id] >= (r.atualizadoEm||0)) return;
+      const local = porId[r.id];
+      if(!local){ localLista.push(r); porId[r.id]=r; return; }
+      if((r.atualizadoEm||0) > (local.atualizadoEm||0)) Object.assign(local, r);
+    });
+    return localLista.filter(x=> !(TOMBSTONES[tipoTomb][x.id] && TOMBSTONES[tipoTomb][x.id] >= (x.atualizadoEm||0)));
+  }
+  TAREFAS = mesclarLista(TAREFAS, remoto.tarefas, "tarefas");
+  HISTORICO = mesclarLista(HISTORICO, remoto.historico, "historico");
+
+  // Planos de marcos: estrutura aninhada (sem id por linha) — simplificado, quem sincronizou
+  // por último "ganha" nos projetos em que os dois mexeram; projetos que só um lado tem plano
+  // não se perdem
+  if(remoto.planos){ PLANOS = {...PLANOS, ...remoto.planos}; }
+}
+
+function atualizarStatusGh(txt, cor){
+  const el = $("ghSyncStatus");
+  if(!el) return;
+  el.textContent = txt;
+  el.style.color = cor || "#B9C7DC";
+}
+
+// ---- ghBuscarEMesclar: SÓ lê o GitHub e mescla no estado local. Nunca grava nada remoto.
+async function ghBuscarEMesclar(){
+  if(!ghConfigurado()) return null;
+  if(ghSyncEmAndamento) return null;
+  ghSyncEmAndamento = true;
+  atualizarStatusGh("🔄 buscando…");
+  try{
+    const remoto = await ghGet();
+    mesclarRemoto(remoto.content);
+    GH_SHA = remoto.sha;
+    localStorage.setItem(LS_GH_SHA, GH_SHA||"");
+    localStorage.setItem(LS_PROJ, JSON.stringify(PROJETOS));
+    localStorage.setItem(LS_HIST, JSON.stringify(HISTORICO));
+    localStorage.setItem(LS_TAR, JSON.stringify(TAREFAS));
+    localStorage.setItem(LS_PLANOS, JSON.stringify(PLANOS));
+    localStorage.setItem(LS_TOMBSTONES, JSON.stringify(TOMBSTONES));
+    montarSelects(); renderTudo();
+    atualizarStatusGh("✓ atualizado às "+new Date().toLocaleTimeString("pt-BR").slice(0,5), "#8FD19E");
+    return true;
+  }catch(err){
+    console.error("[sync] erro ao buscar:", err);
+    atualizarStatusGh("⚠ falha ao atualizar", "#F3B77A");
+    throw err;
+  }finally{
+    ghSyncEmAndamento = false;
+  }
+}
+
+// ---- ghEnviarAgora: busca a versão mais recente, mescla, e SÓ ENTÃO grava — usando sempre o sha
+// mais atual. Em caso de HTTP 409 (alguém gravou no meio do caminho), tenta de novo, até 3 vezes.
+async function ghEnviarAgora(){
+  if(!ghConfigurado()) return;
+  atualizarStatusGh("🔄 sincronizando…");
+  let ultimaExcecao = null;
+  for(let tentativa=1; tentativa<=3; tentativa++){
+    try{
+      const remoto = await ghGet();
+      mesclarRemoto(remoto.content);
+      localStorage.setItem(LS_PROJ, JSON.stringify(PROJETOS));
+      localStorage.setItem(LS_HIST, JSON.stringify(HISTORICO));
+      localStorage.setItem(LS_TAR, JSON.stringify(TAREFAS));
+      localStorage.setItem(LS_PLANOS, JSON.stringify(PLANOS));
+      localStorage.setItem(LS_TOMBSTONES, JSON.stringify(TOMBSTONES));
+      montarSelects(); renderTudo();
+      const novoSha = await ghPut(pacoteAtual(), remoto.sha);
+      GH_SHA = novoSha;
+      localStorage.setItem(LS_GH_SHA, GH_SHA||"");
+      temMudancasSemBackup = false;
+      atualizarStatusGh("✓ sincronizado às "+new Date().toLocaleTimeString("pt-BR").slice(0,5), "#8FD19E");
+      return;
+    }catch(err){
+      ultimaExcecao = err;
+      if(err.status===409){ continue; }
+      break;
+    }
+  }
+  atualizarStatusGh("⚠ falha ao sincronizar", "#F3B77A");
+  console.error("Erro de sincronização com o GitHub:", ultimaExcecao);
+  const el = $("ghSyncStatus");
+  if(el) el.title = "Erro: " + (ultimaExcecao ? ultimaExcecao.message : "desconhecido") + " — clique em \"🔗 GitHub\" para revisar.";
+  throw ultimaExcecao;
+}
+
+// salvar() só AGENDA um envio (debounce de 2,5s) — nunca envia durante o carregamento inicial.
+function ghAgendarPush(){
+  if(!ghConfigurado() || ghSyncEmAndamento) return;
+  clearTimeout(ghSyncTimeout);
+  ghSyncTimeout = setTimeout(()=>{
+    if(ghSyncEmAndamento) return;
+    ghSyncEmAndamento = true;
+    ghEnviarAgora().catch(()=>{}).finally(()=>{ ghSyncEmAndamento = false; });
+  }, 2500);
+}
+
+/* ---------- wiring da interface de configuração do GitHub ---------- */
+$("btnAtualizarAgora").onclick = async ()=>{
+  try{ await ghBuscarEMesclar(); }
+  catch(err){ alert("Não consegui buscar do GitHub: "+err.message); }
+};
+function ghMontarResumo(){
+  const owner = $("ghOwner").value.trim(), repo = $("ghRepo").value.trim(),
+        path = $("ghPath").value.trim(), branch = $("ghBranch").value.trim();
+  if(!owner && !repo && !path){ $("ghResumoConfig").textContent = "— nada configurado ainda —"; return; }
+  $("ghResumoConfig").textContent = `${owner || "?"} / ${repo || "?"} / ${path || "?"} / branch: ${branch || "(padrão do repositório)"}`;
+}
+$("btnGhConfig").onclick = ()=>{
+  $("ghToken").value = GH_TOKEN;
+  $("ghOwner").value = GH_OWNER;
+  $("ghRepo").value = GH_REPO;
+  $("ghPath").value = GH_PATH;
+  $("ghBranch").value = GH_BRANCH;
+  $("ghConfigMsg").textContent = ghConfigurado() ? "Já conectado. Alterar e salvar reconecta." : "";
+  $("ghConfigMsg").style.color = "var(--gray)";
+  ghMontarResumo();
+  $("modalGhConfig").classList.remove("hide");
+};
+["ghOwner","ghRepo","ghPath","ghBranch"].forEach(id=> $(id).oninput = ghMontarResumo);
+$("ghCopiarResumo").onclick = ()=>{
+  navigator.clipboard.writeText($("ghResumoConfig").textContent).then(()=>{
+    $("ghCopiarResumo").textContent = "Copiado ✓";
+    setTimeout(()=>{ $("ghCopiarResumo").textContent = "Copiar resumo"; }, 1500);
+  });
+};
+$("ghCancelar").onclick = ()=> $("modalGhConfig").classList.add("hide");
+$("ghSalvarConfig").onclick = async ()=>{
+  const token = $("ghToken").value.trim(), owner = $("ghOwner").value.trim(),
+        repo = $("ghRepo").value.trim(), path = $("ghPath").value.trim(),
+        branch = $("ghBranch").value.trim();
+  if(!token || !owner || !repo || !path){
+    $("ghConfigMsg").textContent = "Preenche pelo menos token, organização, repositório e caminho.";
+    $("ghConfigMsg").style.color = "var(--red)";
+    return;
+  }
+  GH_TOKEN=token; GH_OWNER=owner; GH_REPO=repo; GH_PATH=path; GH_BRANCH=branch;
+  localStorage.setItem(LS_GH_TOKEN, GH_TOKEN);
+  localStorage.setItem(LS_GH_OWNER, GH_OWNER);
+  localStorage.setItem(LS_GH_REPO, GH_REPO);
+  localStorage.setItem(LS_GH_PATH, GH_PATH);
+  localStorage.setItem(LS_GH_BRANCH, GH_BRANCH);
+  $("ghConfigMsg").textContent = "Testando conexão e buscando os dados atuais…";
+  $("ghConfigMsg").style.color = "var(--gray)";
+  try{
+    await ghBuscarEMesclar();
+    $("ghConfigMsg").textContent = "Conectado! Dados atualizados com sucesso.";
+    $("ghConfigMsg").style.color = "#2C7A4B";
+    setTimeout(()=> $("modalGhConfig").classList.add("hide"), 1200);
+  }catch(err){
+    $("ghConfigMsg").textContent = "Erro: "+err.message+" — confira token, organização, repositório, caminho e branch.";
+    $("ghConfigMsg").style.color = "var(--red)";
+  }
+};
+$("ghTestar").onclick = async ()=>{
+  const token = $("ghToken").value.trim(), owner = $("ghOwner").value.trim(),
+        repo = $("ghRepo").value.trim(), path = $("ghPath").value.trim(),
+        branch = $("ghBranch").value.trim();
+  if(!token || !owner || !repo || !path){
+    $("ghConfigMsg").textContent = "Preenche pelo menos token, organização, repositório e caminho antes de testar.";
+    $("ghConfigMsg").style.color = "var(--red)";
+    return;
+  }
+  const tokenAntes=GH_TOKEN, ownerAntes=GH_OWNER, repoAntes=GH_REPO, pathAntes=GH_PATH, branchAntes=GH_BRANCH;
+  GH_TOKEN=token; GH_OWNER=owner; GH_REPO=repo; GH_PATH=path; GH_BRANCH=branch;
+  $("ghConfigMsg").textContent = "Testando leitura…";
+  $("ghConfigMsg").style.color = "var(--gray)";
+  $("ghTestar").disabled = true;
+  try{
+    let remoto;
+    try{ remoto = await ghGet(); }
+    catch(err){
+      $("ghConfigMsg").textContent = "❌ Leitura falhou: " + err.message;
+      $("ghConfigMsg").style.color = "var(--red)";
+      return;
+    }
+    $("ghConfigMsg").textContent = "✓ Leitura OK. Testando escrita (grava o mesmo conteúdo de volta, não altera nada)…";
+    try{
+      await ghPut(remoto.content || {tipo:"portfolio_app_backup", versao:2, projetos:[], historico:[], tarefas:[], planos:{}, tombstones:{projetos:{},tarefas:{},historico:{}}}, remoto.sha);
+      $("ghConfigMsg").textContent = "✓ Leitura OK. ✓ Escrita OK. Essa configuração funciona de ponta a ponta.";
+      $("ghConfigMsg").style.color = "#2C7A4B";
+    }catch(err){
+      $("ghConfigMsg").textContent = "✓ Leitura OK, mas ❌ Escrita falhou: " + err.message;
+      $("ghConfigMsg").style.color = "var(--red)";
+    }
+  } finally {
+    GH_TOKEN=tokenAntes; GH_OWNER=ownerAntes; GH_REPO=repoAntes; GH_PATH=pathAntes; GH_BRANCH=branchAntes;
+    $("ghTestar").disabled = false;
+  }
+};
+$("ghDesconectar").onclick = ()=>{
+  if(!confirm("Desconectar do GitHub? Os dados que já estão neste navegador continuam salvos aqui, só para de sincronizar com o repositório.")) return;
+  GH_TOKEN=""; GH_OWNER=""; GH_REPO=""; GH_PATH=""; GH_BRANCH=""; GH_SHA=null;
+  [LS_GH_TOKEN,LS_GH_OWNER,LS_GH_REPO,LS_GH_PATH,LS_GH_BRANCH,LS_GH_SHA].forEach(k=>localStorage.removeItem(k));
+  atualizarStatusGh("");
+  $("modalGhConfig").classList.add("hide");
+};
+
+// carga inicial — só entra se ainda não houver nada salvo neste navegador
+const PROJETOS_SEED = ["1.1 - Gestão de ativos SW (COI)", "1.2 - Plataforma de Integração Cloud", "2.1 - Centro 1200", "2.2 - Compliance de Emissão de Documentos", "2.3 - Expansão da Unidade de Faturamento (QUAR)", "3.1 - Automação de Recebimento Fiscal (Inbound)", "3.2 - Planejamento reforma 2027 (etapa 2)", "3.3 - Implementação do split payment", "3.4 - Transferência digital trib. (Aastax)", "3.5 - CNPJ Alfanumérico", "4.1 - Cartões de Crédito", "4.2 - Wflow governança contab. (Lct direto)", "4.3 - Integração de despesas (Concur)", "4.4 - Compensação de Documentos Bloqueados", "5.1 - Governança de Acessos (GRC/IAG)", "5.2 - Modernização de Vendas/Distr. (SD)", "5.3 - Segurança das Informações Comerciais (Revisão de Perfis)", "5.4 - Eficiência Wflow reembolso (user SAP)", "6.1 - Gestão Estratégica de Armazéns (EWM)", "6.2 - Gestão de Compliance de Fornecedores", "7.1 - Digitalização de Processos de P&D (Lote Piloto SAP)", "8.1 - Interligação dados financeiros (Crebinfar)", "8.2 - Padronização de Relatórios de Qualidade", "8.3 - Transparência em Custos de Produção", "8.4 - Melhoria em Relatórios Comerciais", "8.5 - Gestão inteligente devoluções", "8.6 - Saneamento Contábil (uso/consumo)", "8.7 - Gestão Contábil de Bonificações", "8.8 - Compliance ANVISA (Produtos Controlados)", "8.9 - Controle de Qualidade em Liberação de Lote", "9.1 - Segurança em conectividade bancária (Bank Manager)", "9.2 - Gestão de Prazos e Cash flow", "10.1 - Saneamento Mestre de Materiais (PDM)", "11.1 - Integração e Planejamento Integrado (S&OP)", "11.2 - Otimização de Documentação de Produção"];
+if(PROJETOS.length===0 && localStorage.getItem(LS_PROJ)===null){
+  PROJETOS = PROJETOS_SEED.map(nome=>({id:novoId(), nome, faseAtual:"", prazoPrevisto:null, responsavel:"", bloqueio:""}));
+  salvar();
+}
+
+/* ---------- farol ---------- */
+function diasUteisEntre(a, b){ // dias úteis (seg-sex) estritamente após 'a' até 'b', inclusive
+  if(b<=a) return 0;
+  let d = new Date(a+"T00:00:00");
+  const fim = new Date(b+"T00:00:00");
+  d.setDate(d.getDate()+1);
+  let count = 0;
+  while(d<=fim){
+    const wd = d.getDay();
+    if(wd!==0 && wd!==6) count++;
+    d.setDate(d.getDate()+1);
+  }
+  return count;
+}
+function calcFarol(p){
+  if(p.statusProjeto==="Bloqueado") return {cor:"preto", label:"🛑 Bloqueado/Parado", dias:null};
+  if(!p.faseAtual) return {cor:"cinza", label:"Sem fase", dias:null};
+  if(p.faseAtual===MILESTONE_FINAL) return {cor:"azul", label:"Concluído", dias:0};
+
+  // impedimento é um estado próprio, igual o Bloqueado/Parado — não mistura com conta de atraso.
+  // Se tem impedimento, é Amarelo, ponto final, não importa há quantos dias.
+  if(p.temImpedimento){
+    return {cor:"amarelo", label:"Amarelo (impedimento — não conseguimos prosseguir)", dias:null};
+  }
+
+  // usa o Fim Previsto do Plano de Marcos pra fase atual quando existir (mais preciso);
+  // cai pro Prazo Previsto solto do Portfólio quando não houver plano
+  let prazo = p.prazoPrevisto;
+  const plano = PLANOS[p.id];
+  if(plano){
+    const linha = plano.find(m=>m.milestone===p.faseAtual);
+    if(linha && linha.fim) prazo = linha.fim;
+  }
+
+  if(!prazo){
+    // sem prazo definido já é, em si, um sinal de atenção — é exatamente o problema que esta
+    // ferramenta existe pra resolver, então não pode ficar neutro/cinza e sumir do radar
+    return {cor:"amarelo", label:"Amarelo (sem prazo)", dias:null};
+  }
+
+  const dias = Math.max(diasUteisEntre(prazo, hojeISO()), 0);
+
+  // laranja só faz uma coisa: marcar atraso sem impedimento declarado. Nada mais entra aqui.
+  if(dias>5) return {cor:"vermelho", label:`Vermelho (${dias}d úteis)`, dias};
+  if(dias>0) return {cor:"laranja", label:`Atrasado (${dias}d úteis, sem motivo registrado)`, dias};
+  return {cor:"verde", label:"Verde", dias:0};
+}
+const FAROL_HEX = {vermelho:"#B23A2E", amarelo:"#B9791A", laranja:"#C2530E", verde:"#2C7A4B", azul:"#2758A8", cinza:"#8A94A3", preto:"#3D4148"};
+
+function nomeProjeto(id){ const p = PROJETOS.find(x=>x.id===id); return p?p.nome:"(projeto removido)"; }
+function registrarHistoricoAuto(pid, fase, nota, bloqueio){
+  HISTORICO.unshift({id:novoId(), criadoEm:Date.now(), projetoId:pid, data:hojeISO(),
+    fase: fase||"", nota, bloqueio: bloqueio||"", proximaAcao:"", resp:"", precisaDecisao:false});
+  salvar();
+}
+function ultimaAtualizacao(projetoId){
+  const itens = HISTORICO.filter(h=>h.projetoId===projetoId).sort((a,b)=> b.data.localeCompare(a.data) || (b.criadoEm||0)-(a.criadoEm||0));
+  return itens.length ? itens[0] : null;
+}
+
+/* ---------- navegação por abas ---------- */
+document.querySelectorAll("nav button").forEach(b=>{
+  b.onclick = ()=> irParaAba(b.dataset.tab);
+});
+function irParaAba(tab){
+  document.querySelectorAll("nav button").forEach(x=>x.classList.toggle("on", x.dataset.tab===tab));
+  document.querySelectorAll("main > section").forEach(s=>s.classList.add("hide"));
+  $("tab-"+tab).classList.remove("hide");
+  renderTudo();
+}
+
+/* ---------- selects compartilhados ---------- */
+function montarSelects(){
+  const optsFase = '<option value="">— sem fase —</option>' + MILESTONES.map(f=>`<option>${esc(f)}</option>`).join("");
+  const optsFaseObrig = '<option value="">— selecione —</option>' + MILESTONES.map(f=>`<option>${esc(f)}</option>`).join("");
+  $("mpFase").innerHTML = optsFase;
+  $("mrFase").innerHTML = optsFaseObrig;
+  $("tfMilestone").innerHTML = optsFaseObrig;
+
+  const optsProj = PROJETOS.map(p=>`<option value="${p.id}">${esc(p.nome)}</option>`).join("");
+  $("mrProjeto").innerHTML = optsProj;
+
+  const filtroAtual = $("filtroHistProjeto").value;
+  $("filtroHistProjeto").innerHTML = '<option value="">Todos os projetos</option>' + optsProj;
+  $("filtroHistProjeto").value = filtroAtual;
+
+  const cronoAtual = $("cronoProjeto").value;
+  $("cronoProjeto").innerHTML = '<option value="">— selecione um projeto —</option>' + optsProj;
+  $("cronoProjeto").value = cronoAtual;
+
+  const fichaAtual = $("fichaProjeto").value;
+  $("fichaProjeto").innerHTML = '<option value="">— selecione um projeto —</option>' + optsProj;
+  $("fichaProjeto").value = fichaAtual;
+}
+
+/* ================= PORTFÓLIO ================= */
+function renderPortfolio(){
+  $("totalProjetos").textContent = PROJETOS.length;
+  const tb = $("tabelaPortfolio");
+  if(!PROJETOS.length){
+    tb.innerHTML = '<tr><td colspan="7" class="empty">Nenhum projeto cadastrado. Clique em "+ Novo projeto".</td></tr>';
+    return;
+  }
+  const optsFase = sel => '<option value="">— sem fase —</option>' + MILESTONES.map(f=>`<option ${f===sel?"selected":""}>${esc(f)}</option>`).join("");
+  tb.innerHTML = PROJETOS.map(p=>{
+    const f = calcFarol(p);
+    const bloqueado = p.statusProjeto==="Bloqueado";
+    return `<tr data-pid="${p.id}" ${bloqueado?'style="background:#F2F2F3"':(p.temImpedimento?'style="background:#FFF8E6"':"")}>
+      <td style="font-weight:700;position:sticky;left:0;background:${bloqueado?'#F2F2F3':(p.temImpedimento?'#FFF8E6':'#fff')};z-index:1${bloqueado?';text-decoration:line-through;color:var(--gray)':""}">${esc(p.nome)}</td>
+      <td><select class="p-fase">${optsFase(p.faseAtual)}</select></td>
+      <td><input type="date" class="p-prazo" value="${p.prazoPrevisto||""}"></td>
+      <td><input type="text" class="p-resp" value="${esc(p.responsavel||"")}" placeholder="responsável"></td>
+      <td style="min-width:260px"><input type="text" class="p-bloq" value="${esc(p.bloqueio||"")}" placeholder="anotação livre (não afeta o farol)" style="width:100%"></td>
+      <td>${f.cor==='preto'
+          ? `<span title="${esc(f.label)}" style="cursor:help;font-size:15px">🛑</span>`
+          : `<span title="${esc(f.label)}" style="display:inline-block;width:15px;height:15px;border-radius:50%;background:${f.cor==='cinza'?'#AAB2BE':FAROL_HEX[f.cor]};cursor:help;vertical-align:middle"></span>`
+        }${(bpxPendente(p)||vscPendente(p))?` <span title="Pendência de qualidade (BPx/VSC)">⚠️</span>`:""}</td>
+      <td style="white-space:nowrap">
+        <button class="icon-btn" data-act="add" title="Registrar checkpoint no histórico (estado atual, sem digitar nada)" style="color:var(--blue)">➕</button>
+        <button class="icon-btn" data-act="impedimento" title="${p.temImpedimento?'Resolver impedimento':'Marcar impedimento (não conseguimos prosseguir)'}" style="color:${p.temImpedimento?FAROL_HEX.amarelo:'var(--gray)'}">🟡</button>
+        <button class="icon-btn" data-act="bloquear" title="${p.statusProjeto==='Bloqueado'?'Reativar projeto':'Marcar como Bloqueado/Parado'}" style="color:${p.statusProjeto==='Bloqueado'?FAROL_HEX.preto:'var(--gray)'}">🛑</button>
+        <button class="icon-btn" data-act="ficha" title="Ver ficha completa (one-page deste projeto)">📄</button>
+        <button class="icon-btn" data-act="hist" title="Ver histórico deste projeto">🕘</button>
+        <button class="icon-btn" data-act="crono" title="Ver cronograma">📅</button>
+        <button class="icon-btn" data-act="del" title="Remover">✕</button>
+      </td>
+    </tr>`;
+  }).join("");
+
+  tb.querySelectorAll("tr[data-pid]").forEach(tr=>{
+    const pid = tr.dataset.pid;
+    const p = PROJETOS.find(x=>x.id===pid);
+    tr.querySelector(".p-fase").onchange = e=>{
+      const faseAnterior = p.faseAtual;
+      p.faseAtual = e.target.value; p.faseAtualDesde = hojeISO(); salvar();
+      const nota = faseAnterior ? `Fase alterada de "${faseAnterior}" para "${p.faseAtual}"` : `Fase definida como "${p.faseAtual}"`;
+      registrarHistoricoAuto(pid, p.faseAtual, nota, "");
+      fecharFaseAtualAnterior(p, faseAnterior);
+      sincronizarFaseAtualCronograma(p); salvar();
+      renderTudo();
+    };
+    tr.querySelector(".p-prazo").onchange = e=>{
+      p.prazoPrevisto = e.target.value || null; salvar();
+      sincronizarFaseAtualCronograma(p); salvar();
+      renderTudo();
+    };
+    tr.querySelector(".p-resp").onchange = e=>{ p.responsavel = e.target.value.trim(); salvar(); };
+    tr.querySelector(".p-bloq").onchange = e=>{
+      p.bloqueio = e.target.value.trim(); salvar();
+      if(p.bloqueio){
+        registrarHistoricoAuto(pid, p.faseAtual, `Anotação: ${p.bloqueio}`, "");
+      }
+      renderTudo();
+    };
+    tr.querySelector('[data-act="impedimento"]').onclick = ()=>{
+      if(p.temImpedimento){
+        if(confirm(`O impedimento de "${p.nome}" foi resolvido? O farol volta a considerar só o prazo.`)){
+          const motivoAnterior = p.motivoImpedimento;
+          p.temImpedimento = false;
+          registrarHistoricoAuto(pid, p.faseAtual, `Impedimento resolvido: ${motivoAnterior||"(sem motivo registrado)"} — projeto seguiu andando.`, "");
+          salvar(); renderTudo();
+        }
+      } else {
+        const motivo = prompt(`Qual impedimento está travando "${p.nome}" de prosseguir?`);
+        if(motivo===null) return; // cancelou
+        p.temImpedimento = true;
+        p.motivoImpedimento = motivo.trim();
+        registrarHistoricoAuto(pid, p.faseAtual, `Impedimento identificado: ${motivo.trim()||"(sem motivo informado)"}`, "");
+        salvar(); renderTudo();
+      }
+    };
+    tr.querySelector('[data-act="bloquear"]').onclick = ()=>{
+      if(p.statusProjeto==="Bloqueado"){
+        if(confirm(`Reativar "${p.nome}"? Ele volta a aparecer no fluxo normal do pipeline.`)){
+          p.statusProjeto = "";
+          registrarHistoricoAuto(pid, p.faseAtual, "Projeto reativado — voltou a andar.", "");
+          sincronizarFaseAtualCronograma(p); salvar(); renderTudo();
+        }
+      } else {
+        const motivo = prompt(`Por que "${p.nome}" está parando ou não vai ter continuação?`);
+        if(motivo===null) return; // cancelou
+        p.statusProjeto = "Bloqueado";
+        p.motivoBloqueioProjeto = motivo.trim();
+        registrarHistoricoAuto(pid, p.faseAtual, `Projeto marcado como BLOQUEADO/PARADO: ${motivo.trim()||"(sem motivo informado)"}`, "");
+        sincronizarFaseAtualCronograma(p); salvar(); renderTudo();
+      }
+    };
+    tr.querySelector('[data-act="add"]').onclick = ()=>{
+      const partes = [`Fase "${p.faseAtual||"sem fase"}"`,
+        `Prazo ${p.prazoPrevisto?brDate(p.prazoPrevisto):"não definido"}`,
+        `Responsável ${p.responsavel||"não definido"}`];
+      let nota = "Checkpoint: " + partes.join(", ");
+      if(p.bloqueio) nota += ` — Anotação: ${p.bloqueio}`;
+      if(!confirm(`Registrar checkpoint no Histórico de "${p.nome}"?\n\n${nota}`)) return;
+      registrarHistoricoAuto(pid, p.faseAtual, nota, "");
+      renderTudo();
+    };
+    tr.querySelector('[data-act="ficha"]').onclick = ()=>{ $("fichaProjeto").value = pid; irParaAba("ficha"); };
+    tr.querySelector('[data-act="hist"]').onclick = ()=>{
+      $("filtroHistProjeto").value = pid;
+      irParaAba("historico");
+    };
+    tr.querySelector('[data-act="crono"]').onclick = ()=>{ $("cronoProjeto").value = pid; irParaAba("cronograma"); };
+    tr.querySelector('[data-act="del"]').onclick = ()=>{
+      if(confirm(`Remover "${p.nome}"? O histórico e cronograma dele também serão removidos.`)){
+        const agora = Date.now();
+        TOMBSTONES.projetos[pid] = agora;
+        TAREFAS.filter(x=>x.projetoId===pid).forEach(x=> TOMBSTONES.tarefas[x.id]=agora);
+        HISTORICO.filter(x=>x.projetoId===pid).forEach(x=> TOMBSTONES.historico[x.id]=agora);
+        PROJETOS = PROJETOS.filter(x=>x.id!==pid);
+        HISTORICO = HISTORICO.filter(x=>x.projetoId!==pid);
+        TAREFAS = TAREFAS.filter(x=>x.projetoId!==pid);
+        salvar(); montarSelects(); renderTudo();
+      }
+    };
+  });
+}
+
+let projetoModalAlvo = null;
+$("btnNovoProjeto").onclick = ()=>{
+  projetoModalAlvo = null;
+  $("mpTitulo").textContent = "Novo projeto";
+  $("mpNome").value=""; $("mpFase").value=""; $("mpPrazo").value=""; $("mpResp").value=""; $("mpBloqueio").value="";
+  $("modalProjeto").classList.remove("hide");
+};
+$("mpCancelar").onclick = ()=> $("modalProjeto").classList.add("hide");
+$("mpSalvar").onclick = ()=>{
+  const nome = $("mpNome").value.trim();
+  if(!nome){ alert("Digite o nome do projeto."); return; }
+  if(projetoModalAlvo){
+    Object.assign(projetoModalAlvo, {nome, faseAtual:$("mpFase").value, prazoPrevisto:$("mpPrazo").value||null,
+      responsavel:$("mpResp").value.trim(), bloqueio:$("mpBloqueio").value.trim()});
+  } else {
+    PROJETOS.push({id:novoId(), nome, faseAtual:$("mpFase").value, prazoPrevisto:$("mpPrazo").value||null,
+      responsavel:$("mpResp").value.trim(), bloqueio:$("mpBloqueio").value.trim()});
+  }
+  salvar(); montarSelects(); renderTudo();
+  $("modalProjeto").classList.add("hide");
+};
+
+/* ================= ONE-PAGE (SEXTA) ================= */
+function renderOnePage(){
+  $("opData").textContent = brDate(hojeISO());
+  $("opData2").textContent = brDate(hojeISO());
+  const farois = PROJETOS.map(p=>({p, f:calcFarol(p)}));
+  const conta = cor => farois.filter(x=>x.f.cor===cor).length;
+  $("kpisFarol").innerHTML = `
+    <div class="kpi" style="border-top-color:${FAROL_HEX.verde}"><div class="n">${conta("verde")}</div><div class="l">Verde</div></div>
+    <div class="kpi" style="border-top-color:${FAROL_HEX.amarelo}"><div class="n">${conta("amarelo")}</div><div class="l">Amarelo (impedimento)</div></div>
+    <div class="kpi" style="border-top-color:${FAROL_HEX.laranja}"><div class="n">${conta("laranja")}</div><div class="l">Laranja (atraso s/ motivo)</div></div>
+    <div class="kpi" style="border-top-color:${FAROL_HEX.vermelho}"><div class="n">${conta("vermelho")}</div><div class="l">Vermelho</div></div>
+    <div class="kpi" style="border-top-color:${FAROL_HEX.azul}"><div class="n">${conta("azul")}</div><div class="l">Concluído</div></div>
+    <div class="kpi" style="border-top-color:${FAROL_HEX.cinza}"><div class="n">${conta("cinza")}</div><div class="l">Sem fase/prazo</div></div>
+    <div class="kpi" style="border-top-color:${FAROL_HEX.preto}"><div class="n">${conta("preto")}</div><div class="l">🛑 Bloqueados</div></div>`;
+
+  // Resumo por milestone — igual ao cabeçalho de coluna do Kanban, só quem tem projeto
+  const porMilestoneResumo = {}; MILESTONES.forEach(m=> porMilestoneResumo[m]=0);
+  PROJETOS.forEach(p=>{ if(p.faseAtual && p.statusProjeto!=="Bloqueado") porMilestoneResumo[p.faseAtual]=(porMilestoneResumo[p.faseAtual]||0)+1; });
+  $("resumoPorEtapa").innerHTML = MILESTONES
+    .filter(m=> porMilestoneResumo[m]>0)
+    .map(m=> `<div class="kanban-col" style="min-width:190px;max-width:190px;padding:10px">${kanbanColHeaderHTML(m, porMilestoneResumo[m], false)}</div>`)
+    .join("");
+
+  // Lista dos bloqueados com motivo — o card de cima só dá o número, aqui dá o "quem e por quê"
+  const bloqueados = farois.filter(x=>x.p.statusProjeto==="Bloqueado");
+  $("listaBloqueadosOnePage").innerHTML = bloqueados.length ? bloqueados.map(({p})=>`
+    <div class="row-item" style="border-left:4px solid ${FAROL_HEX.preto}">
+      <div class="ri-top">
+        <div class="ri-proj">${esc(p.nome)}</div>
+        <span class="pill" style="background:${FAROL_HEX.preto}22;color:${FAROL_HEX.preto}">🛑 Bloqueado</span>
+      </div>
+      <div class="ri-nota"><b>Motivo:</b> ${esc(p.motivoBloqueioProjeto||"Sem motivo registrado")}</div>
+      <div class="ri-meta"><span><b>Estava na fase:</b> ${esc(p.faseAtual||"—")}</span><span><b>Responsável:</b> ${esc(p.responsavel||"—")}</span></div>
+    </div>`).join("") : `<div class="empty">Nenhum projeto bloqueado agora.</div>`;
+
+  // Impedimentos — projeto continua ativo na fase, só não consegue prosseguir agora
+  const impedidos = farois.filter(x=>x.p.temImpedimento && x.p.statusProjeto!=="Bloqueado");
+  $("listaImpedimentosOnePage").innerHTML = impedidos.length ? impedidos.map(({p})=>`
+    <div class="row-item" style="border-left:4px solid ${FAROL_HEX.amarelo}">
+      <div class="ri-top">
+        <div class="ri-proj">${esc(p.nome)}</div>
+        <span class="pill" style="background:${FAROL_HEX.amarelo}22;color:${FAROL_HEX.amarelo}">🟡 Impedimento</span>
+      </div>
+      <div class="ri-nota"><b>Motivo:</b> ${esc(p.motivoImpedimento||"Sem motivo registrado")}</div>
+      <div class="ri-meta"><span><b>Fase Atual:</b> ${esc(p.faseAtual||"—")}</span><span><b>Responsável:</b> ${esc(p.responsavel||"—")}</span></div>
+    </div>`).join("") : `<div class="empty">Nenhum impedimento ativo agora.</div>`;
+
+  // Atrasados por responsável — pra responder rápido "quem tem o quê atrasado"
+  // aqui é só atraso de verdade (laranja/vermelho) — impedimento (amarelo) já tem o card
+  // "🟡 Projetos com Impedimento" lá em cima, não precisa duplicar aqui
+  const problematicos = farois.filter(x=>x.f.cor==="laranja"||x.f.cor==="vermelho");
+  const porResp = {};
+  problematicos.forEach(({p,f})=>{
+    const resp = p.responsavel && p.responsavel.trim() ? p.responsavel.trim() : "Sem responsável definido";
+    (porResp[resp] = porResp[resp]||[]).push({p,f});
+  });
+  const respsOrdenados = Object.keys(porResp).sort((a,b)=> porResp[b].length - porResp[a].length);
+  $("tabelaAtrasadosResp").innerHTML = respsOrdenados.length
+    ? `<thead><tr><th>Responsável</th><th>Qtde</th><th>Projetos</th></tr></thead><tbody>` +
+      respsOrdenados.map(resp=>{
+        const itens = porResp[resp].sort((a,b)=>(b.f.dias||0)-(a.f.dias||0));
+        const projetosHTML = itens.map(({p,f})=>
+          `<div style="margin-bottom:6px">${esc(p.nome)} <span class="pill" style="font-size:10px;background:${FAROL_HEX[f.cor]}22;color:${FAROL_HEX[f.cor]}">${f.label}</span></div>`
+        ).join("");
+        return `<tr><td style="font-weight:700;white-space:nowrap;vertical-align:top">${esc(resp)}</td><td style="vertical-align:top">${itens.length}</td><td>${projetosHTML}</td></tr>`;
+      }).join("") + `</tbody>`
+    : `<tbody><tr><td class="empty" colspan="3">Ninguém com atraso agora 🎉</td></tr></tbody>`;
+
+  // Kanban do pipeline — uma coluna por MILESTONE (não por etapa macro), assim Escopo (3) e
+function kanbanColHeaderHTML(col, count, colUltima){
+  const etapaMae = (col!=="Sem fase" && !colUltima) ? etapaDoMilestone(col) : "";
+  const descPratica = DESCRICOES_PRATICAS[col] || "";
+  const gateInfo = (col!=="Sem fase" && !colUltima) ? (MILESTONES_REF.find(m=>m[1]===col)||[])[2] : "";
+  const gateCodigo = gateInfo && gateInfo!=="—" ? gateInfo.split("–")[0].trim() : "";
+  return `<div class="kanban-col-head" style="flex-direction:column;align-items:stretch;gap:2px;border-bottom:none;margin-bottom:0">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      ${etapaMae?`<span style="font-size:9px;color:var(--gray);text-transform:uppercase;letter-spacing:.03em">${esc(etapaMae)}</span>`:"<span></span>"}
+      ${gateInfo && gateInfo!=="—"?`<span title="${esc(gateInfo)}" style="font-size:9px;font-weight:800;color:#fff;background:var(--purple);border-radius:5px;padding:1px 6px;white-space:nowrap;cursor:help">${esc(gateCodigo)}</span>`:""}
+    </div>
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <span class="kanban-col-nome"${colUltima?' style="color:'+FAROL_HEX.preto+'"':""}>${esc(col)}</span>
+      <span class="kanban-col-count"${colUltima?' style="background:'+FAROL_HEX.preto+'"':""}>${count}</span>
+    </div>
+    ${descPratica?`<span style="font-size:10px;color:var(--blue);font-weight:600;font-style:italic">${esc(descPratica)}</span>`:""}
+  </div>`;
+}
+  // Planejamento (2) abrem em colunas separadas em vez de ficarem misturados numa só
+  const colunas = ["Sem fase", ...MILESTONES, "🛑 Bloqueados"];
+  $("kanbanPipeline").innerHTML = colunas.map(col=>{
+    const itens = farois.filter(x => {
+        if(col==="🛑 Bloqueados") return x.p.statusProjeto==="Bloqueado";
+        if(x.p.statusProjeto==="Bloqueado") return false; // bloqueados só aparecem na coluna própria
+        return col==="Sem fase" ? !x.p.faseAtual : x.p.faseAtual===col;
+      })
+      .sort((a,b)=> a.p.nome.localeCompare(b.p.nome));
+    const cards = itens.map(({p,f})=>`
+      <div class="kanban-card" style="border-left-color:${f.cor==='cinza'?'#AAB2BE':FAROL_HEX[f.cor]}${p.statusProjeto==='Bloqueado'?';opacity:.75':''}" data-act="abrir-ficha" data-pid="${p.id}">
+        <div class="kc-nome"${p.statusProjeto==='Bloqueado'?' style="text-decoration:line-through"':''}>${esc(p.nome)}</div>
+        <div class="kc-fase">${p.statusProjeto==='Bloqueado' ? esc(p.motivoBloqueioProjeto||"sem motivo registrado") : (p.temImpedimento ? "🟡 "+esc(p.motivoImpedimento||"impedimento sem motivo") : esc(p.responsavel||""))}</div>
+      </div>`).join("");
+    const colUltima = col==="🛑 Bloqueados";
+    return `<div class="kanban-col"${colUltima?' style="background:#EAEAEC"':""}>
+      ${kanbanColHeaderHTML(col, itens.length, colUltima)}
+      ${cards || `<div class="kanban-empty">Nenhum projeto</div>`}
+    </div>`;
+  }).join("");
+  $("kanbanPipeline").querySelectorAll('[data-act="abrir-ficha"]').forEach(card=>{
+    card.onclick = ()=>{ $("fichaProjeto").value = card.dataset.pid; irParaAba("ficha"); };
+  });
+
+  const atencao = farois.filter(x=>x.f.cor==="amarelo"||x.f.cor==="laranja"||x.f.cor==="vermelho").sort((a,b)=>(b.f.dias||0)-(a.f.dias||0));
+  $("listaAtencao").innerHTML = atencao.length ? atencao.map(({p,f})=>{
+    const u = ultimaAtualizacao(p.id);
+    const ultimaTxt = u ? `${brDate(u.data)}: ${esc(u.nota)}` : "sem anotação registrada";
+    return `<div class="row-item">
+      <div class="ri-top">
+        <div class="ri-proj">${esc(p.nome)}</div>
+        <span class="pill" style="background:${FAROL_HEX[f.cor]}22;color:${FAROL_HEX[f.cor]}">${f.label}</span>
+      </div>
+      <div class="ri-meta">
+        <span><b>Fase:</b> ${esc(p.faseAtual||"—")}</span>
+        <span><b>Prazo:</b> ${p.prazoPrevisto?brDate(p.prazoPrevisto):"—"}</span>
+        <span><b>Responsável:</b> ${esc(p.responsavel||"—")}</span>
+      </div>
+      ${f.cor==="amarelo" && p.motivoImpedimento?`<div class="ri-nota"><b>Impedimento:</b> ${esc(p.motivoImpedimento)}</div>`:""}
+      ${p.bloqueio?`<div class="ri-nota" style="color:var(--gray)"><b>Anotação:</b> ${esc(p.bloqueio)}</div>`:""}
+      <div class="ri-meta"><span><b>Última atualização:</b> ${ultimaTxt}</span></div>
+    </div>`;
+  }).join("") : `<div class="empty">Nenhum projeto em atenção agora 🎉</div>`;
+
+  // Atividade da semana — tudo registrado nos últimos 7 dias, independente do farol atual
+  // (pega quem atrasou e recuperou no meio da semana, que some da lista de atenção acima)
+  const seteDiasAtras = new Date(Date.now() - 7*86400000).toISOString().slice(0,10);
+  const atividade = HISTORICO.filter(h=> h.data >= seteDiasAtras).sort((a,b)=> b.data.localeCompare(a.data) || (b.criadoEm||0)-(a.criadoEm||0));
+  $("listaAtividadeSemana").innerHTML = atividade.length ? atividade.map(h=>{
+    const p = PROJETOS.find(x=>x.id===h.projetoId);
+    const f = p ? calcFarol(p) : {cor:"cinza", label:"—"};
+    return `<div class="row-item">
+      <div class="ri-top">
+        <div class="ri-proj">${esc(nomeProjeto(h.projetoId))}
+          ${h.fase?`<span class="pill" style="background:var(--blue-soft);color:var(--blue)">${esc(h.fase)}</span>`:""}
+          <span class="pill" style="background:${FAROL_HEX[f.cor]}22;color:${FAROL_HEX[f.cor]==='cinza'?'var(--gray)':FAROL_HEX[f.cor]}">agora: ${f.label}</span>
+        </div>
+        <span style="font-size:11.5px;color:var(--gray)">${brDate(h.data)}</span>
+      </div>
+      ${h.nota?`<div class="ri-nota">${esc(h.nota)}</div>`:""}
+      ${h.bloqueio?`<div class="ri-meta"><span><b>Bloqueio na hora:</b> ${esc(h.bloqueio)}</span></div>`:""}
+    </div>`;
+  }).join("") : `<div class="empty">Nenhum registro nos últimos 7 dias.</div>`;
+}
+
+$("btnExportarStatusCSV").onclick = ()=>{
+  const linhas = [["Projeto","Fase Atual","Etapa","Prazo Previsto","Responsável","Impedimento","Anotação","Farol"]];
+  PROJETOS.forEach(p=>{
+    const f = calcFarol(p);
+    linhas.push([p.nome, p.faseAtual||"", etapaDoMilestone(p.faseAtual||""), p.prazoPrevisto?brDate(p.prazoPrevisto):"", p.responsavel||"", p.temImpedimento?(p.motivoImpedimento||"sim"):"", p.bloqueio||"", f.label]);
+  });
+  baixarCSV(linhas, "portfolio_status_"+hojeISO()+".csv");
+};
+$("btnExportarVisaoGeralCSV").onclick = ()=>{
+  const linhas = [["Projeto","Etapa","Fase Atual","Farol"]];
+  const ordenado = [...PROJETOS].sort((a,b)=>{
+    const ia = a.faseAtual ? MILESTONES.indexOf(a.faseAtual) : -1;
+    const ib = b.faseAtual ? MILESTONES.indexOf(b.faseAtual) : -1;
+    return ia - ib || a.nome.localeCompare(b.nome);
+  });
+  ordenado.forEach(p=>{
+    const f = calcFarol(p);
+    linhas.push([p.nome, etapaDoMilestone(p.faseAtual||""), p.faseAtual||"", f.label]);
+  });
+  baixarCSV(linhas, "visao_geral_por_projeto_"+hojeISO()+".csv");
+};
+$("btnExportarAtrasadosCSV").onclick = ()=>{
+  const linhas = [["Responsável","Projeto","Farol","Fase Atual"]];
+  PROJETOS.forEach(p=>{
+    const f = calcFarol(p);
+    if(f.cor==="laranja"||f.cor==="vermelho"){
+      linhas.push([p.responsavel&&p.responsavel.trim()?p.responsavel.trim():"Sem responsável definido", p.nome, f.label, p.faseAtual||""]);
+    }
+  });
+  if(linhas.length===1){ alert("Ninguém com atraso agora."); return; }
+  baixarCSV(linhas, "atrasados_por_responsavel_"+hojeISO()+".csv");
+};
+function baixarCSV(linhas, nomeArquivo){
+  const csv = linhas.map(l=> l.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(";")).join("\r\n");
+  const blob = new Blob(["\uFEFF"+csv], {type:"text/csv;charset=utf-8;"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a"); a.href = url; a.download = nomeArquivo;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+/* ================= HISTÓRICO ================= */
+function renderHistorico(){
+  const filtro = $("filtroHistProjeto").value;
+  let itens = HISTORICO.filter(h=> !filtro || h.projetoId===filtro);
+  itens.sort((a,b)=> b.data.localeCompare(a.data) || (b.criadoEm||0)-(a.criadoEm||0));
+  $("listaHistorico").innerHTML = itens.length ? itens.map(h=>{
+    const tagDecisao = h.precisaDecisao ? `<span class="pill" style="background:var(--amber-soft);color:var(--amber)">Precisa decisão</span>` : "";
+    return `<div class="row-item">
+      <div class="ri-top">
+        <div class="ri-proj">${esc(nomeProjeto(h.projetoId))}
+          ${h.fase?`<span class="pill" style="background:var(--blue-soft);color:var(--blue)">${esc(h.fase)}</span>`:""}
+          ${tagDecisao}
+        </div>
+        <span style="font-size:11.5px;color:var(--gray)">${brDate(h.data)}</span>
+      </div>
+      ${h.nota?`<div class="ri-nota">${esc(h.nota)}</div>`:""}
+      <div class="ri-meta">
+        ${h.bloqueio?`<span><b>Bloqueio:</b> ${esc(h.bloqueio)}</span>`:""}
+        ${h.proximaAcao?`<span><b>Próxima ação:</b> ${esc(h.proximaAcao)}</span>`:""}
+        ${h.resp?`<span><b>Responsável:</b> ${esc(h.resp)}</span>`:""}
+      </div>
+      <div class="ri-actions">
+        <button class="btn btn-ghost btn-sm" data-act="edit-h" data-id="${h.id}">✎ editar</button>
+        <button class="btn btn-ghost btn-sm" data-act="del-h" data-id="${h.id}" style="color:var(--red)">excluir</button>
+      </div>
+    </div>`;
+  }).join("") : `<div class="empty">Nenhum registro ainda${filtro?" pra esse projeto":""}.</div>`;
+
+  $("listaHistorico").querySelectorAll('[data-act="del-h"]').forEach(btn=>{
+    btn.onclick = ()=>{ if(confirm("Excluir este registro?")){ TOMBSTONES.historico[btn.dataset.id]=Date.now(); HISTORICO = HISTORICO.filter(x=>x.id!==btn.dataset.id); salvar(); renderTudo(); } };
+  });
+  $("listaHistorico").querySelectorAll('[data-act="edit-h"]').forEach(btn=>{
+    btn.onclick = ()=> abrirModalRegistro(HISTORICO.find(x=>x.id===btn.dataset.id));
+  });
+}
+$("filtroHistProjeto").onchange = renderHistorico;
+
+let registroModalAlvo = null;
+function abrirModalRegistro(h, projetoIdPreset, prefill){
+  registroModalAlvo = h || null;
+  $("mrTitulo").textContent = h ? "Editar registro" : "Novo registro";
+  $("mrProjeto").value = h ? h.projetoId : (projetoIdPreset || $("filtroHistProjeto").value || (PROJETOS[0]?PROJETOS[0].id:""));
+  $("mrData").value = h ? h.data : hojeISO();
+  $("mrFase").value = h ? (h.fase||"") : (prefill&&prefill.fase || "");
+  $("mrNota").value = h ? (h.nota||"") : (prefill&&prefill.nota || "");
+  $("mrBloqueio").value = h ? (h.bloqueio||"") : (prefill&&prefill.bloqueio || "");
+  $("mrProximaAcao").value = h ? (h.proximaAcao||"") : "";
+  $("mrResp").value = h ? (h.resp||"") : "";
+  $("mrDecisao").checked = h ? !!h.precisaDecisao : false;
+  $("modalRegistro").classList.remove("hide");
+}
+$("btnNovoRegistro").onclick = ()=>{
+  if(!PROJETOS.length){ alert("Cadastre um projeto na aba Portfólio primeiro."); return; }
+  abrirModalRegistro(null);
+};
+$("mrCancelar").onclick = ()=> $("modalRegistro").classList.add("hide");
+$("mrSalvar").onclick = ()=>{
+  const nota = $("mrNota").value.trim();
+  if(!nota){ alert("Escreva o que mudou."); return; }
+  const dados = {
+    projetoId: $("mrProjeto").value, data: $("mrData").value || hojeISO(), fase: $("mrFase").value || "",
+    nota, bloqueio: $("mrBloqueio").value.trim(), proximaAcao: $("mrProximaAcao").value.trim(),
+    resp: $("mrResp").value.trim(), precisaDecisao: $("mrDecisao").checked,
+  };
+  if(registroModalAlvo){ Object.assign(registroModalAlvo, dados); }
+  else { HISTORICO.unshift({id:novoId(), criadoEm:Date.now(), ...dados}); }
+  salvar();
+  $("modalRegistro").classList.add("hide");
+  renderTudo();
+};
+
+/* ================= CRONOGRAMA ================= */
+function statusSlug(s){ return (s||"Não iniciado").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/\s+/g,"_"); }
+// ordena por código no estilo WBS (5.6.2 antes de 5.6.10); quem não tem código cai pro final, ordenado por data
+function compararTarefas(a, b){
+  if(a.codigo && b.codigo){
+    const pa = a.codigo.split(".").map(n=>parseInt(n,10));
+    const pb = b.codigo.split(".").map(n=>parseInt(n,10));
+    for(let i=0; i<Math.max(pa.length,pb.length); i++){
+      const na = pa[i]===undefined ? -1 : (isNaN(pa[i])?0:pa[i]);
+      const nb = pb[i]===undefined ? -1 : (isNaN(pb[i])?0:pb[i]);
+      if(na!==nb) return na-nb;
+    }
+    return 0;
+  }
+  if(a.codigo && !b.codigo) return -1;
+  if(!a.codigo && b.codigo) return 1;
+  return (a.inicio||"").localeCompare(b.inicio||"");
+}
+/* ---------- grade de Gantt diária, igual à aba Gantt do Excel: semana/dia-da-semana/dia, células coloridas ---------- */
+const LETRA_DIA = ["D","S","T","Q","Q","S","S"]; // índice = Date.getDay() (0=domingo)
+function gradeGanttHTML(tarefas, inicioBase, editavel){
+  const N_DIAS = 84; // 12 semanas, igual ao template do Excel
+  const base = new Date(inicioBase+"T00:00:00");
+  const dias = Array.from({length:N_DIAS}, (_,i)=>{ const d=new Date(base); d.setDate(d.getDate()+i); return d.toISOString().slice(0,10); });
+  const hojeStr = hojeISO();
+
+  let headerWeeks = "", headerDays = "";
+  for(let w=0; w<N_DIAS/7; w++){
+    headerWeeks += `<th class="gantt-week-head${w%2?" b":""}" colspan="7">Sem ${w+1} · ${brDate(dias[w*7])}</th>`;
+  }
+  dias.forEach((d,i)=>{
+    const dt = new Date(d+"T00:00:00");
+    const w = Math.floor(i/7);
+    headerDays += `<th class="gantt-day-head${w%2?" b":" a"}${d===hojeStr?" hoje":""}${(dt.getDay()===0||dt.getDay()===6)?" fds":""}">${LETRA_DIA[dt.getDay()]}<br>${String(dt.getDate()).padStart(2,"0")}</th>`;
+  });
+
+  const diaCellsHTML = t => dias.map(d=>{
+    const fimDeSemana = [0,6].includes(new Date(d+"T00:00:00").getDay());
+    let cls = "gantt-day-cell" + (fimDeSemana?" fds":"");
+    if(t.inicio && t.fim && d>=t.inicio && d<=t.fim){
+      if(t.isMarco) cls += (t.status==="Concluído" ? " gc-marco-concluido" : (t.status==="Atrasado" ? " gc-marco-atrasado" : " gc-marco"));
+      else cls += " gc-"+statusSlug(t.status); // VSC, BPx e Fase Atual usam as mesmas cores de status normais
+    }
+    if(d===hojeStr) cls += " hoje";
+    return `<td class="${cls}"></td>`;
+  }).join("");
+
+  const TIPO_INFO = {
+    marco: {bg:"var(--purple-soft)", fg:"var(--purple)", rotulo:"marco", emoji:"🚩"},
+    vsc:   {bg:"#EDEFF3", fg:"var(--gray)", rotulo:"VSC", emoji:"🧪"},
+    bpx:   {bg:"#EDEFF3", fg:"var(--gray)", rotulo:"BPx", emoji:"⚕️"},
+    faseatual: {bg:"var(--blue-soft)", fg:"var(--blue)", rotulo:"Fase Atual", emoji:"📍"},
+  };
+  const bodyRows = tarefas.map(t=>{
+    const tipoKey = t.isMarco?"marco":t.isVSC?"vsc":t.isBPX?"bpx":t.isFaseAtual?"faseatual":null;
+    const especial = !!tipoKey; // só controla o visual (emoji, cor de fundo do texto quando não editável)
+    const info = tipoKey ? TIPO_INFO[tipoKey] : null;
+    const nomeAtual = t.isMarco ? (t.milestone||t.nome) : t.nome;
+    const sub = especial ? "" : (t.resp||"");
+    const emoji = especial ? info.emoji+" " : "";
+    const colStatus = editavel
+      ? `<select class="tk-status-grid" data-tid="${t.id}" style="width:100%">
+          ${["Não iniciado","Em andamento","Concluído","Atrasado"].map(s=>`<option ${s===t.status?"selected":""}>${s}</option>`).join("")}
+        </select>`
+      : `<span class="pill" style="font-size:10px;background:${especial?info.bg:"#EDEFF3"};color:${especial?info.fg:"var(--gray)"}">${esc(t.status||"—")}</span>`;
+    const delBtn = editavel ? `<button class="icon-btn" data-act="del-t-grid" data-tid="${t.id}" title="Excluir">✕</button>` : "";
+    const editBtn = editavel ? `<button class="icon-btn" data-act="edit-t-grid" data-tid="${t.id}" title="Editar datas, responsável ou milestone">✎</button>` : "";
+    const nomeCampo = editavel
+      ? `<textarea class="tk-nome-grid" data-tid="${t.id}" rows="2" style="font-weight:700;border:none;padding:2px 0;width:100%;background:transparent;resize:vertical;font-family:inherit;font-size:12px;line-height:1.3;overflow:hidden">${esc(emoji+nomeAtual)}</textarea>`
+      : `<div style="font-weight:700">${esc(emoji+nomeAtual)}</div>`;
+    const codigoCampo = (editavel && !t.isMarco)
+      ? `<input type="text" class="tk-codigo-grid" data-tid="${t.id}" value="${esc(t.codigo||"")}" placeholder="ID" style="width:52px;border:none;padding:1px 2px;font-size:10.5px;color:var(--gray);background:transparent">`
+      : (t.codigo ? `<span style="font-size:10.5px;color:var(--gray)">${esc(t.codigo)}</span>` : "");
+    const milestoneRef = t.milestone;
+    const faseMacro = milestoneRef ? etapaDoMilestone(milestoneRef) : "";
+    return `<tr data-tid="${t.id}">
+      <td class="gantt-label-col">
+        <div style="display:flex;align-items:flex-start;gap:4px">
+          <div style="display:flex;flex-direction:column;gap:2px">${delBtn}${editBtn}</div>
+          <div style="min-width:52px">${codigoCampo}</div>
+          <div style="flex:1;min-width:0">
+            ${faseMacro?`<div style="font-size:9px;color:var(--blue);font-weight:800;text-transform:uppercase;letter-spacing:.02em">${esc(faseMacro)}</div>`:""}
+            ${nomeCampo}
+            ${sub?`<div style="font-size:10.5px;color:var(--gray);font-weight:400">${esc(sub)}</div>`:""}
+          </div>
+        </div>
+      </td>
+      <td class="gantt-sub-col" style="left:300px">${colStatus}</td>
+      ${diaCellsHTML(t)}
+    </tr>`;
+  }).join("");
+
+  return `<div class="gantt-wrap"><table class="gantt-grade">
+    <thead>
+      <tr>
+        <th class="gantt-label-col" style="background:var(--navy);color:#fff" rowspan="2">Cód. / Tarefa / Marco</th>
+        <th class="gantt-sub-col" style="left:300px;background:var(--navy);color:#fff" rowspan="2">Status</th>
+        ${headerWeeks}
+      </tr>
+      <tr>${headerDays}</tr>
+    </thead>
+    <tbody>${bodyRows}</tbody>
+  </table></div>
+  <div class="gantt-legenda">
+    <span><span class="sw" style="background:#E6E0F5"></span>Não iniciado</span>
+    <span><span class="sw" style="background:#A996DE"></span>Em andamento</span>
+    <span><span class="sw" style="background:#5B3FA0"></span>Concluído</span>
+    <span><span class="sw" style="background:#C0392B"></span>Atrasado</span>
+    <span><span class="sw" style="background:var(--navy)"></span>Marco planejado</span>
+    <span><span class="sw" style="background:var(--purple)"></span>Marco concluído</span>
+  </div>`;
+}
+
+function janelaTarefas(tarefas, cronogramaInicio){
+  const datas = tarefas.flatMap(t=>[t.inicio,t.fim]).filter(Boolean);
+  const inicioBase = cronogramaInicio || (datas.length ? datas.sort()[0] : hojeISO());
+  const fimBase = datas.length ? datas.sort().slice(-1)[0] : hojeISO();
+  const janela = Math.max(diasEntreDatas(inicioBase, fimBase) + 7, 14);
+  return {inicioBase, janela};
+}
+function barraTarefaHTML(t, inicioBase, janela){
+  const slug = statusSlug(t.status);
+  const offsetHoje = diasEntreDatas(inicioBase, hojeISO());
+  const hojePct = (offsetHoje>=0 && offsetHoje<=janela) ? (offsetHoje/janela*100)+"%" : "";
+  if(t.isMarco){
+    // barra do PERÍODO PREVISTO (início–fim) do milestone, cor sólida de marco
+    let pos="", larg="";
+    if(t.inicio && t.fim){
+      const offset = Math.max(diasEntreDatas(inicioBase, t.inicio), 0);
+      const dur = Math.max(diasEntreDatas(t.inicio, t.fim)+1, 1);
+      pos = (offset/janela*100)+"%"; larg = (dur/janela*100)+"%";
+    }
+    const marcoSlug = t.status==="Concluído" ? "concluido" : (t.status==="Atrasado" ? "atrasado" : "");
+    // losango na DATA REAL (quando preenchida), marcando o ponto exato em que foi concluído
+    let posReal = "";
+    if(t.real){ posReal = (Math.max(diasEntreDatas(inicioBase, t.real),0)/janela*100)+"%"; }
+    return `<div class="task-track">
+      ${pos!==""?`<div class="task-bar marco ${marcoSlug}" style="left:${pos};width:${larg}"></div>`:""}
+      ${posReal!==""?`<div class="task-marco concluido" style="left:${posReal}" title="Realizado em ${brDate(t.real)}"></div>`:""}
+      ${hojePct!==""?`<div class="task-hoje" style="left:${hojePct}" title="Hoje"></div>`:""}
+    </div>`;
+  }
+  let pos="", larg="";
+  if(t.inicio && t.fim){
+    const offset = Math.max(diasEntreDatas(inicioBase, t.inicio), 0);
+    const dur = Math.max(diasEntreDatas(t.inicio, t.fim)+1, 1);
+    pos = (offset/janela*100)+"%"; larg = (dur/janela*100)+"%";
+  }
+  return `<div class="task-track">
+    ${pos!==""?`<div class="task-bar ${slug}" style="left:${pos};width:${larg}"></div>`:""}
+    ${hojePct!==""?`<div class="task-hoje" style="left:${hojePct}" title="Hoje"></div>`:""}
+  </div>`;
+}
+
+/* ---------- sincroniza o Plano de Marcos (Início/Fim/Real) com uma barra no Cronograma ---------- */
+function sincronizarMarcoCronograma(pid, milestone, inicio, fim, real){
+  const existente = TAREFAS.find(t=>t.projetoId===pid && t.isMarco && t.milestone===milestone);
+  if(!inicio && !fim && !real){
+    if(existente){ TOMBSTONES.tarefas[existente.id]=Date.now(); TAREFAS = TAREFAS.filter(t=>t!==existente); }
+    return;
+  }
+  const dIni = inicio || real || fim;
+  const dFim = fim || real || inicio;
+  let status;
+  if(real) status = "Concluído";
+  else if(fim && fim<hojeISO()) status = "Atrasado";
+  else if(inicio && inicio<=hojeISO()) status = "Em andamento";
+  else status = "Não iniciado";
+  if(existente){
+    Object.assign(existente, {inicio:dIni, fim:dFim, real, status});
+  } else {
+    TAREFAS.push({id:novoId(), projetoId:pid, nome:"🚩 "+milestone, resp:"", inicio:dIni, fim:dFim,
+      real, milestone, status, isMarco:true});
+  }
+}
+
+/* ---------- sincroniza uma barra (Início/Fim/Real) genérica no Cronograma — usada por VSC e BPx ---------- */
+function sincronizarBarraCronograma(pid, chave, nomeExibicao, inicio, fim, real, tipoFlag){
+  const existente = TAREFAS.find(t=>t.projetoId===pid && t[tipoFlag] && t.chaveEspecial===chave);
+  if(!inicio && !fim && !real){
+    if(existente){ TOMBSTONES.tarefas[existente.id]=Date.now(); TAREFAS = TAREFAS.filter(t=>t!==existente); }
+    return;
+  }
+  const dIni = inicio || real || fim;
+  const dFim = fim || real || inicio;
+  let status;
+  if(existente && existente.forcarNaoIniciado && !real){
+    // marcado manualmente como "planejamos mas não conseguimos começar" — ignora a data até desmarcar
+    status = "Não iniciado";
+  } else if(real) status = "Concluído";
+  else if(fim && fim<hojeISO()) status = "Atrasado";
+  else if(inicio && inicio<=hojeISO()) status = "Em andamento";
+  else status = "Não iniciado";
+  if(existente){
+    Object.assign(existente, {inicio:dIni, fim:dFim, real, status, nome:nomeExibicao});
+  } else {
+    const novo = {id:novoId(), projetoId:pid, nome:nomeExibicao, resp:"", inicio:dIni, fim:dFim, real, chaveEspecial:chave, status};
+    novo[tipoFlag] = true;
+    TAREFAS.push(novo);
+  }
+}
+
+/* ---------- sincroniza a Fase Atual + Prazo Previsto do Portfólio direto como barra no Cronograma ---------- */
+function concluirBarraCronograma(pid, chave, tipoFlag, dataReal){
+  const t = TAREFAS.find(x=>x.projetoId===pid && x[tipoFlag] && x.chaveEspecial===chave);
+  if(t){ t.real = dataReal; if(dataReal>t.fim) t.fim = dataReal; t.status = "Concluído"; salvar(); }
+}
+function sincronizarFaseAtualCronograma(p){
+  // cada fase tem sua própria barra (chave inclui o nome da fase) — assim, quando a fase muda,
+  // a barra antiga não é sobrescrita, ela fica registrada como histórico. Ver fechamento em
+  // "fecharFaseAtualAnterior", chamado sempre que a Fase Atual muda.
+  if(!p.faseAtual || p.faseAtual===MILESTONE_FINAL || p.statusProjeto==="Bloqueado" || !p.prazoPrevisto) return;
+  if(!p.faseAtualDesde) p.faseAtualDesde = hojeISO();
+  sincronizarBarraCronograma(p.id, `faseatual_${p.id}_${p.faseAtual}`, `Fase Atual — ${p.faseAtual}`, p.faseAtualDesde, p.prazoPrevisto, null, "isFaseAtual");
+}
+function fecharFaseAtualAnterior(p, faseAnterior){
+  if(faseAnterior) concluirBarraCronograma(p.id, `faseatual_${p.id}_${faseAnterior}`, "isFaseAtual", hojeISO());
+}
+function renderCronograma(){
+  const pid = $("cronoProjeto").value;
+  $("cronoSemProjeto").classList.toggle("hide", !!pid);
+  $("cronoConteudo").classList.toggle("hide", !pid);
+  $("cronoTituloImpresso").style.display = pid ? "block" : "none";
+  if(!pid) return;
+  const p = PROJETOS.find(x=>x.id===pid);
+  if(!p) return;
+  $("cronoDataInicio").value = p.cronogramaInicio || "";
+  $("cronoTituloImpresso").innerHTML = `<h2 style="margin:0">Cronograma — ${esc(p.nome)}</h2><div class="desc" style="margin-bottom:0">Gerado em ${brDate(hojeISO())}</div>`;
+
+  const tarefas = TAREFAS.filter(t=>t.projetoId===pid).sort(compararTarefas);
+  $("totalTarefas").textContent = tarefas.length;
+  if(!tarefas.length){ $("listaTarefas").innerHTML = `<div class="empty">Nenhuma tarefa lançada ainda.</div>`; return; }
+
+  const {inicioBase} = janelaTarefas(tarefas, p.cronogramaInicio);
+  $("listaTarefas").innerHTML = gradeGanttHTML(tarefas, inicioBase, true);
+  wireGradeGanttHandlers("listaTarefas", renderCronograma);
+}
+function wireGradeGanttHandlers(containerId, rerender){
+  const container = $(containerId);
+  container.querySelectorAll('[data-act="del-t-grid"]').forEach(btn=>{
+    btn.onclick = ()=>{
+      if(confirm("Excluir esta tarefa?")){ TOMBSTONES.tarefas[btn.dataset.tid]=Date.now(); TAREFAS = TAREFAS.filter(x=>x.id!==btn.dataset.tid); salvar(); rerender(); }
+    };
+  });
+  container.querySelectorAll('[data-act="edit-t-grid"]').forEach(btn=>{
+    btn.onclick = ()=> abrirModalTarefa(btn.dataset.tid, rerender);
+  });
+  container.querySelectorAll(".tk-nome-grid").forEach(inp=>{
+    const ajustarAltura = ()=>{ inp.style.height="auto"; inp.style.height=(inp.scrollHeight+2)+"px"; };
+    ajustarAltura();
+    inp.addEventListener("input", ajustarAltura);
+    inp.onchange = e=>{
+      const t = TAREFAS.find(x=>x.id===e.target.dataset.tid);
+      const novoNome = e.target.value.trim();
+      if(t && novoNome){ t.nome = novoNome; if(t.isMarco) t.milestone = novoNome; salvar(); rerender(); }
+      else if(t) e.target.value = t.nome; // não deixa ficar em branco
+    };
+  });
+  container.querySelectorAll(".tk-codigo-grid").forEach(inp=>{
+    inp.onchange = e=>{
+      const t = TAREFAS.find(x=>x.id===e.target.dataset.tid);
+      if(t){ t.codigo = e.target.value.trim(); salvar(); rerender(); }
+    };
+  });
+  container.querySelectorAll(".tk-status-grid").forEach(sel=>{
+    sel.onchange = e=>{
+      const t = TAREFAS.find(x=>x.id===e.target.dataset.tid);
+      if(t){
+        t.status = e.target.value;
+        if(t.status==="Concluído" && !t.real) t.real = hojeISO();
+        salvar(); rerender();
+      }
+    };
+  });
+}
+let tarefaModalAlvo = null;
+function abrirModalTarefa(tid){
+  const t = TAREFAS.find(x=>x.id===tid);
+  if(!t) return;
+  tarefaModalAlvo = tid;
+  $("tfeMilestone").innerHTML = '<option value="">— selecione —</option>' + MILESTONES.map(m=>`<option ${m===t.milestone?"selected":""}>${esc(m)}</option>`).join("");
+  $("tfeCodigo").value = t.codigo || "";
+  $("tfeNome").value = t.nome || "";
+  $("tfeResp").value = t.resp || "";
+  $("tfeInicio").value = t.inicio || "";
+  $("tfeFim").value = t.fim || "";
+  $("tfeStatus").value = t.status || "Não iniciado";
+  $("modalTarefa").classList.remove("hide");
+}
+$("tfeCancelar").onclick = ()=> $("modalTarefa").classList.add("hide");
+$("tfeSalvar").onclick = ()=>{
+  const t = TAREFAS.find(x=>x.id===tarefaModalAlvo);
+  if(!t) return;
+  const nome = $("tfeNome").value.trim();
+  if(!nome){ alert("A tarefa não pode ficar sem nome."); return; }
+  t.codigo = $("tfeCodigo").value.trim();
+  t.nome = nome;
+  t.resp = $("tfeResp").value.trim();
+  t.inicio = $("tfeInicio").value || null;
+  t.fim = $("tfeFim").value || null;
+  t.milestone = $("tfeMilestone").value || "";
+  t.status = $("tfeStatus").value || "Não iniciado";
+  salvar();
+  $("modalTarefa").classList.add("hide");
+  renderCronograma(); renderFicha();
+};
+$("cronoProjeto").onchange = renderCronograma;
+$("cronoDataInicio").onchange = e=>{
+  const p = PROJETOS.find(x=>x.id===$("cronoProjeto").value);
+  if(p){ p.cronogramaInicio = e.target.value || null; salvar(); renderCronograma(); }
+};
+$("btnAddTarefa").onclick = ()=>{
+  const pid = $("cronoProjeto").value;
+  if(!pid){ alert("Selecione um projeto primeiro."); return; }
+  const nome = $("tfNome").value.trim();
+  if(!nome){ alert("Digite o nome da tarefa."); return; }
+  TAREFAS.push({id:novoId(), projetoId:pid, codigo:$("tfCodigo").value.trim(), nome, resp:$("tfResp").value.trim(),
+    inicio:$("tfInicio").value||null, fim:$("tfFim").value||null,
+    milestone:$("tfMilestone").value||"", status:$("tfStatus").value||"Não iniciado"});
+  salvar();
+  $("tfCodigo").value=""; $("tfNome").value=""; $("tfResp").value=""; $("tfInicio").value=""; $("tfFim").value="";
+  $("tfMilestone").value=""; $("tfStatus").value="Não iniciado";
+  renderCronograma();
+};
+
+/* ================= FICHA DO PROJETO (one-page individual) ================= */
+function renderFicha(){
+  const pid = $("fichaProjeto").value;
+  $("fichaSemProjeto").classList.toggle("hide", !!pid);
+  $("fichaConteudo").classList.toggle("hide", !pid);
+
+  const idx = PROJETOS.findIndex(x=>x.id===pid);
+  $("fichaContagem").textContent = (idx>=0 && PROJETOS.length) ? `Projeto ${idx+1} de ${PROJETOS.length}` : "";
+  $("btnFichaAnterior").disabled = idx<=0;
+  $("btnFichaProximo").disabled = idx<0 || idx>=PROJETOS.length-1;
+
+  if(!pid) return;
+  const p = PROJETOS.find(x=>x.id===pid);
+  if(!p) return;
+
+  const f = calcFarol(p);
+  const optsFaseFicha = MILESTONES.map(m=>`<option ${m===p.faseAtual?"selected":""}>${esc(m)}</option>`).join("");
+  $("fichaCabecalho").innerHTML = `
+    <div class="ri-top" style="margin-bottom:10px">
+      <h2 style="margin:0">${esc(p.nome)}</h2>
+      <span class="pill" style="background:${f.cor==='cinza'?'#EDEFF3':FAROL_HEX[f.cor]+'22'};color:${f.cor==='cinza'?'var(--gray)':FAROL_HEX[f.cor]};font-size:13px;padding:5px 14px">${f.label}</span>
+    </div>
+    ${p.statusProjeto==="Bloqueado" ? `<div class="ri-nota" style="background:#F2F2F3;padding:10px 12px;border-radius:8px;margin-bottom:12px">
+      <b>🛑 Este projeto está marcado como Bloqueado/Parado.</b><br>${esc(p.motivoBloqueioProjeto||"Sem motivo registrado.")}
+    </div>` : ""}
+    ${p.temImpedimento ? `<div class="ri-nota" style="background:#FFF8E6;padding:10px 12px;border-radius:8px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;gap:10px">
+      <div><b>🟡 Impedimento — não conseguimos prosseguir.</b><br>${esc(p.motivoImpedimento||"Sem motivo registrado.")}</div>
+      <button class="btn btn-soft btn-sm no-print" id="fcResolverImpedimento" style="white-space:nowrap">Resolver</button>
+    </div>` : `<button class="btn btn-soft btn-sm no-print" id="fcMarcarImpedimento" style="margin-bottom:12px">🟡 Marcar impedimento</button>`}
+    <div class="grid2" style="margin-bottom:0">
+      <div class="field">
+        <label>Fase Atual <span style="text-transform:none;font-weight:400;color:var(--gray)">(Etapa: ${esc(etapaDoMilestone(p.faseAtual||"")||"—")})</span></label>
+        <select id="fcFase"><option value="">— sem fase —</option>${optsFaseFicha}</select>
+      </div>
+      <div class="field"><label>Prazo Previsto</label><input type="date" id="fcPrazo" value="${p.prazoPrevisto||""}"></div>
+    </div>
+    <div class="grid2" style="margin-bottom:0">
+      <div class="field"><label>Responsável</label><input type="text" id="fcResp" value="${esc(p.responsavel||"")}" placeholder="responsável"></div>
+      <div class="field"><label>Anotação livre <span style="text-transform:none;font-weight:400;color:var(--gray)">(não afeta o farol)</span></label><input type="text" id="fcBloqueio" value="${esc(p.bloqueio||"")}" placeholder="observação qualquer"></div>
+    </div>
+    ${bpxPendente(p)?`<div class="ri-nota" style="margin-top:2px;color:var(--amber)"><b>⚠ Pendência de qualidade (BPx):</b> ainda faltam itens do checklist de compliance.</div>`:""}
+    ${vscPendente(p)?`<div class="ri-nota" style="margin-top:2px;color:var(--amber)"><b>⚠ Pendência de VSC:</b> ainda faltam etapas de QI/QO/QD.</div>`:""}`;
+
+  $("fcFase").onchange = e=>{
+    const faseAnterior = p.faseAtual;
+    p.faseAtual = e.target.value; p.faseAtualDesde = hojeISO(); salvar(); renderPortfolio(); renderFicha();
+    const nota = faseAnterior ? `Fase alterada de "${faseAnterior}" para "${p.faseAtual}"` : `Fase definida como "${p.faseAtual}"`;
+    registrarHistoricoAuto(p.id, p.faseAtual, nota, "");
+    fecharFaseAtualAnterior(p, faseAnterior);
+    sincronizarFaseAtualCronograma(p); salvar();
+    renderHistorico(); renderCronograma();
+  };
+  $("fcPrazo").onchange = e=>{
+    p.prazoPrevisto = e.target.value || null; salvar();
+    sincronizarFaseAtualCronograma(p); salvar();
+    renderPortfolio(); renderFicha(); renderCronograma();
+  };
+  $("fcResp").onchange = e=>{ p.responsavel = e.target.value.trim(); salvar(); renderPortfolio(); };
+  $("fcBloqueio").onchange = e=>{
+    p.bloqueio = e.target.value.trim(); salvar(); renderPortfolio();
+    if(p.bloqueio){
+      registrarHistoricoAuto(p.id, p.faseAtual, `Anotação: ${p.bloqueio}`, "");
+      renderHistorico();
+    }
+  };
+  if($("fcMarcarImpedimento")) $("fcMarcarImpedimento").onclick = ()=>{
+    const motivo = prompt(`Qual impedimento está travando "${p.nome}" de prosseguir?`);
+    if(motivo===null) return;
+    p.temImpedimento = true; p.motivoImpedimento = motivo.trim(); salvar();
+    registrarHistoricoAuto(p.id, p.faseAtual, `Impedimento identificado: ${motivo.trim()||"(sem motivo informado)"}`, "");
+    renderPortfolio(); renderFicha(); renderHistorico();
+  };
+  if($("fcResolverImpedimento")) $("fcResolverImpedimento").onclick = ()=>{
+    if(!confirm(`O impedimento de "${p.nome}" foi resolvido?`)) return;
+    const motivoAnterior = p.motivoImpedimento;
+    p.temImpedimento = false; salvar();
+    registrarHistoricoAuto(p.id, p.faseAtual, `Impedimento resolvido: ${motivoAnterior||"(sem motivo registrado)"} — projeto seguiu andando.`, "");
+    renderPortfolio(); renderFicha(); renderHistorico();
+  };
+
+  const gate = MILESTONES_REF.find(m=>m[1]===p.faseAtual);
+  $("fichaGate").innerHTML = gate ? `
+    <div class="ri-meta" style="margin-bottom:8px">
+      <span><b>Quality Gate:</b> ${esc(gate[2])}</span>
+    </div>
+    <div class="ri-nota"><b>Condição mínima para aprovação:</b> ${esc(gate[3])}</div>`
+    : `<div class="empty">Nenhuma fase selecionada pra este projeto ainda.</div>`;
+
+  renderCompliance(pid);
+  renderVSC(pid);
+  renderPlanoMarcos(pid);
+
+  const itensHist = HISTORICO.filter(h=>h.projetoId===pid).sort((a,b)=> b.data.localeCompare(a.data) || (b.criadoEm||0)-(a.criadoEm||0));
+  $("fichaHistorico").innerHTML = itensHist.length ? itensHist.map(h=>`
+    <div class="row-item">
+      <div class="ri-top">
+        <div class="ri-proj">${h.fase?`<span class="pill" style="background:var(--blue-soft);color:var(--blue)">${esc(h.fase)}</span>`:""}
+          ${h.precisaDecisao?`<span class="pill" style="background:var(--amber-soft);color:var(--amber)">Precisa decisão</span>`:""}
+        </div>
+        <span style="font-size:11.5px;color:var(--gray)">${brDate(h.data)}</span>
+      </div>
+      ${h.nota?`<div class="ri-nota">${esc(h.nota)}</div>`:""}
+      <div class="ri-meta">
+        ${h.bloqueio?`<span><b>Bloqueio:</b> ${esc(h.bloqueio)}</span>`:""}
+        ${h.proximaAcao?`<span><b>Próxima ação:</b> ${esc(h.proximaAcao)}</span>`:""}
+        ${h.resp?`<span><b>Responsável:</b> ${esc(h.resp)}</span>`:""}
+      </div>
+    </div>`).join("") : `<div class="empty">Nenhum registro no histórico ainda.</div>`;
+
+  const tarefas = TAREFAS.filter(t=>t.projetoId===pid).sort(compararTarefas);
+  if(!tarefas.length){
+    $("fichaCronograma").innerHTML = `<div class="empty">Nenhuma tarefa lançada ainda.</div>`;
+  } else {
+    const {inicioBase} = janelaTarefas(tarefas, p.cronogramaInicio);
+    $("fichaCronograma").innerHTML = gradeGanttHTML(tarefas, inicioBase, true);
+    wireGradeGanttHandlers("fichaCronograma", ()=>renderFicha());
+  }
+}
+/* ---------- Compliance de Qualidade (BPx) — obrigatório quando o projeto impacta Boas Práticas ---------- */
+function renderCompliance(pid){
+  const p = PROJETOS.find(x=>x.id===pid);
+  if(!p) return;
+  $("fichaBpxImpacto").value = p.bpxImpacto || "";
+
+  if(p.bpxImpacto !== "Sim"){
+    $("fichaComplianceItens").innerHTML = p.bpxImpacto==="Não"
+      ? `<div class="empty">Sem impacto em BPx — checklist de qualidade não se aplica a este projeto.</div>`
+      : `<div class="empty">Pendente de avaliação de impacto em Boas Práticas (BPx).</div>`;
+    return;
+  }
+
+  p.bpxItens = p.bpxItens || {};
+  COMPLIANCE_ITENS_SIMPLES.forEach(nome=>{ p.bpxItens[nome] = p.bpxItens[nome] || {inicio:null, fim:null, real:null}; });
+  p.bpxItens["POP"] = p.bpxItens["POP"] || {};
+  p.bpxItens["POP"].steps = p.bpxItens["POP"].steps || {};
+  POP_ETAPAS.forEach(step=>{ p.bpxItens["POP"].steps[step] = p.bpxItens["POP"].steps[step] || {inicio:null, fim:null, real:null}; });
+
+  const linhaHTML = (label, it, attrs, indent)=>{
+    let statusTxt="—", statusCor=FAROL_HEX.cinza;
+    if(it.real && it.fim){ statusTxt = it.real<=it.fim ? "No prazo" : "Atrasou"; statusCor = it.real<=it.fim ? FAROL_HEX.verde : FAROL_HEX.vermelho; }
+    else if(it.real){ statusTxt="Concluído"; statusCor=FAROL_HEX.azul; }
+    else if(it.fim){ statusTxt = it.fim<hojeISO() ? "Atrasado" : (it.inicio && it.inicio<=hojeISO() ? "Em andamento" : "Pendente"); statusCor = it.fim<hojeISO()?FAROL_HEX.vermelho:FAROL_HEX.cinza; }
+    return `<tr>
+      <td${indent?' style="padding-left:26px;color:var(--gray)"':""}>${indent?"↳ ":""}${esc(label)}</td>
+      <td><input type="date" class="bc-inicio" ${attrs} value="${it.inicio||""}"></td>
+      <td><input type="date" class="bc-fim" ${attrs} value="${it.fim||""}"></td>
+      <td><input type="date" class="bc-real" ${attrs} value="${it.real||""}"></td>
+      <td><span class="pill" style="background:${statusCor}22;color:${statusCor}">${statusTxt}</span></td>
+    </tr>`;
+  };
+
+  let linhas = "";
+  COMPLIANCE_ITENS_SIMPLES.forEach(nome=>{
+    linhas += linhaHTML(nome, p.bpxItens[nome], `data-tipo="simples" data-nome="${esc(nome)}"`, false);
+  });
+  linhas += `<tr><td colspan="5" style="font-weight:800;padding-top:14px">POP</td></tr>`;
+  POP_ETAPAS.forEach(step=>{
+    linhas += linhaHTML(step, p.bpxItens["POP"].steps[step], `data-tipo="pop" data-passo="${esc(step)}"`, true);
+  });
+
+  $("fichaComplianceItens").innerHTML = `<table><thead><tr><th>Item</th><th>Início Previsto</th><th>Fim Previsto</th><th>Real</th><th>Status</th></tr></thead>
+    <tbody>${linhas}</tbody></table>`;
+
+  const pegarItem = el => el.dataset.tipo==="pop" ? p.bpxItens["POP"].steps[el.dataset.passo] : p.bpxItens[el.dataset.nome];
+  const atualizar = el=>{
+    const it = pegarItem(el);
+    if(el.dataset.tipo==="pop"){
+      sincronizarBarraCronograma(pid, `bpx_POP_${el.dataset.passo}`, `BPx — POP — ${el.dataset.passo}`, it.inicio, it.fim, it.real, "isBPX");
+    } else {
+      sincronizarBarraCronograma(pid, `bpx_${el.dataset.nome}`, `BPx — ${el.dataset.nome}`, it.inicio, it.fim, it.real, "isBPX");
+    }
+    salvar(); renderCompliance(pid); renderPortfolio(); renderCronograma(); renderFicha();
+  };
+  $("fichaComplianceItens").querySelectorAll(".bc-inicio").forEach(inp=>{
+    inp.onchange = e=>{ pegarItem(e.target).inicio = e.target.value||null; atualizar(e.target); };
+  });
+  $("fichaComplianceItens").querySelectorAll(".bc-fim").forEach(inp=>{
+    inp.onchange = e=>{ pegarItem(e.target).fim = e.target.value||null; atualizar(e.target); };
+  });
+  $("fichaComplianceItens").querySelectorAll(".bc-real").forEach(inp=>{
+    inp.onchange = e=>{ pegarItem(e.target).real = e.target.value||null; atualizar(e.target); };
+  });
+}
+$("fichaBpxImpacto").onchange = e=>{
+  const pid = $("fichaProjeto").value;
+  const p = PROJETOS.find(x=>x.id===pid);
+  if(p){
+    p.bpxImpacto = e.target.value || "";
+    if(p.bpxImpacto!=="Sim" && p.bpxItens){
+      COMPLIANCE_ITENS_SIMPLES.forEach(nome=> sincronizarBarraCronograma(pid, `bpx_${nome}`, "", null, null, null, "isBPX"));
+      POP_ETAPAS.forEach(step=> sincronizarBarraCronograma(pid, `bpx_POP_${step}`, "", null, null, null, "isBPX"));
+    }
+    salvar(); renderCompliance(pid); renderPortfolio(); renderCronograma(); renderFicha();
+  }
+};
+
+/* ---------- VSC — Validação de Sistemas Computadorizados (QI/QO/QD do projeto) ---------- */
+function renderVSC(pid){
+  const p = PROJETOS.find(x=>x.id===pid);
+  if(!p) return;
+  $("fichaVscRequerido").value = p.vscRequerido || "";
+
+  if(p.vscRequerido !== "Sim"){
+    $("fichaVscConteudo").innerHTML = p.vscRequerido==="Não"
+      ? `<div class="empty">Este projeto não requer VSC.</div>`
+      : `<div class="empty">Pendente de avaliação — defina acima se o projeto requer VSC.</div>`;
+    return;
+  }
+
+  p.vscEtapas = p.vscEtapas || {};
+  const linhas = VSC_ETAPAS.map(e=>{
+    const it = p.vscEtapas[e.key] = p.vscEtapas[e.key] || {inicio:null, fim:null, real:null};
+    let statusTxt="—", statusCor=FAROL_HEX.cinza;
+    if(it.real && it.fim){ statusTxt = it.real<=it.fim ? "No prazo" : "Atrasou"; statusCor = it.real<=it.fim ? FAROL_HEX.verde : FAROL_HEX.vermelho; }
+    else if(it.real){ statusTxt="Concluído"; statusCor=FAROL_HEX.azul; }
+    else if(it.fim){ statusTxt = it.fim<hojeISO() ? "Atrasado" : (it.inicio && it.inicio<=hojeISO() ? "Em andamento" : "Pendente"); statusCor = it.fim<hojeISO()?FAROL_HEX.vermelho:FAROL_HEX.cinza; }
+    return `<tr>
+      <td>${esc(e.label)}</td>
+      <td><input type="date" class="vsc-inicio" data-e="${e.key}" value="${it.inicio||""}"></td>
+      <td><input type="date" class="vsc-fim" data-e="${e.key}" value="${it.fim||""}"></td>
+      <td><input type="date" class="vsc-real" data-e="${e.key}" value="${it.real||""}"></td>
+      <td><span class="pill" style="background:${statusCor}22;color:${statusCor}">${statusTxt}</span></td>
+    </tr>`;
+  }).join("");
+
+  $("fichaVscConteudo").innerHTML = `<table><thead><tr><th>Etapa</th><th>Início Previsto</th><th>Fim Previsto</th><th>Real</th><th>Status</th></tr></thead>
+    <tbody>${linhas}</tbody></table>`;
+
+  const atualizarEtapa = (ekey)=>{
+    const it = p.vscEtapas[ekey];
+    const eLabel = VSC_ETAPAS.find(e=>e.key===ekey).label;
+    sincronizarBarraCronograma(pid, `${pid}_${ekey}`, `VSC — ${eLabel}`, it.inicio, it.fim, it.real, "isVSC");
+    salvar(); renderVSC(pid); renderCronograma(); renderFicha();
+  };
+  $("fichaVscConteudo").querySelectorAll(".vsc-inicio").forEach(inp=>{
+    inp.onchange = e=>{ p.vscEtapas[e.target.dataset.e].inicio = e.target.value||null; atualizarEtapa(e.target.dataset.e); };
+  });
+  $("fichaVscConteudo").querySelectorAll(".vsc-fim").forEach(inp=>{
+    inp.onchange = e=>{ p.vscEtapas[e.target.dataset.e].fim = e.target.value||null; atualizarEtapa(e.target.dataset.e); };
+  });
+  $("fichaVscConteudo").querySelectorAll(".vsc-real").forEach(inp=>{
+    inp.onchange = e=>{ p.vscEtapas[e.target.dataset.e].real = e.target.value||null; atualizarEtapa(e.target.dataset.e); };
+  });
+}
+$("fichaVscRequerido").onchange = e=>{
+  const pid = $("fichaProjeto").value;
+  const p = PROJETOS.find(x=>x.id===pid);
+  if(p){ p.vscRequerido = e.target.value || ""; salvar(); renderVSC(pid); renderPortfolio(); }
+};
+
+/* ---------- Plano de Marcos (baseline x real) — só disponível a partir de "Escopo em assinatura" ---------- */
+function renderPlanoMarcos(pid){
+  const p = PROJETOS.find(x=>x.id===pid);
+  if(!p) return;
+  const idxAtual = MILESTONES.indexOf(p.faseAtual);
+  const liberado = idxAtual >= IDX_ESCOPO_APROVADO; // -1 (sem fase) também cai fora daqui
+
+  if(!liberado){
+    $("fichaPlanoAcoes").innerHTML = "";
+    $("fichaPlanoMarcos").innerHTML = `<div class="empty">Disponível quando a Fase Atual chegar em "Escopo em assinatura" (G2) — antes disso não há baseline pra comparar.</div>`;
+    return;
+  }
+
+  let plano = PLANOS[pid];
+  if(!plano){
+    $("fichaPlanoAcoes").innerHTML = `<button class="btn btn-soft btn-sm" id="btnCriarPlano">+ Criar plano de marcos</button>`;
+    $("fichaPlanoMarcos").innerHTML = `<div class="empty">Nenhum plano criado ainda pra este projeto.</div>`;
+    $("btnCriarPlano").onclick = ()=>{
+      PLANOS[pid] = MILESTONES.map(m=>({milestone:m, inicio:null, fim:null, real:null}));
+      salvar(); renderPlanoMarcos(pid);
+    };
+    return;
+  }
+  // migração leve: planos antigos só tinham "planejada" (data única) — vira início=fim
+  let migrou = false;
+  plano.forEach(m=>{ if(m.planejada!==undefined){ m.inicio = m.inicio || m.planejada; m.fim = m.fim || m.planejada; delete m.planejada; migrou = true; } });
+  if(migrou) salvar();
+
+  $("fichaPlanoAcoes").innerHTML = `<button class="btn btn-ghost btn-sm" id="btnRemoverPlano" style="color:var(--red)">remover plano</button>`;
+  $("fichaPlanoAcoes").querySelector("#btnRemoverPlano").onclick = ()=>{
+    if(confirm("Remover o plano de marcos deste projeto? As barras correspondentes no Cronograma também somem.")){
+      plano.forEach(m=> sincronizarMarcoCronograma(pid, m.milestone, null, null, null));
+      delete PLANOS[pid]; salvar(); renderPlanoMarcos(pid); renderCronograma(); renderFicha();
+    }
+  };
+
+  $("fichaPlanoMarcos").innerHTML = `<table><thead><tr><th>Milestone</th><th>Início Previsto</th><th>Fim Previsto</th><th>Real</th><th>Status</th></tr></thead><tbody>` +
+    plano.map((m,i)=>{
+      let statusTxt="—", statusCor=FAROL_HEX.cinza;
+      if(m.real && m.fim){ if(m.real<=m.fim){ statusTxt="No prazo"; statusCor=FAROL_HEX.verde; } else { statusTxt="Atrasou"; statusCor=FAROL_HEX.vermelho; } }
+      else if(m.real){ statusTxt="Concluído"; statusCor=FAROL_HEX.azul; }
+      else if(m.fim){ statusTxt = m.fim<hojeISO() ? "Atrasado" : (m.inicio && m.inicio<=hojeISO() ? "Em andamento" : "Pendente"); statusCor = m.fim<hojeISO() ? FAROL_HEX.vermelho : FAROL_HEX.cinza; }
+      return `<tr>
+        <td>${esc(m.milestone)}</td>
+        <td><input type="date" class="pm-inicio" data-i="${i}" value="${m.inicio||""}"></td>
+        <td><input type="date" class="pm-fim" data-i="${i}" value="${m.fim||""}"></td>
+        <td><input type="date" class="pm-real" data-i="${i}" value="${m.real||""}"></td>
+        <td><span class="pill" style="background:${statusCor}22;color:${statusCor}">${statusTxt}</span></td>
+      </tr>`;
+    }).join("") + `</tbody>`;
+
+  const atualizarLinha = (i)=>{
+    const m = plano[i];
+    sincronizarMarcoCronograma(pid, m.milestone, m.inicio, m.fim, m.real);
+    salvar(); renderPlanoMarcos(pid); renderCronograma(); renderFicha();
+  };
+  $("fichaPlanoMarcos").querySelectorAll(".pm-inicio").forEach(inp=>{
+    inp.onchange = e=>{ plano[+e.target.dataset.i].inicio = e.target.value || null; atualizarLinha(+e.target.dataset.i); };
+  });
+  $("fichaPlanoMarcos").querySelectorAll(".pm-fim").forEach(inp=>{
+    inp.onchange = e=>{ plano[+e.target.dataset.i].fim = e.target.value || null; atualizarLinha(+e.target.dataset.i); };
+  });
+  $("fichaPlanoMarcos").querySelectorAll(".pm-real").forEach(inp=>{
+    inp.onchange = e=>{ plano[+e.target.dataset.i].real = e.target.value || null; atualizarLinha(+e.target.dataset.i); };
+  });
+}
+
+/* ---------- modo apresentação: navegar projeto a projeto ---------- */
+function fichaIndexAtual(){ return PROJETOS.findIndex(p=>p.id===$("fichaProjeto").value); }
+function fichaIrPara(i){
+  if(!PROJETOS.length) return;
+  const idx = Math.max(0, Math.min(PROJETOS.length-1, i));
+  $("fichaProjeto").value = PROJETOS[idx].id;
+  renderFicha();
+}
+$("btnFichaAnterior").onclick = ()=>{ const i = fichaIndexAtual(); fichaIrPara(i<0 ? 0 : i-1); };
+$("btnFichaProximo").onclick = ()=>{ const i = fichaIndexAtual(); fichaIrPara(i<0 ? 0 : i+1); };
+
+$("fichaProjeto").onchange = renderFicha;
+$("btnImprimirFicha").onclick = ()=>{
+  if(!$("fichaProjeto").value){ alert("Selecione um projeto primeiro."); return; }
+  window.print();
+};
+$("btnImprimirOnePage").onclick = ()=> window.print();
+$("btnImprimirCronograma").onclick = ()=>{
+  if(!$("cronoProjeto").value){ alert("Selecione um projeto primeiro."); return; }
+  window.print();
+};
+
+/* ================= MILESTONES (REFERÊNCIA) ================= */
+function renderMilestonesRef(){
+  $("tabelaMilestonesRef").querySelector("tbody").innerHTML = MILESTONES_REF.map(([et,ms,gate,cond])=>
+    `<tr><td>${esc(et)}</td><td><b>${esc(ms)}</b></td><td style="color:var(--blue);font-style:italic">${esc(DESCRICOES_PRATICAS[ms]||"—")}</td><td>${esc(gate)}</td><td style="color:var(--gray)">${esc(cond)}</td></tr>`
+  ).join("");
+}
+
+/* ================= BACKUP ================= */
+let backupFileHandle = null; // fica lembrado enquanto a aba estiver aberta
+$("btnExportarBackup").onclick = async ()=>{
+  const backup = {tipo:"portfolio_app_backup", versao:1, exportadoEm:new Date().toISOString(),
+    projetos:PROJETOS, historico:HISTORICO, tarefas:TAREFAS, planos:PLANOS};
+  const conteudo = JSON.stringify(backup,null,2);
+  const nomeArquivo = "backup_portfolio_"+hojeISO()+".json";
+
+  if(window.showSaveFilePicker){
+    try{
+      // já escolhemos o arquivo antes nesta sessão? grava direto nele, sem perguntar de novo
+      if(backupFileHandle){
+        const permissao = await backupFileHandle.queryPermission({mode:"readwrite"});
+        if(permissao==="granted" || (await backupFileHandle.requestPermission({mode:"readwrite"}))==="granted"){
+          const writable = await backupFileHandle.createWritable();
+          await writable.write(conteudo);
+          await writable.close();
+          temMudancasSemBackup = false;
+          return;
+        }
+      }
+      const handle = await window.showSaveFilePicker({
+        suggestedName: nomeArquivo,
+        types: [{ description: "Backup JSON", accept: {"application/json": [".json"]} }],
+      });
+      const writable = await handle.createWritable();
+      await writable.write(conteudo);
+      await writable.close();
+      backupFileHandle = handle; // lembra pra próxima vez
+      temMudancasSemBackup = false;
+      return;
+    }catch(err){
+      if(err && err.name==="AbortError") return; // usuário cancelou a janela — não faz nada
+      // qualquer outro erro: cai pro download normal abaixo
+    }
+  }
+  const blob = new Blob([conteudo], {type:"application/json"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a"); a.href = url; a.download = nomeArquivo;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  temMudancasSemBackup = false;
+};
+$("btnEscolherLocalBackup").onclick = ()=>{ backupFileHandle = null; alert("Ok — na próxima vez que clicar em 'Salvar backup', vai pedir pra escolher o arquivo de novo."); };
+$("btnImportarBackup").onclick = ()=> $("fileBackup").click();
+$("fileBackup").onchange = async e=>{
+  const f = e.target.files[0]; if(!f) return;
+  try{
+    const backup = JSON.parse(await f.text());
+    if(!backup || backup.tipo!=="portfolio_app_backup"){ alert("Esse arquivo não parece ser um backup válido."); return; }
+    const resumo = `Esse backup tem ${backup.projetos?.length||0} projetos, ${backup.historico?.length||0} registros e ${backup.tarefas?.length||0} tarefas.\n\n`+
+      `Vou trazer pra cá: itens novos entram, e itens que já existirem aqui (mesmo projeto/registro) `+
+      `vão ser ATUALIZADOS com a versão desse arquivo — assim as edições de outras pessoas entram certinho. Nada é apagado. Confirmar?`;
+    if(!confirm(resumo)){ e.target.value=""; return; }
+    // itens novos entram; itens já existentes (mesmo id) são atualizados com a versão do arquivo importado —
+    // é assim que edições feitas por outra pessoa (num backup mais recente) chegam até você
+    (backup.projetos||[]).forEach(p=>{
+      const existente = PROJETOS.find(x=>x.id===p.id);
+      if(existente) Object.assign(existente, p); else PROJETOS.push(p);
+    });
+    (backup.historico||[]).forEach(h=>{
+      const existente = HISTORICO.find(x=>x.id===h.id);
+      if(existente) Object.assign(existente, h); else HISTORICO.push(h);
+    });
+    (backup.tarefas||[]).forEach(t=>{
+      const existente = TAREFAS.find(x=>x.id===t.id);
+      if(existente) Object.assign(existente, t); else TAREFAS.push(t);
+    });
+    if(backup.planos){ PLANOS = {...PLANOS, ...backup.planos}; } // o arquivo importado é quem manda em caso de conflito
+    salvar(); montarSelects(); renderTudo();
+    alert("Backup importado e atualizado com sucesso.");
+  }catch(err){ alert("Não consegui ler esse arquivo: "+err.message); }
+  e.target.value = "";
+};
+
+/* ================= INICIALIZAÇÃO ================= */
+function renderTudo(){
+  renderPortfolio(); renderOnePage(); renderFicha(); renderHistorico(); renderCronograma(); renderMilestonesRef();
+}
+// sincroniza a barra de Fase Atual de todo mundo uma vez, pra cobrir projetos que já tinham
+// Fase Atual + Prazo Previsto preenchidos antes dessa sincronização existir
+// limpeza: remove barras de "Fase Atual" com o formato antigo de chave (faseatual_<id>, sem a fase no
+// final) — eram órfãs desde que passamos a ter uma barra por fase, e apareciam duplicadas na grade
+TAREFAS = TAREFAS.filter(t=> !(t.isFaseAtual && t.chaveEspecial && !t.chaveEspecial.includes(`faseatual_${t.projetoId}_`)));
+PROJETOS.forEach(p=> sincronizarFaseAtualCronograma(p));
+salvar();
+montarSelects();
+renderTudo();
+
+if(ghConfigurado()){
+  // ao abrir: só BUSCA e mescla — nunca grava automaticamente (evita empurrar um estado
+  // local incompleto/desatualizado por cima do que já está no repositório)
+  ghBuscarEMesclar().catch(err=>{ console.error("Erro ao buscar do GitHub na abertura:", err); atualizarStatusGh("⚠ falha ao atualizar", "#F3B77A"); });
+  setInterval(()=>{
+    if(!ghSyncEmAndamento) ghBuscarEMesclar().catch(()=>{});
+  }, 60*1000); // busca o que os outros gravaram, a cada 1 minuto
+}
+</script>
+</body>
+</html>
