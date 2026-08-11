@@ -1222,14 +1222,45 @@ function normalizarNome(nome){
 // consolida projetos com NOME EXATAMENTE IGUAL (duplicados por sincronização entre ferramentas,
 // por exemplo). Remapeia tarefas/histórico/planos pro sobrevivente e marca lápide no removido,
 // pra sincronização nunca trazer o duplicado de volta.
+// pontua o quão "completo" um projeto está, pra escolher o melhor entre duplicados —
+// nunca escolhe pela ordem em que aparecem na lista (era isso que apagava fase aleatoriamente)
+function pontuarCompletudeProjeto(p){
+  let pontos = 0;
+  if(p.faseAtual) pontos += 1000;
+  if(p.prazoPrevisto) pontos += 100;
+  if(p.responsavel) pontos += 50;
+  if(p.bloqueio) pontos += 20;
+  if(p.statusProjeto==="Bloqueado") pontos += 10;
+  if(p.temImpedimento) pontos += 10;
+  pontos += Math.min((p.atualizadoEm||0) / 1e15, 5); // desempate fino, nunca domina os critérios acima
+  return pontos;
+}
 function consolidarProjetosDuplicados(){
-  const porNome = {};
-  const remap = {};
-  const sobreviventes = [];
+  const grupos = {};
   PROJETOS.forEach(p=>{
     const nome = (p.nome||"").trim();
-    if(porNome[nome]){ remap[p.id] = porNome[nome].id; }
-    else { porNome[nome] = p; sobreviventes.push(p); }
+    (grupos[nome] = grupos[nome]||[]).push(p);
+  });
+  const remap = {};
+  const sobreviventes = [];
+  Object.values(grupos).forEach(grupo=>{
+    if(grupo.length===1){ sobreviventes.push(grupo[0]); return; }
+    grupo.sort((a,b)=> pontuarCompletudeProjeto(b)-pontuarCompletudeProjeto(a));
+    const vencedor = grupo[0];
+    grupo.slice(1).forEach(perdedor=>{
+      remap[perdedor.id] = vencedor.id;
+      // completa no vencedor qualquer campo que ele não tenha mas o perdedor tinha —
+      // não perde dado nenhum que só existia no duplicado descartado
+      ["faseAtual","prazoPrevisto","responsavel","bloqueio","faseAtualDesde","motivoImpedimento","motivoBloqueioProjeto"].forEach(campo=>{
+        if(!vencedor[campo] && perdedor[campo]) vencedor[campo] = perdedor[campo];
+      });
+      if(!vencedor.temImpedimento && perdedor.temImpedimento) vencedor.temImpedimento = true;
+      if(!vencedor.statusProjeto && perdedor.statusProjeto) vencedor.statusProjeto = perdedor.statusProjeto;
+      if(!vencedor.bpxItens && perdedor.bpxItens) vencedor.bpxItens = perdedor.bpxItens;
+      if(!vencedor.vscEtapas && perdedor.vscEtapas) vencedor.vscEtapas = perdedor.vscEtapas;
+      if(!vencedor.popEtapas && perdedor.popEtapas) vencedor.popEtapas = perdedor.popEtapas;
+    });
+    sobreviventes.push(vencedor);
   });
   const idsRemovidos = Object.keys(remap);
   const removidos = PROJETOS.length - sobreviventes.length;
