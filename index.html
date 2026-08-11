@@ -196,6 +196,7 @@
           <h2 style="margin-bottom:2px">Projetos (<span id="totalProjetos">0</span>)</h2>
           <div class="desc" style="margin-bottom:0">Fase, Prazo, Responsável e Bloqueio editáveis direto na tabela. Farol calcula sozinho.</div>
         </div>
+        <button class="btn btn-soft btn-sm" id="btnConsolidarDup" title="Junta projetos com o mesmo nome que ficaram duplicados (ex.: por sincronização entre ferramentas antes de configurar certo)">🧹 Corrigir duplicados</button>
         <button class="btn" id="btnNovoProjeto">+ Novo projeto</button>
       </div>
       <div style="overflow-x:auto">
@@ -738,6 +739,11 @@ function pacoteAtual(){
 // replace" da base local.
 function mesclarRemoto(remoto){
   if(!remoto) return;
+  // proteção contra apontar sem querer pro arquivo de OUTRA ferramenta (ex.: o Daily) —
+  // sem isso, os dados das duas ferramentas se misturam silenciosamente
+  if(remoto.tipo && remoto.tipo!=="portfolio_app_backup"){
+    throw new Error(`O arquivo configurado não é do Portfólio (é do tipo "${remoto.tipo}"). Confira se o caminho/repositório apontam pro arquivo certo — não use o mesmo arquivo do Daily.`);
+  }
 
   // lápides remotas entram no nosso conjunto (união, mantendo sempre o timestamp mais recente)
   ["projetos","tarefas","historico"].forEach(tipo=>{
@@ -1200,6 +1206,70 @@ function renderPortfolio(){
 }
 
 let projetoModalAlvo = null;
+// normaliza um nome pra comparação "parecido" (minúsculas, sem acento, sem pontuação/parênteses,
+// espaços colapsados) — usada só pra AVISAR sobre possíveis duplicados, nunca pra mesclar sozinho
+function normalizarNome(nome){
+  return (nome||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"")
+    .replace(/[().,;:-]/g," ").replace(/\s+/g," ").trim();
+}
+// consolida projetos com NOME EXATAMENTE IGUAL (duplicados por sincronização entre ferramentas,
+// por exemplo). Remapeia tarefas/histórico/planos pro sobrevivente e marca lápide no removido,
+// pra sincronização nunca trazer o duplicado de volta.
+function consolidarProjetosDuplicados(){
+  const porNome = {};
+  const remap = {};
+  const sobreviventes = [];
+  PROJETOS.forEach(p=>{
+    const nome = (p.nome||"").trim();
+    if(porNome[nome]){ remap[p.id] = porNome[nome].id; }
+    else { porNome[nome] = p; sobreviventes.push(p); }
+  });
+  const idsRemovidos = Object.keys(remap);
+  const removidos = PROJETOS.length - sobreviventes.length;
+  PROJETOS = sobreviventes;
+
+  let tarefasRemapeadas = 0, historicoRemapeado = 0;
+  TAREFAS.forEach(t=>{ if(remap[t.projetoId]){ t.projetoId = remap[t.projetoId]; tarefasRemapeadas++; } });
+  HISTORICO.forEach(h=>{ if(remap[h.projetoId]){ h.projetoId = remap[h.projetoId]; historicoRemapeado++; } });
+
+  idsRemovidos.forEach(idRemovido=>{
+    const idSobrevivente = remap[idRemovido];
+    if(PLANOS[idRemovido] && !PLANOS[idSobrevivente]) PLANOS[idSobrevivente] = PLANOS[idRemovido];
+    delete PLANOS[idRemovido];
+  });
+
+  const agora = Date.now();
+  idsRemovidos.forEach(id=>{ TOMBSTONES.projetos[id] = agora; });
+
+  // possíveis duplicados que NÃO batem nome exato, mas são bem parecidos — só pra revisão manual
+  const porNomeNormalizado = {};
+  PROJETOS.forEach(p=>{
+    const chave = normalizarNome(p.nome);
+    (porNomeNormalizado[chave] = porNomeNormalizado[chave]||[]).push(p.nome);
+  });
+  const suspeitos = Object.values(porNomeNormalizado).filter(grupo=>grupo.length>1);
+
+  return {removidos, tarefasRemapeadas, historicoRemapeado, suspeitos};
+}
+$("btnConsolidarDup").onclick = ()=>{
+  const antes = PROJETOS.length;
+  const {removidos, tarefasRemapeadas, historicoRemapeado, suspeitos} = consolidarProjetosDuplicados();
+  if(!removidos && !suspeitos.length){
+    alert("Não encontrei projetos duplicados (nem parecidos). Nada pra corrigir.");
+    return;
+  }
+  if(removidos){ salvar(); montarSelects(); renderTudo(); }
+  let msg = removidos
+    ? `Corrigido: ${antes} → ${PROJETOS.length} projetos (${removidos} duplicado${removidos!==1?"s":""} removido${removidos!==1?"s":""}, nome idêntico).`
+    : `Nenhum duplicado com nome idêntico encontrado.`;
+  if(tarefasRemapeadas) msg += ` ${tarefasRemapeadas} tarefa(s) reapontada(s).`;
+  if(historicoRemapeado) msg += ` ${historicoRemapeado} registro(s) de histórico reapontado(s).`;
+  if(suspeitos.length){
+    msg += `\n\n⚠ Achei ${suspeitos.length} grupo(s) de nomes PARECIDOS (não idênticos) — esses eu não mesclo sozinho, pra não juntar projeto errado. Revise manualmente:\n\n`;
+    suspeitos.forEach(grupo=>{ msg += "• " + grupo.join("  ×  ") + "\n"; });
+  }
+  alert(msg);
+};
 $("btnNovoProjeto").onclick = ()=>{
   projetoModalAlvo = null;
   $("mpTitulo").textContent = "Novo projeto";
