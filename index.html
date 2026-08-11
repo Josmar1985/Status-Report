@@ -162,10 +162,12 @@
   <div class="header-top">
     <div>
       <h1>Portfólio de Projetos — Acompanhamento Semanal</h1>
-      <div class="sub">Fase, farol, histórico e cronograma dos 35 projetos, num lugar só</div>
+      <div class="sub">Fase, farol, histórico e cronograma dos <span id="totalProjetosSub">0</span> projetos, num lugar só</div>
       <div class="sub" style="margin-top:4px;font-style:italic">Uso com mais de uma pessoa: configure a sincronização com o GitHub (botão "🔗 GitHub" ao lado) — os dados passam a ficar num repositório compartilhado, e cada pessoa que abrir a ferramenta vê as atualizações das outras.</div>
     </div>
-    <div class="header-actions">
+    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
+      <span style="font-size:10.5px;color:#8098B8">Desenvolvido por Josmar Valentini</span>
+      <div class="header-actions">
       <span id="ghSyncStatus" style="font-size:11px;color:#B9C7DC;white-space:nowrap;align-self:center"></span>
       <button class="btn btn-soft btn-sm" id="btnAtualizarAgora" title="Busca agora mesmo o que outras pessoas já gravaram">🔄 Atualizar dados</button>
       <button class="btn btn-soft btn-sm" id="btnGhConfig" title="Configurar sincronização com o GitHub, pra mais de uma pessoa usar">🔗 GitHub</button>
@@ -173,6 +175,7 @@
       <button class="btn btn-ghost btn-sm" id="btnEscolherLocalBackup" title="Escolher outro arquivo/pasta pro backup" style="color:#B9C7DC">📁 Trocar local</button>
       <button class="btn btn-soft btn-sm" id="btnImportarBackup">⬆ Restaurar backup</button>
       <input type="file" id="fileBackup" accept=".json" hidden>
+      </div>
     </div>
   </div>
 </header>
@@ -414,7 +417,6 @@
     </div>
   </section>
 
-  <div style="text-align:center;color:var(--gray);font-size:11.5px;padding:20px 0 4px">Desenvolvido por Josmar Valentini</div>
 </main>
 
 <!-- ===== MODAL: NOVO/EDITAR PROJETO ===== -->
@@ -737,13 +739,20 @@ function pacoteAtual(){
 // mescla o conteúdo remoto DENTRO do estado local em memória (por referência — os arrays globais
 // continuam os mesmos, só com itens adicionados/atualizados/removidos). Nunca é um "wholesale
 // replace" da base local.
-function mesclarRemoto(remoto){
+function mesclarRemoto(remoto, opcoes={}){
   if(!remoto) return;
   // proteção contra apontar sem querer pro arquivo de OUTRA ferramenta (ex.: o Daily) —
   // sem isso, os dados das duas ferramentas se misturam silenciosamente
   if(remoto.tipo && remoto.tipo!=="portfolio_app_backup"){
     throw new Error(`O arquivo configurado não é do Portfólio (é do tipo "${remoto.tipo}"). Confira se o caminho/repositório apontam pro arquivo certo — não use o mesmo arquivo do Daily.`);
   }
+  // forcarVencedor=true (usado só no "Restaurar backup" manual): o arquivo escolhido pelo usuário
+  // sempre vence em campo que bater, mesmo que o local esteja "mais novo" — porque nesse caso
+  // "mais novo" pode ser justamente uma corrupção que o usuário está tentando desfazer restaurando
+  // um arquivo antigo. Na sincronização automática (GitHub) isso fica desligado, aí sim quem
+  // editou por último é que deve valer.
+  const forcar = !!opcoes.forcarVencedor;
+  const vence = (remotoTs, localTs)=> forcar ? true : (remotoTs||0) > (localTs||0);
 
   // lápides remotas entram no nosso conjunto (união, mantendo sempre o timestamp mais recente)
   ["projetos","tarefas","historico"].forEach(tipo=>{
@@ -765,7 +774,7 @@ function mesclarRemoto(remoto){
     if(TOMBSTONES.projetos[p.id] && TOMBSTONES.projetos[p.id] >= (p.atualizadoEm||0)) return; // já apagamos, e é mais novo
     const existenteLocal = PROJETOS.find(x=>x.id===p.id);
     if(existenteLocal){
-      if((p.atualizadoEm||0) > (existenteLocal.atualizadoEm||0)) Object.assign(existenteLocal, p);
+      if(vence(p.atualizadoEm, existenteLocal.atualizadoEm)) Object.assign(existenteLocal, p);
       return;
     }
     const nome = (p.nome||"").trim();
@@ -774,7 +783,7 @@ function mesclarRemoto(remoto){
       if(p.id!==existentePorNome.id) remapProjeto[p.id] = existentePorNome.id;
       // casou só pelo nome (ids diferentes) — precisa trazer os DADOS do lado mais recente também,
       // senão o merge só redireciona tarefas/histórico e perde fase/prazo/farol do remoto (era o bug)
-      if((p.atualizadoEm||0) > (existentePorNome.atualizadoEm||0)){
+      if(vence(p.atualizadoEm, existentePorNome.atualizadoEm)){
         const idLocalPreservado = existentePorNome.id;
         Object.assign(existentePorNome, p);
         existentePorNome.id = idLocalPreservado; // nunca troca o id local, tudo mais referencia ele
@@ -792,7 +801,7 @@ function mesclarRemoto(remoto){
       if(TOMBSTONES[tipoTomb][r.id] && TOMBSTONES[tipoTomb][r.id] >= (r.atualizadoEm||0)) return;
       const local = porId[r.id];
       if(!local){ localLista.push(r); porId[r.id]=r; return; }
-      if((r.atualizadoEm||0) > (local.atualizadoEm||0)) Object.assign(local, r);
+      if(vence(r.atualizadoEm, local.atualizadoEm)) Object.assign(local, r);
     });
     return localLista.filter(x=> !(TOMBSTONES[tipoTomb][x.id] && TOMBSTONES[tipoTomb][x.id] >= (x.atualizadoEm||0)));
   }
@@ -1092,6 +1101,7 @@ function montarSelects(){
 /* ================= PORTFÓLIO ================= */
 function renderPortfolio(){
   $("totalProjetos").textContent = PROJETOS.length;
+  $("totalProjetosSub").textContent = PROJETOS.length;
   const tb = $("tabelaPortfolio");
   if(!PROJETOS.length){
     tb.innerHTML = '<tr><td colspan="7" class="empty">Nenhum projeto cadastrado. Clique em "+ Novo projeto".</td></tr>';
@@ -2314,12 +2324,12 @@ $("fileBackup").onchange = async e=>{
     const backup = JSON.parse(await f.text());
     if(!backup || backup.tipo!=="portfolio_app_backup"){ alert("Esse arquivo não parece ser um backup válido."); return; }
     const resumo = `Esse backup tem ${backup.projetos?.length||0} projetos, ${backup.historico?.length||0} registros e ${backup.tarefas?.length||0} tarefas.\n\n`+
-      `Vou mesclar com o que já está aqui: projeto com o mesmo nome não duplica, item mais recente (comparando quem editou por último) vence, e nada que você já apagou volta. Confirmar?`;
+      `Vou mesclar com o que já está aqui: projeto com o mesmo nome não duplica, e os campos preenchidos nesse arquivo (fase, prazo, etc.) SEMPRE substituem o que está aqui agora — é assim que "restaurar" funciona, não importa qual versão é mais nova. Projeto que você já apagou aqui não volta. Confirmar?`;
     if(!confirm(resumo)){ e.target.value=""; return; }
     // usa a MESMA lógica de mesclagem da sincronização com o GitHub (casamento por nome,
     // desempate por atualizadoEm, respeita lápides de exclusão) — evitar duas lógicas diferentes
     // pro mesmo problema, que foi exatamente o que causava "sobe projeto duplicado" antes
-    mesclarRemoto(backup);
+    mesclarRemoto(backup, {forcarVencedor:true});
     salvar(); montarSelects(); renderTudo();
     alert("Backup importado e mesclado com sucesso.");
   }catch(err){ alert("Não consegui ler esse arquivo: "+err.message); }
