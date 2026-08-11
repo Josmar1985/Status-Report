@@ -771,7 +771,10 @@ function mesclarRemoto(remoto, opcoes={}){
   const remapProjeto = {}; // id remoto -> id local equivalente (quando casados por nome)
 
   (remoto.projetos||[]).forEach(p=>{
-    if(TOMBSTONES.projetos[p.id] && TOMBSTONES.projetos[p.id] >= (p.atualizadoEm||0)) return; // já apagamos, e é mais novo
+    // no modo forçado (Restaurar backup) a lápide não bloqueia: o id do arquivo antigo pode ter
+    // sido o "perdedor" de uma consolidação de duplicados feita depois do backup ser salvo —
+    // nesse caso o nome ainda bate com o sobrevivente, e é isso que devolve o dado certo
+    if(!forcar && TOMBSTONES.projetos[p.id] && TOMBSTONES.projetos[p.id] >= (p.atualizadoEm||0)) return; // já apagamos, e é mais novo
     const existenteLocal = PROJETOS.find(x=>x.id===p.id);
     if(existenteLocal){
       if(vence(p.atualizadoEm, existenteLocal.atualizadoEm)) Object.assign(existenteLocal, p);
@@ -792,18 +795,18 @@ function mesclarRemoto(remoto, opcoes={}){
     }
     if(!idsProjLocais.has(p.id)){ PROJETOS.push(p); porNomeLocal[nome]=p; idsProjLocais.add(p.id); }
   });
-  PROJETOS = PROJETOS.filter(p=> !(TOMBSTONES.projetos[p.id] && TOMBSTONES.projetos[p.id] >= (p.atualizadoEm||0)));
+  PROJETOS = PROJETOS.filter(p=> forcar ? true : !(TOMBSTONES.projetos[p.id] && TOMBSTONES.projetos[p.id] >= (p.atualizadoEm||0)));
 
   function mesclarLista(localLista, remotaLista, tipoTomb){
     const porId = {}; localLista.forEach(x=> porId[x.id]=x);
     (remotaLista||[]).forEach(r=>{
       if(remapProjeto[r.projetoId]) r.projetoId = remapProjeto[r.projetoId];
-      if(TOMBSTONES[tipoTomb][r.id] && TOMBSTONES[tipoTomb][r.id] >= (r.atualizadoEm||0)) return;
+      if(!forcar && TOMBSTONES[tipoTomb][r.id] && TOMBSTONES[tipoTomb][r.id] >= (r.atualizadoEm||0)) return;
       const local = porId[r.id];
       if(!local){ localLista.push(r); porId[r.id]=r; return; }
       if(vence(r.atualizadoEm, local.atualizadoEm)) Object.assign(local, r);
     });
-    return localLista.filter(x=> !(TOMBSTONES[tipoTomb][x.id] && TOMBSTONES[tipoTomb][x.id] >= (x.atualizadoEm||0)));
+    return localLista.filter(x=> forcar ? true : !(TOMBSTONES[tipoTomb][x.id] && TOMBSTONES[tipoTomb][x.id] >= (x.atualizadoEm||0)));
   }
   TAREFAS = mesclarLista(TAREFAS, remoto.tarefas, "tarefas");
   HISTORICO = mesclarLista(HISTORICO, remoto.historico, "historico");
