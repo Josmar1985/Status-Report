@@ -772,6 +772,13 @@ function mesclarRemoto(remoto){
     const existentePorNome = porNomeLocal[nome];
     if(existentePorNome){
       if(p.id!==existentePorNome.id) remapProjeto[p.id] = existentePorNome.id;
+      // casou só pelo nome (ids diferentes) — precisa trazer os DADOS do lado mais recente também,
+      // senão o merge só redireciona tarefas/histórico e perde fase/prazo/farol do remoto (era o bug)
+      if((p.atualizadoEm||0) > (existentePorNome.atualizadoEm||0)){
+        const idLocalPreservado = existentePorNome.id;
+        Object.assign(existentePorNome, p);
+        existentePorNome.id = idLocalPreservado; // nunca troca o id local, tudo mais referencia ele
+      }
       return;
     }
     if(!idsProjLocais.has(p.id)){ PROJETOS.push(p); porNomeLocal[nome]=p; idsProjLocais.add(p.id); }
@@ -2276,26 +2283,14 @@ $("fileBackup").onchange = async e=>{
     const backup = JSON.parse(await f.text());
     if(!backup || backup.tipo!=="portfolio_app_backup"){ alert("Esse arquivo não parece ser um backup válido."); return; }
     const resumo = `Esse backup tem ${backup.projetos?.length||0} projetos, ${backup.historico?.length||0} registros e ${backup.tarefas?.length||0} tarefas.\n\n`+
-      `Vou trazer pra cá: itens novos entram, e itens que já existirem aqui (mesmo projeto/registro) `+
-      `vão ser ATUALIZADOS com a versão desse arquivo — assim as edições de outras pessoas entram certinho. Nada é apagado. Confirmar?`;
+      `Vou mesclar com o que já está aqui: projeto com o mesmo nome não duplica, item mais recente (comparando quem editou por último) vence, e nada que você já apagou volta. Confirmar?`;
     if(!confirm(resumo)){ e.target.value=""; return; }
-    // itens novos entram; itens já existentes (mesmo id) são atualizados com a versão do arquivo importado —
-    // é assim que edições feitas por outra pessoa (num backup mais recente) chegam até você
-    (backup.projetos||[]).forEach(p=>{
-      const existente = PROJETOS.find(x=>x.id===p.id);
-      if(existente) Object.assign(existente, p); else PROJETOS.push(p);
-    });
-    (backup.historico||[]).forEach(h=>{
-      const existente = HISTORICO.find(x=>x.id===h.id);
-      if(existente) Object.assign(existente, h); else HISTORICO.push(h);
-    });
-    (backup.tarefas||[]).forEach(t=>{
-      const existente = TAREFAS.find(x=>x.id===t.id);
-      if(existente) Object.assign(existente, t); else TAREFAS.push(t);
-    });
-    if(backup.planos){ PLANOS = {...PLANOS, ...backup.planos}; } // o arquivo importado é quem manda em caso de conflito
+    // usa a MESMA lógica de mesclagem da sincronização com o GitHub (casamento por nome,
+    // desempate por atualizadoEm, respeita lápides de exclusão) — evitar duas lógicas diferentes
+    // pro mesmo problema, que foi exatamente o que causava "sobe projeto duplicado" antes
+    mesclarRemoto(backup);
     salvar(); montarSelects(); renderTudo();
-    alert("Backup importado e atualizado com sucesso.");
+    alert("Backup importado e mesclado com sucesso.");
   }catch(err){ alert("Não consegui ler esse arquivo: "+err.message); }
   e.target.value = "";
 };
