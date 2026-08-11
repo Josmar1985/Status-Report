@@ -739,6 +739,16 @@ function pacoteAtual(){
 // mescla o conteúdo remoto DENTRO do estado local em memória (por referência — os arrays globais
 // continuam os mesmos, só com itens adicionados/atualizados/removidos). Nunca é um "wholesale
 // replace" da base local.
+function vazio(v){ return v===undefined || v===null || v===""; }
+// mescla campo a campo: só copia da origem pro alvo o que o alvo AINDA NÃO TEM preenchido.
+// nunca sobrescreve um campo que já tem valor — usado no "Restaurar backup" (forçado), pra nunca
+// apagar algo que você já preencheu de novo depois que o arquivo antigo foi salvo
+function mesclarPreenchendoLacunas(alvo, origem){
+  Object.keys(origem).forEach(chave=>{
+    if(chave==="id") return; // nunca troca o id
+    if(vazio(alvo[chave]) && !vazio(origem[chave])) alvo[chave] = origem[chave];
+  });
+}
 function mesclarRemoto(remoto, opcoes={}){
   if(!remoto) return;
   // proteção contra apontar sem querer pro arquivo de OUTRA ferramenta (ex.: o Daily) —
@@ -777,7 +787,8 @@ function mesclarRemoto(remoto, opcoes={}){
     if(!forcar && TOMBSTONES.projetos[p.id] && TOMBSTONES.projetos[p.id] >= (p.atualizadoEm||0)) return; // já apagamos, e é mais novo
     const existenteLocal = PROJETOS.find(x=>x.id===p.id);
     if(existenteLocal){
-      if(vence(p.atualizadoEm, existenteLocal.atualizadoEm)) Object.assign(existenteLocal, p);
+      if(forcar) mesclarPreenchendoLacunas(existenteLocal, p);
+      else if(vence(p.atualizadoEm, existenteLocal.atualizadoEm)) Object.assign(existenteLocal, p);
       return;
     }
     const nome = (p.nome||"").trim();
@@ -786,7 +797,9 @@ function mesclarRemoto(remoto, opcoes={}){
       if(p.id!==existentePorNome.id) remapProjeto[p.id] = existentePorNome.id;
       // casou só pelo nome (ids diferentes) — precisa trazer os DADOS do lado mais recente também,
       // senão o merge só redireciona tarefas/histórico e perde fase/prazo/farol do remoto (era o bug)
-      if(vence(p.atualizadoEm, existentePorNome.atualizadoEm)){
+      if(forcar){
+        mesclarPreenchendoLacunas(existentePorNome, p);
+      } else if(vence(p.atualizadoEm, existentePorNome.atualizadoEm)){
         const idLocalPreservado = existentePorNome.id;
         Object.assign(existentePorNome, p);
         existentePorNome.id = idLocalPreservado; // nunca troca o id local, tudo mais referencia ele
@@ -804,7 +817,8 @@ function mesclarRemoto(remoto, opcoes={}){
       if(!forcar && TOMBSTONES[tipoTomb][r.id] && TOMBSTONES[tipoTomb][r.id] >= (r.atualizadoEm||0)) return;
       const local = porId[r.id];
       if(!local){ localLista.push(r); porId[r.id]=r; return; }
-      if(vence(r.atualizadoEm, local.atualizadoEm)) Object.assign(local, r);
+      if(forcar) mesclarPreenchendoLacunas(local, r);
+      else if(vence(r.atualizadoEm, local.atualizadoEm)) Object.assign(local, r);
     });
     return localLista.filter(x=> forcar ? true : !(TOMBSTONES[tipoTomb][x.id] && TOMBSTONES[tipoTomb][x.id] >= (x.atualizadoEm||0)));
   }
@@ -2327,7 +2341,7 @@ $("fileBackup").onchange = async e=>{
     const backup = JSON.parse(await f.text());
     if(!backup || backup.tipo!=="portfolio_app_backup"){ alert("Esse arquivo não parece ser um backup válido."); return; }
     const resumo = `Esse backup tem ${backup.projetos?.length||0} projetos, ${backup.historico?.length||0} registros e ${backup.tarefas?.length||0} tarefas.\n\n`+
-      `Vou mesclar com o que já está aqui: projeto com o mesmo nome não duplica, e os campos preenchidos nesse arquivo (fase, prazo, etc.) SEMPRE substituem o que está aqui agora — é assim que "restaurar" funciona, não importa qual versão é mais nova. Projeto que você já apagou aqui não volta. Confirmar?`;
+      `Vou mesclar com o que já está aqui: projeto com o mesmo nome não duplica. Só preencho campos que estão VAZIOS aqui agora com o que tem nesse arquivo — nunca apago ou troco um campo que você já preencheu. Projeto que você já apagou aqui não volta. Confirmar?`;
     if(!confirm(resumo)){ e.target.value=""; return; }
     // usa a MESMA lógica de mesclagem da sincronização com o GitHub (casamento por nome,
     // desempate por atualizadoEm, respeita lápides de exclusão) — evitar duas lógicas diferentes
