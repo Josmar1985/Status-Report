@@ -583,6 +583,22 @@
   </div>
 </div>
 
+<!-- ===== MODAL: EDITAR CARD DE SUB-PROJETO (VISÃO POR ESTEIRA) ===== -->
+<div class="modal-bg hide" id="modalCardEsteira">
+  <div class="modal">
+    <h3>Editar card <span id="ceCodigo" style="color:var(--gray);font-weight:400"></span></h3>
+    <div class="desc">Já abre preenchido com o automático (últimas atualizações do Histórico) — edite à vontade. Qualquer alteração salva vira manual, até você clicar em "Voltar ao automático".</div>
+    <div class="field"><textarea id="ceTexto" rows="6" placeholder="Deixe em branco pra usar o automático..."></textarea></div>
+    <div style="display:flex;gap:8px;justify-content:space-between;margin-top:6px">
+      <button class="btn btn-ghost btn-sm" id="ceVoltarAuto">↺ Voltar ao automático</button>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-soft btn-sm" id="ceCancelar">Cancelar</button>
+        <button class="btn btn-sm" id="ceSalvar">Salvar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- ===== MODAL: NOVO/EDITAR REGISTRO DE HISTÓRICO ===== -->
 <div class="modal-bg hide" id="modalRegistro">
   <div class="modal">
@@ -939,6 +955,13 @@ function mesclarRemoto(remoto, opcoes={}){
       ["subtitulo","statusCor","statusTexto"].forEach(campo=>{
         if(vazio(lE[campo]) && !vazio(rE[campo])) lE[campo] = rE[campo];
       });
+      // overridesCard (texto manual por sub-projeto): mesmo critério, um projeto por vez
+      if(rE.overridesCard){
+        lE.overridesCard = lE.overridesCard || {};
+        Object.keys(rE.overridesCard).forEach(pid=>{
+          if(vazio(lE.overridesCard[pid]) && !vazio(rE.overridesCard[pid])) lE.overridesCard[pid] = rE.overridesCard[pid];
+        });
+      }
     });
   }
 }
@@ -2463,6 +2486,17 @@ function nomeCurtoProjeto(nome){
   const partes = (nome||"").split(" - ");
   return {codigo: partes[0]||"", resto: partes.slice(1).join(" - ")};
 }
+// monta o título da esteira: "3.1 a 3.5" quando os sub-códigos são sequenciais (mais limpo),
+// senão lista separado por vírgula com "e" antes do último (ex.: "3.1, 3.2 e 3.4")
+function montarTituloEsteira(subprojetos){
+  const codigos = subprojetos.map(p=> nomeCurtoProjeto(p.nome).codigo);
+  if(codigos.length<=1) return codigos.join("");
+  if(codigos.length===2) return codigos.join(" e ");
+  const numeros = codigos.map(c=>{ const m = c.match(/\.(\d+)$/); return m ? parseInt(m[1],10) : null; });
+  const sequencial = numeros.every((n,i)=> n!==null && (i===0 || n===numeros[i-1]+1));
+  if(sequencial) return `Projetos ${codigos[0]} a ${codigos[codigos.length-1]}`;
+  return codigos.slice(0,-1).join(", ") + " e " + codigos[codigos.length-1];
+}
 // desenha uma lista (Dependências/Riscos/Próximos Passos): cada item tem um seletor de projeto
 // (ou "Geral da esteira") + o texto — assim dá pra saber de qual sub-projeto cada linha é
 // agrupa itens pela combinação de projetos marcados — item marcado só em "3.1" cai no grupo "3.1";
@@ -2578,8 +2612,9 @@ function renderEsteiraOnePage(){
   const dE = ESTEIRAS[sel];
   const corStatus = STATUS_GERAL_COR[dE.statusCor||""] || STATUS_GERAL_COR[""];
 
-  const titulo = subprojetos.map(p=> nomeCurtoProjeto(p.nome).codigo).join(" e ");
+  const titulo = montarTituloEsteira(subprojetos);
 
+  dE.overridesCard = dE.overridesCard || {}; // {projetoId: "texto manual, uma linha por bullet"} — se vazio/ausente, usa automático
   const cardsHTML = subprojetos.length ? subprojetos.map((p,i)=>{
     const f = calcFarol(p);
     const {codigo, resto} = nomeCurtoProjeto(p.nome);
@@ -2592,13 +2627,19 @@ function renderEsteiraOnePage(){
     const FAROL_ROTULO_CURTO = {amarelo:"Impedimento", laranja:"Atrasado", vermelho:"Vermelho", verde:"Em andamento", azul:"Concluído", cinza:"Sem fase"};
     const rotuloCurto = FAROL_ROTULO_CURTO[f.cor] || f.label;
     const bolinhaFarol = `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${f.cor==='cinza'?'#AAB2BE':FAROL_HEX[f.cor]};margin-right:5px"></span>`;
+    const auto = HISTORICO.filter(h=>h.projetoId===p.id).sort((a,b)=> b.data.localeCompare(a.data)).slice(0,3).map(h=>h.nota||"").filter(Boolean);
+    const override = (dE.overridesCard[p.id]||"").trim();
+    const usandoOverride = !bloqueado && !!override;
+    const bullets = usandoOverride ? override.split("\n").map(s=>s.trim()).filter(Boolean) : auto;
     const corpo = bloqueado
       ? `<span class="pill" style="background:${FAROL_HEX.preto}22;color:${FAROL_HEX.preto}">🛑 Bloqueado</span>
          <div class="ri-nota" style="margin-top:8px"><b>Motivo:</b> ${esc(p.motivoBloqueioProjeto||"Sem motivo registrado")}</div>`
-      : `<span class="pill" style="background:${f.cor==='cinza'?'#EDEFF3':FAROL_HEX[f.cor]+'22'};color:${f.cor==='cinza'?'var(--gray)':FAROL_HEX[f.cor]}">${bolinhaFarol}${esc(rotuloCurto)}</span>
+      : `<div style="display:flex;justify-content:space-between;align-items:center">
+           <span class="pill" style="background:${f.cor==='cinza'?'#EDEFF3':FAROL_HEX[f.cor]+'22'};color:${f.cor==='cinza'?'var(--gray)':FAROL_HEX[f.cor]}">${bolinhaFarol}${esc(rotuloCurto)}</span>
+           <button class="icon-btn no-print" data-act="editar-card-esteira" data-proj="${p.id}" title="${usandoOverride?'Editar texto manual':'Editar (por padrão é automático, puxado do Histórico)'}" style="font-size:10px">✎${usandoOverride?" (manual)":""}</button>
+         </div>
          <ul style="margin:10px 0 0;padding-left:18px;font-size:12.5px;line-height:1.6">
-           ${(()=>{ const u = HISTORICO.filter(h=>h.projetoId===p.id).sort((a,b)=> b.data.localeCompare(a.data)).slice(0,3);
-             return u.length ? u.map(h=>`<li>${esc(h.nota||"")}</li>`).join("") : '<li style="color:var(--gray);list-style:none;margin-left:-18px">Sem atualização recente registrada</li>'; })()}
+           ${bullets.length ? bullets.map(b=>`<li>${esc(b)}</li>`).join("") : '<li style="color:var(--gray);list-style:none;margin-left:-18px">Sem atualização recente registrada</li>'}
          </ul>`;
     return `<div class="esteira-subcard" style="background:${cor}${bloqueado?';opacity:.85':''}">
       <div style="font-size:22px;font-weight:800;color:var(--navy);line-height:1${bloqueado?';text-decoration:line-through':''}">${esc(codigo)}</div>
@@ -2685,6 +2726,9 @@ function renderEsteiraOnePage(){
   ["dependencias","riscos","proximosPassos"].forEach(campo=> renderListaCampoEsteira(sel, campo, subprojetos));
 
   $("btnAddMarcoEsteira").onclick = ()=> abrirModalEsteiraMarco(sel, null);
+  $("esteiraConteudo").querySelectorAll('[data-act="editar-card-esteira"]').forEach(btn=>{
+    btn.onclick = ()=> abrirModalCardEsteira(sel, btn.dataset.proj);
+  });
   $("esteiraConteudo").querySelectorAll(".btn-add-item-esteira").forEach(btn=>{
     btn.onclick = ()=>{
       ESTEIRAS[sel][btn.dataset.campo].push({id:novoId(), projetoIds:[], texto:""});
@@ -2737,6 +2781,38 @@ $("emExcluir").onclick = ()=>{
   TOMBSTONES.esteiraItens[id] = Date.now();
   salvar();
   $("modalEsteiraMarco").classList.add("hide");
+  renderEsteiraOnePage();
+};
+
+let cardEsteiraAlvo = null; // {esteira, projetoId}
+function abrirModalCardEsteira(esteira, projetoId){
+  cardEsteiraAlvo = {esteira, projetoId};
+  const p = PROJETOS.find(x=>x.id===projetoId);
+  $("ceCodigo").textContent = p ? nomeCurtoProjeto(p.nome).codigo : "";
+  const override = (ESTEIRAS[esteira].overridesCard||{})[projetoId] || "";
+  if(override){
+    $("ceTexto").value = override;
+  } else {
+    // sem edição manual ainda: abre já preenchido com o que está automático agora, pronto pra editar
+    const auto = HISTORICO.filter(h=>h.projetoId===projetoId).sort((a,b)=> b.data.localeCompare(a.data)).slice(0,3).map(h=>h.nota||"").filter(Boolean);
+    $("ceTexto").value = auto.join("\n");
+  }
+  $("modalCardEsteira").classList.remove("hide");
+}
+$("ceCancelar").onclick = ()=> $("modalCardEsteira").classList.add("hide");
+$("ceSalvar").onclick = ()=>{
+  const {esteira, projetoId} = cardEsteiraAlvo;
+  ESTEIRAS[esteira].overridesCard = ESTEIRAS[esteira].overridesCard || {};
+  ESTEIRAS[esteira].overridesCard[projetoId] = $("ceTexto").value;
+  salvar();
+  $("modalCardEsteira").classList.add("hide");
+  renderEsteiraOnePage();
+};
+$("ceVoltarAuto").onclick = ()=>{
+  const {esteira, projetoId} = cardEsteiraAlvo;
+  if(ESTEIRAS[esteira].overridesCard) delete ESTEIRAS[esteira].overridesCard[projetoId];
+  salvar();
+  $("modalCardEsteira").classList.add("hide");
   renderEsteiraOnePage();
 };
 $("esteiraSelect").onchange = renderEsteiraOnePage;
