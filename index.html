@@ -706,7 +706,8 @@ let ESTEIRAS = JSON.parse(localStorage.getItem(LS_ESTEIRAS) || "{}"); // {numero
 const LS_TOMBSTONES = "portfolioApp_tombstones_v1";
 // lápides de exclusão — {tipo: {id: timestampDaExclusao}} — permitem que uma exclusão
 // sobreviva à sincronização (senão, mesclar com o remoto ressuscitaria o item apagado)
-let TOMBSTONES = JSON.parse(localStorage.getItem(LS_TOMBSTONES) || '{"projetos":{},"tarefas":{},"historico":{}}');
+let TOMBSTONES = JSON.parse(localStorage.getItem(LS_TOMBSTONES) || '{"projetos":{},"tarefas":{},"historico":{},"esteiraItens":{}}');
+TOMBSTONES.esteiraItens = TOMBSTONES.esteiraItens || {}; // cobre quem já tinha TOMBSTONES salvo sem essa chave
 
 const LS_GH_TOKEN="portfolioApp_gh_token", LS_GH_OWNER="portfolioApp_gh_owner", LS_GH_REPO="portfolioApp_gh_repo",
       LS_GH_PATH="portfolioApp_gh_path", LS_GH_SHA="portfolioApp_gh_sha", LS_GH_BRANCH="portfolioApp_gh_branch";
@@ -911,9 +912,34 @@ function mesclarRemoto(remoto, opcoes={}){
     if(forcar){ Object.keys(remoto.planos).forEach(chave=>{ if(!PLANOS[chave]) PLANOS[chave] = remoto.planos[chave]; }); }
     else { PLANOS = {...PLANOS, ...remoto.planos}; }
   }
+  // Esteiras: cada lista dentro dela (timeline, dependências, riscos, próximos passos) mescla
+  // ITEM POR ITEM, por id — nunca troca a esteira inteira de uma vez, senão um item novo criado
+  // aqui é apagado assim que a busca automática (a cada 1 min) trouxer uma versão remota mais velha
+  function mesclarItensEsteira(localLista, remotaLista){
+    localLista = localLista || [];
+    const porId = {}; localLista.forEach(x=> porId[x.id]=x);
+    (remotaLista||[]).forEach(r=>{
+      if(!forcar && TOMBSTONES.esteiraItens[r.id]) return; // já apagamos esse item, não deixa voltar
+      if(!porId[r.id]){ localLista.push(r); porId[r.id]=r; }
+      // se já existe local com o mesmo id, mantém a versão local — evita que uma sincronização
+      // atrasada sobrescreva uma edição que acabou de acontecer na tela
+    });
+    return forcar ? localLista : localLista.filter(x=> !TOMBSTONES.esteiraItens[x.id]);
+  }
   if(remoto.esteiras){
-    if(forcar){ Object.keys(remoto.esteiras).forEach(chave=>{ if(!ESTEIRAS[chave]) ESTEIRAS[chave] = remoto.esteiras[chave]; }); }
-    else { ESTEIRAS = {...ESTEIRAS, ...remoto.esteiras}; }
+    Object.keys(remoto.esteiras).forEach(chave=>{
+      const rE = remoto.esteiras[chave];
+      if(!ESTEIRAS[chave]){ ESTEIRAS[chave] = rE; return; }
+      const lE = ESTEIRAS[chave];
+      ["timeline","dependencias","riscos","proximosPassos"].forEach(campo=>{
+        lE[campo] = mesclarItensEsteira(lE[campo], rE[campo]);
+      });
+      // campos de texto solto (subtítulo, status geral): só aceita o remoto se ainda estiver vazio
+      // aqui — evita perder o que já foi escrito, mesmo sem comparar datas
+      ["subtitulo","statusCor","statusTexto"].forEach(campo=>{
+        if(vazio(lE[campo]) && !vazio(rE[campo])) lE[campo] = rE[campo];
+      });
+    });
   }
 }
 
@@ -1153,7 +1179,7 @@ function calcFarol(p){
   // laranja só faz uma coisa: marcar atraso sem impedimento declarado. Nada mais entra aqui.
   if(dias>5) return {cor:"vermelho", label:`Vermelho (${dias}d úteis)`, dias};
   if(dias>0) return {cor:"laranja", label:`Atrasado (${dias}d úteis, sem motivo registrado)`, dias};
-  return {cor:"verde", label:"Verde", dias:0};
+  return {cor:"verde", label:"Em andamento", dias:0};
 }
 const FAROL_HEX = {vermelho:"#B23A2E", amarelo:"#B9791A", laranja:"#C2530E", verde:"#2C7A4B", azul:"#2758A8", cinza:"#8A94A3", preto:"#3D4148"};
 
@@ -1463,7 +1489,7 @@ function renderOnePage(){
   const farois = PROJETOS.map(p=>({p, f:calcFarol(p)}));
   const conta = cor => farois.filter(x=>x.f.cor===cor).length;
   $("kpisFarol").innerHTML = `
-    <div class="kpi" style="border-top-color:${FAROL_HEX.verde}"><div class="n">${conta("verde")}</div><div class="l">Verde</div></div>
+    <div class="kpi" style="border-top-color:${FAROL_HEX.verde}"><div class="n">${conta("verde")}</div><div class="l">Em andamento</div></div>
     <div class="kpi" style="border-top-color:${FAROL_HEX.amarelo}"><div class="n">${conta("amarelo")}</div><div class="l">Amarelo (impedimento)</div></div>
     <div class="kpi" style="border-top-color:${FAROL_HEX.laranja}"><div class="n">${conta("laranja")}</div><div class="l">Laranja (atraso s/ motivo)</div></div>
     <div class="kpi" style="border-top-color:${FAROL_HEX.vermelho}"><div class="n">${conta("vermelho")}</div><div class="l">Vermelho</div></div>
@@ -2505,6 +2531,7 @@ function renderListaCampoEsteira(sel, campo, subprojetos){
   container.querySelectorAll('[data-act="del-item-esteira"]').forEach(btn=>{
     btn.onclick = ()=>{
       ESTEIRAS[sel][campo] = itens.filter(x=>x.id!==btn.dataset.id);
+      TOMBSTONES.esteiraItens[btn.dataset.id] = Date.now();
       salvar(); renderEsteiraOnePage();
     };
   });
@@ -2707,6 +2734,7 @@ $("emExcluir").onclick = ()=>{
   if(!confirm("Excluir este marco da timeline?")) return;
   const {esteira, id} = esteiraMarcoAlvo;
   ESTEIRAS[esteira].timeline = (ESTEIRAS[esteira].timeline||[]).filter(m=>m.id!==id);
+  TOMBSTONES.esteiraItens[id] = Date.now();
   salvar();
   $("modalEsteiraMarco").classList.add("hide");
   renderEsteiraOnePage();
