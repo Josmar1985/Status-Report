@@ -1438,13 +1438,18 @@ function pontuarCompletudeProjeto(p){
   pontos += Math.min((p.atualizadoEm||0) / 1e15, 5); // desempate fino, nunca domina os critérios acima
   return pontos;
 }
-// consolida tarefas Marco/VSC/BPx/Fase Atual duplicadas (mesmo projeto + mesma chaveEspecial) —
-// resíduo de quando dois computadores criavam a mesma barra antes de nunca terem sincronizado
+// consolida tarefas Marco/VSC/BPx/Fase Atual duplicadas. Agrupa por (projeto atual + tipo +
+// identificador legível — milestone pro Marco, nome pros outros), NUNCA pela chaveEspecial crua:
+// ela pode ter o id de um projeto ANTIGO gravado dentro do texto (de antes de uma consolidação de
+// projeto duplicado), então duas barras que já apontam pro mesmo projeto podem ter chaveEspecial
+// com aparência diferente — foi exatamente isso que impediu a limpeza da vez passada.
 function consolidarTarefasDuplicadas(){
   const grupos = {};
   TAREFAS.forEach(t=>{
-    if(!t.chaveEspecial) return; // só afeta as sincronizadas (Marco/VSC/BPx/Fase Atual), nunca tarefa normal
-    const chave = t.projetoId+"|"+t.chaveEspecial;
+    const tipoKey = t.isMarco?"marco":t.isVSC?"vsc":t.isBPX?"bpx":t.isFaseAtual?"faseatual":null;
+    if(!tipoKey) return; // só afeta as sincronizadas, nunca tarefa normal
+    const identificador = t.isMarco ? (t.milestone||"") : (t.nome||"");
+    const chave = t.projetoId+"|"+tipoKey+"|"+identificador;
     (grupos[chave] = grupos[chave]||[]).push(t);
   });
   let removidos = 0;
