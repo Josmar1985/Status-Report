@@ -751,6 +751,14 @@ function marcarAtualizados(lista, mapa){
     if(mapa[item.id] !== sig){ item.atualizadoEm = Date.now(); mapa[item.id] = sig; }
   });
 }
+// depois de mesclar dado que VEIO de fora (sincronização), só "batiza" a assinatura como já vista —
+// SEM carimbar um horário novo. Se isso não for feito, o próximo salvar() qualquer (mesmo mexendo
+// em outra coisa completamente diferente) ia achar que aquele item "mudou agora" e sobrescrever o
+// horário dele — fazendo esse lado parecer sempre mais novo que a próxima edição de verdade de
+// outra pessoa, e travando a atualização dela pra sempre
+function baseSnapshotSemCarimbar(lista, mapa){
+  lista.forEach(item=>{ mapa[item.id] = assinaturaSemTimestamp(item); });
+}
 
 let temMudancasSemBackup = false;
 function salvar(){
@@ -982,6 +990,9 @@ async function ghBuscarEMesclar(){
   try{
     const remoto = await ghGet();
     mesclarRemoto(remoto.content);
+    baseSnapshotSemCarimbar(PROJETOS, ULTIMO_SNAPSHOT.projetos);
+    baseSnapshotSemCarimbar(TAREFAS, ULTIMO_SNAPSHOT.tarefas);
+    baseSnapshotSemCarimbar(HISTORICO, ULTIMO_SNAPSHOT.historico);
     GH_SHA = remoto.sha;
     localStorage.setItem(LS_GH_SHA, GH_SHA||"");
     localStorage.setItem(LS_PROJ, JSON.stringify(PROJETOS));
@@ -1012,6 +1023,9 @@ async function ghEnviarAgora(){
     try{
       const remoto = await ghGet();
       mesclarRemoto(remoto.content);
+      baseSnapshotSemCarimbar(PROJETOS, ULTIMO_SNAPSHOT.projetos);
+      baseSnapshotSemCarimbar(TAREFAS, ULTIMO_SNAPSHOT.tarefas);
+      baseSnapshotSemCarimbar(HISTORICO, ULTIMO_SNAPSHOT.historico);
       localStorage.setItem(LS_PROJ, JSON.stringify(PROJETOS));
       localStorage.setItem(LS_HIST, JSON.stringify(HISTORICO));
       localStorage.setItem(LS_TAR, JSON.stringify(TAREFAS));
@@ -1825,22 +1839,28 @@ function gradeGanttHTML(tarefas, inicioBase, editavel){
   };
   const bodyRows = tarefas.map(t=>{
     const tipoKey = t.isMarco?"marco":t.isVSC?"vsc":t.isBPX?"bpx":t.isFaseAtual?"faseatual":null;
-    const especial = !!tipoKey; // só controla o visual (emoji, cor de fundo do texto quando não editável)
+    const especial = !!tipoKey; // controla o visual (emoji, cor de fundo do texto quando não editável)
+    // Marco/VSC/BPx/Fase Atual são travados AQUI DE PROPÓSITO: a origem real deles é o Plano de
+    // Marcos, o checklist de VSC, o checklist de BPx (na Ficha) ou o campo Fase Atual (no Portfólio).
+    // Editar direto na grade "carimba" um horário novo só no seu navegador, e como a sincronização
+    // decide quem ganha pela edição mais recente, isso passa a vencer pra sempre contra uma
+    // atualização de verdade de outra pessoa — foi exatamente isso que travou a data do POP.
+    const travado = especial;
     const info = tipoKey ? TIPO_INFO[tipoKey] : null;
     const nomeAtual = t.isMarco ? (t.milestone||t.nome) : t.nome;
     const sub = especial ? "" : (t.resp||"");
     const emoji = especial ? info.emoji+" " : "";
-    const colStatus = editavel
+    const colStatus = (editavel && !travado)
       ? `<select class="tk-status-grid" data-tid="${t.id}" style="width:100%">
           ${["Não iniciado","Em andamento","Concluído","Atrasado"].map(s=>`<option ${s===t.status?"selected":""}>${s}</option>`).join("")}
         </select>`
       : `<span class="pill" style="font-size:10px;background:${especial?info.bg:"#EDEFF3"};color:${especial?info.fg:"var(--gray)"}">${esc(t.status||"—")}</span>`;
-    const delBtn = editavel ? `<button class="icon-btn" data-act="del-t-grid" data-tid="${t.id}" title="Excluir">✕</button>` : "";
-    const editBtn = editavel ? `<button class="icon-btn" data-act="edit-t-grid" data-tid="${t.id}" title="Editar datas, responsável ou milestone">✎</button>` : "";
-    const nomeCampo = editavel
+    const delBtn = (editavel && !travado) ? `<button class="icon-btn" data-act="del-t-grid" data-tid="${t.id}" title="Excluir">✕</button>` : "";
+    const editBtn = (editavel && !travado) ? `<button class="icon-btn" data-act="edit-t-grid" data-tid="${t.id}" title="Editar datas, responsável ou milestone">✎</button>` : "";
+    const nomeCampo = (editavel && !travado)
       ? `<textarea class="tk-nome-grid" data-tid="${t.id}" rows="2" style="font-weight:700;border:none;padding:2px 0;width:100%;background:transparent;resize:vertical;font-family:inherit;font-size:12px;line-height:1.3;overflow:hidden">${esc(emoji+nomeAtual)}</textarea>`
-      : `<div style="font-weight:700">${esc(emoji+nomeAtual)}</div>`;
-    const codigoCampo = (editavel && !t.isMarco)
+      : `<div style="font-weight:700">${esc(emoji+nomeAtual)}${travado?` <span class="no-print" style="font-size:9px;color:var(--gray);font-weight:400">(editar na origem)</span>`:""}</div>`;
+    const codigoCampo = (editavel && !travado && !t.isMarco)
       ? `<input type="text" class="tk-codigo-grid" data-tid="${t.id}" value="${esc(t.codigo||"")}" placeholder="ID" style="width:52px;border:none;padding:1px 2px;font-size:10.5px;color:var(--gray);background:transparent">`
       : (t.codigo ? `<span style="font-size:10.5px;color:var(--gray)">${esc(t.codigo)}</span>` : "");
     const milestoneRef = t.milestone;
@@ -2881,6 +2901,9 @@ $("fileBackup").onchange = async e=>{
     // desempate por atualizadoEm, respeita lápides de exclusão) — evitar duas lógicas diferentes
     // pro mesmo problema, que foi exatamente o que causava "sobe projeto duplicado" antes
     mesclarRemoto(backup, {forcarVencedor:true});
+    baseSnapshotSemCarimbar(PROJETOS, ULTIMO_SNAPSHOT.projetos);
+    baseSnapshotSemCarimbar(TAREFAS, ULTIMO_SNAPSHOT.tarefas);
+    baseSnapshotSemCarimbar(HISTORICO, ULTIMO_SNAPSHOT.historico);
     salvar(); montarSelects(); renderTudo();
     alert("Backup importado e mesclado com sucesso.");
   }catch(err){ alert("Não consegui ler esse arquivo: "+err.message); }
