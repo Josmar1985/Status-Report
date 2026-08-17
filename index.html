@@ -573,6 +573,9 @@
     <div class="field"><label>Data</label><input type="date" id="emData"></div>
     <div class="field"><label>Acontecimento</label><input type="text" id="emEvento" placeholder="Ex.: Comitê aprovou mudança de escopo"></div>
     <div class="field"><label>Comentário / explicação</label><textarea id="emComentario" rows="4" placeholder="Detalhe o que aconteceu, por quê, quem decidiu..."></textarea></div>
+    <div class="field"><label>Projeto <span style="text-transform:none;font-weight:400;color:var(--gray)">(Geral aparece na timeline de todos os projetos dessa esteira)</span></label>
+      <select id="emProjeto"><option value="">— Geral —</option></select>
+    </div>
     <div style="display:flex;gap:8px;justify-content:space-between;margin-top:6px">
       <button class="btn btn-ghost btn-sm" id="emExcluir" style="color:var(--red);display:none">Excluir</button>
       <div style="display:flex;gap:8px">
@@ -960,9 +963,12 @@ function mesclarRemoto(remoto, opcoes={}){
     const porId = {}; localLista.forEach(x=> porId[x.id]=x);
     (remotaLista||[]).forEach(r=>{
       if(!forcar && TOMBSTONES.esteiraItens[r.id]) return; // já apagamos esse item, não deixa voltar
-      if(!porId[r.id]){ localLista.push(r); porId[r.id]=r; }
-      // se já existe local com o mesmo id, mantém a versão local — evita que uma sincronização
-      // atrasada sobrescreva uma edição que acabou de acontecer na tela
+      const local = porId[r.id];
+      if(!local){ localLista.push(r); porId[r.id]=r; return; }
+      // já existe dos dois lados — compara quem é mais recente de verdade (igual Projetos/Tarefas),
+      // em vez de manter local sempre (isso travava edição de fora pra sempre)
+      if(forcar) mesclarPreenchendoLacunas(local, r);
+      else if(vence(r.atualizadoEm, local.atualizadoEm)) Object.assign(local, r, {id: local.id});
     });
     return forcar ? localLista : localLista.filter(x=> !TOMBSTONES.esteiraItens[x.id]);
   }
@@ -2555,6 +2561,7 @@ function renderMilestonesRef(){
 
 /* ================= ONE-PAGE ESTEIRA ================= */
 const CORES_ESTEIRA_CARD = ["#EAF2FB","#FDF0E4","#EAF7EE","#F3EDFB","#FDF9E3","#FCEAEA","#E7F6F8","#F5EAF7"];
+let filtroTimelineProjeto = {}; // {numeroEsteira: projetoId selecionado, ou "" pra Geral}
 const STATUS_GERAL_COR = {"": {bg:"#F2F2F3", fg:"var(--gray)", label:"Não avaliado"},
   "verde":{bg:"var(--green-soft)", fg:"var(--green)", label:"OK"},
   "amarelo":{bg:"var(--amber-soft)", fg:"var(--amber)", label:"Atenção"},
@@ -2728,11 +2735,18 @@ function renderEsteiraOnePage(){
     </div>`;
   }).join("") : `<div class="empty">Nenhum projeto ativo nessa esteira agora.</div>`;
 
-  // timeline própria da esteira: 100% manual, independente do histórico/cronograma dos projetos —
-  // conta uma história diferente, no nível da esteira, não do projeto individual. Horizontal,
-  // alternando os cartões acima/abaixo da linha, tipo linha do tempo de infográfico.
+  // timeline própria da esteira: 100% manual, independente do histórico/cronograma dos projetos.
+  // "Geral" aparece em TODAS as timelines (é a história da esteira como um todo); marco marcado
+  // num projeto específico só aparece na timeline dele. Seletor escolhe de qual projeto ver.
   dE.timeline = dE.timeline || [];
-  const itensTimeline = [...dE.timeline].sort((a,b)=> a.data.localeCompare(b.data));
+  const filtroAtual = filtroTimelineProjeto[sel] || "";
+  const itensTimeline = dE.timeline
+    .filter(m=> !m.projetoId || m.projetoId===filtroAtual)
+    .sort((a,b)=> a.data.localeCompare(b.data));
+  const seletorTimelineHTML = `<select id="esteiraTimelineFiltro" class="no-print" style="max-width:220px">
+      <option value="">— Geral (todos os projetos) —</option>
+      ${subprojetos.map(p=>`<option value="${p.id}" ${filtroAtual===p.id?"selected":""}>${esc(nomeCurtoProjeto(p.nome).codigo)}</option>`).join("")}
+    </select>`;
   const timelineHTML = itensTimeline.length
     ? `<div class="timeline-h-wrap"><div class="timeline-h">` + itensTimeline.map((it,i)=>`
         <div class="th-item ${i%2===0?"cima":"baixo"} ${it.comentario?"clicavel":""}" data-marco-id="${it.id}">
@@ -2745,7 +2759,7 @@ function renderEsteiraOnePage(){
           </div>
           <div class="th-dot"></div>
         </div>`).join("") + `</div></div>`
-    : `<div class="empty">Nenhum marco ainda — clique em "+ Adicionar marco" abaixo e conte a história dessa esteira do seu jeito.</div>`;
+    : `<div class="empty">Nenhum marco ainda pra essa visão — clique em "+ Adicionar marco" abaixo e conte a história do seu jeito.</div>`;
 
   $("esteiraConteudo").innerHTML = `
     <div class="card esteira-header">
@@ -2789,12 +2803,15 @@ function renderEsteiraOnePage(){
       </div>
     </div>
     <div class="card">
-      <div class="toolbar no-print" style="justify-content:space-between">
+      <div class="toolbar no-print" style="justify-content:space-between;flex-wrap:wrap">
         <div>
-          <h2 style="margin:0">Timeline da Esteira</h2>
-          <div class="desc" style="margin-bottom:0">Independente dos projetos individuais — conte a história da esteira do seu jeito. Clique num marco pra ver o comentário.</div>
+          <h2 style="margin:0">Timeline</h2>
+          <div class="desc" style="margin-bottom:0">"Geral" aparece em todas; marco de um projeto específico só aparece nele. Clique num marco pra ver o comentário.</div>
         </div>
-        <button class="btn btn-soft btn-sm" id="btnAddMarcoEsteira">+ Adicionar marco</button>
+        <div style="display:flex;gap:8px;align-items:center">
+          ${seletorTimelineHTML}
+          <button class="btn btn-soft btn-sm" id="btnAddMarcoEsteira">+ Adicionar marco</button>
+        </div>
       </div>
       ${timelineHTML}
     </div>`;
@@ -2805,7 +2822,8 @@ function renderEsteiraOnePage(){
   $("esteiraStatusTexto").onchange = e=> salvarCampoEsteira("statusTexto", e.target.value.trim());
   ["dependencias","riscos","proximosPassos"].forEach(campo=> renderListaCampoEsteira(sel, campo, subprojetos));
 
-  $("btnAddMarcoEsteira").onclick = ()=> abrirModalEsteiraMarco(sel, null);
+  $("btnAddMarcoEsteira").onclick = ()=> abrirModalEsteiraMarco(sel, null, filtroAtual);
+  $("esteiraTimelineFiltro").onchange = e=>{ filtroTimelineProjeto[sel] = e.target.value; renderEsteiraOnePage(); };
   $("esteiraConteudo").querySelectorAll('[data-act="editar-card-esteira"]').forEach(btn=>{
     btn.onclick = ()=> abrirModalCardEsteira(sel, btn.dataset.proj);
   });
@@ -2826,13 +2844,17 @@ function renderEsteiraOnePage(){
   });
 }
 let esteiraMarcoAlvo = null; // {esteira, id} ou null quando é criação
-function abrirModalEsteiraMarco(esteira, id){
+function abrirModalEsteiraMarco(esteira, id, projetoIdPadrao){
   esteiraMarcoAlvo = {esteira, id};
   const marco = id ? (ESTEIRAS[esteira].timeline||[]).find(m=>m.id===id) : null;
   $("emTitulo").textContent = marco ? "Editar marco" : "Novo marco na timeline";
   $("emData").value = marco ? marco.data : hojeISO();
   $("emEvento").value = marco ? marco.titulo : "";
   $("emComentario").value = marco ? marco.comentario : "";
+  const subprojetos = PROJETOS.filter(p=> esteiraDoProjeto(p.nome)===esteira);
+  $("emProjeto").innerHTML = '<option value="">— Geral —</option>' +
+    subprojetos.map(p=>`<option value="${p.id}">${esc(nomeCurtoProjeto(p.nome).codigo)}</option>`).join("");
+  $("emProjeto").value = marco ? (marco.projetoId||"") : (projetoIdPadrao||"");
   $("emExcluir").style.display = marco ? "inline-block" : "none";
   $("modalEsteiraMarco").classList.remove("hide");
 }
@@ -2843,7 +2865,8 @@ $("emSalvar").onclick = ()=>{
   const {esteira, id} = esteiraMarcoAlvo;
   ESTEIRAS[esteira] = ESTEIRAS[esteira] || {};
   ESTEIRAS[esteira].timeline = ESTEIRAS[esteira].timeline || [];
-  const dados = {data: $("emData").value || hojeISO(), titulo: evento, comentario: $("emComentario").value.trim()};
+  const dados = {data: $("emData").value || hojeISO(), titulo: evento, comentario: $("emComentario").value.trim(),
+    projetoId: $("emProjeto").value || "", atualizadoEm: Date.now()};
   if(id){
     const marco = ESTEIRAS[esteira].timeline.find(m=>m.id===id);
     if(marco) Object.assign(marco, dados);
