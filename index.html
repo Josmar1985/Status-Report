@@ -2483,8 +2483,11 @@ const STATUS_GERAL_COR = {"": {bg:"#F2F2F3", fg:"var(--gray)", label:"Não avali
   "amarelo":{bg:"var(--amber-soft)", fg:"var(--amber)", label:"Atenção"},
   "vermelho":{bg:"var(--red-soft)", fg:"var(--red)", label:"Crítico"}};
 function nomeCurtoProjeto(nome){
-  const partes = (nome||"").split(" - ");
-  return {codigo: partes[0]||"", resto: partes.slice(1).join(" - ")};
+  nome = nome || "";
+  // aceita " - " (padrão), TAB (colagem de Excel/Daily), en-dash "–" ou em-dash "—" como separador
+  const m = nome.match(/^(\S+)\s*(?:-|–|—|\t)\s*(.*)$/s);
+  if(m) return {codigo: m[1], resto: m[2]};
+  return {codigo: nome, resto: ""};
 }
 // monta o título da esteira: "3.1 a 3.5" quando os sub-códigos são sequenciais (mais limpo),
 // senão lista separado por vírgula com "e" antes do último (ex.: "3.1, 3.2 e 3.4")
