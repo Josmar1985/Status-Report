@@ -916,13 +916,20 @@ function mesclarRemoto(remoto, opcoes={}){
 
   function mesclarLista(localLista, remotaLista, tipoTomb){
     const porId = {}; localLista.forEach(x=> porId[x.id]=x);
+    // fallback por chaveEspecial+projeto (só existe em Marco/VSC/BPx/Fase Atual) — cobre o caso de
+    // dois computadores criarem a MESMA barra (ex.: VSC-QI do mesmo projeto) cada um com um id
+    // diferente, antes de nunca terem sincronizado entre si. Sem isso, os dois sobrevivem duplicados
+    // pra sempre, porque só bate por id.
+    const porChave = {};
+    localLista.forEach(x=>{ if(x.chaveEspecial) porChave[x.projetoId+"|"+x.chaveEspecial] = x; });
     (remotaLista||[]).forEach(r=>{
       if(remapProjeto[r.projetoId]) r.projetoId = remapProjeto[r.projetoId];
       if(!forcar && TOMBSTONES[tipoTomb][r.id] && TOMBSTONES[tipoTomb][r.id] >= (r.atualizadoEm||0)) return;
-      const local = porId[r.id];
-      if(!local){ localLista.push(r); porId[r.id]=r; return; }
+      let local = porId[r.id];
+      if(!local && r.chaveEspecial) local = porChave[r.projetoId+"|"+r.chaveEspecial];
+      if(!local){ localLista.push(r); porId[r.id]=r; if(r.chaveEspecial) porChave[r.projetoId+"|"+r.chaveEspecial]=r; return; }
       if(forcar) mesclarPreenchendoLacunas(local, r);
-      else if(vence(r.atualizadoEm, local.atualizadoEm)) Object.assign(local, r);
+      else if(vence(r.atualizadoEm, local.atualizadoEm)) Object.assign(local, r, {id: local.id}); // nunca troca o id local
     });
     return localLista.filter(x=> forcar ? true : !(TOMBSTONES[tipoTomb][x.id] && TOMBSTONES[tipoTomb][x.id] >= (x.atualizadoEm||0)));
   }
@@ -1431,6 +1438,33 @@ function pontuarCompletudeProjeto(p){
   pontos += Math.min((p.atualizadoEm||0) / 1e15, 5); // desempate fino, nunca domina os critérios acima
   return pontos;
 }
+// consolida tarefas Marco/VSC/BPx/Fase Atual duplicadas (mesmo projeto + mesma chaveEspecial) —
+// resíduo de quando dois computadores criavam a mesma barra antes de nunca terem sincronizado
+function consolidarTarefasDuplicadas(){
+  const grupos = {};
+  TAREFAS.forEach(t=>{
+    if(!t.chaveEspecial) return; // só afeta as sincronizadas (Marco/VSC/BPx/Fase Atual), nunca tarefa normal
+    const chave = t.projetoId+"|"+t.chaveEspecial;
+    (grupos[chave] = grupos[chave]||[]).push(t);
+  });
+  let removidos = 0;
+  const idsRemover = new Set();
+  Object.values(grupos).forEach(grupo=>{
+    if(grupo.length<=1) return;
+    // escolhe o "melhor": quem tem Real preenchido (concluído) vence; senão, o mais recentemente tocado
+    grupo.sort((a,b)=>{
+      if(!!b.real !== !!a.real) return (b.real?1:0) - (a.real?1:0);
+      return (b.atualizadoEm||0) - (a.atualizadoEm||0);
+    });
+    grupo.slice(1).forEach(perdedor=>{ idsRemover.add(perdedor.id); removidos++; });
+  });
+  if(removidos){
+    TAREFAS = TAREFAS.filter(t=> !idsRemover.has(t.id));
+    const agora = Date.now();
+    idsRemover.forEach(id=>{ TOMBSTONES.tarefas[id] = agora; });
+  }
+  return removidos;
+}
 function consolidarProjetosDuplicados(){
   const grupos = {};
   PROJETOS.forEach(p=>{
@@ -1488,16 +1522,18 @@ function consolidarProjetosDuplicados(){
 $("btnConsolidarDup").onclick = ()=>{
   const antes = PROJETOS.length;
   const {removidos, tarefasRemapeadas, historicoRemapeado, suspeitos} = consolidarProjetosDuplicados();
-  if(!removidos && !suspeitos.length){
-    alert("Não encontrei projetos duplicados (nem parecidos). Nada pra corrigir.");
+  const tarefasDuplicadasRemovidas = consolidarTarefasDuplicadas();
+  if(!removidos && !tarefasDuplicadasRemovidas && !suspeitos.length){
+    alert("Não encontrei duplicados (nem parecidos). Nada pra corrigir.");
     return;
   }
-  if(removidos){ salvar(); montarSelects(); renderTudo(); }
+  if(removidos || tarefasDuplicadasRemovidas){ salvar(); montarSelects(); renderTudo(); }
   let msg = removidos
     ? `Corrigido: ${antes} → ${PROJETOS.length} projetos (${removidos} duplicado${removidos!==1?"s":""} removido${removidos!==1?"s":""}, nome idêntico).`
-    : `Nenhum duplicado com nome idêntico encontrado.`;
+    : `Nenhum projeto duplicado com nome idêntico encontrado.`;
   if(tarefasRemapeadas) msg += ` ${tarefasRemapeadas} tarefa(s) reapontada(s).`;
   if(historicoRemapeado) msg += ` ${historicoRemapeado} registro(s) de histórico reapontado(s).`;
+  if(tarefasDuplicadasRemovidas) msg += `\n${tarefasDuplicadasRemovidas} barra(s) duplicada(s) de Marco/VSC/BPx/Fase Atual removida(s) do Cronograma.`;
   if(suspeitos.length){
     msg += `\n\n⚠ Achei ${suspeitos.length} grupo(s) de nomes PARECIDOS (não idênticos) — esses eu não mesclo sozinho, pra não juntar projeto errado. Revise manualmente:\n\n`;
     suspeitos.forEach(grupo=>{ msg += "• " + grupo.join("  ×  ") + "\n"; });
