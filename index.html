@@ -1054,10 +1054,16 @@ async function ghEnviarAgora(){
 
 // salvar() só AGENDA um envio (debounce de 2,5s) — nunca envia durante o carregamento inicial.
 function ghAgendarPush(){
-  if(!ghConfigurado() || ghSyncEmAndamento) return;
+  if(!ghConfigurado()) return;
   clearTimeout(ghSyncTimeout);
   ghSyncTimeout = setTimeout(()=>{
-    if(ghSyncEmAndamento) return;
+    if(ghSyncEmAndamento){
+      // outra sincronização (busca ou envio) está rodando neste instante — NÃO descarta o envio,
+      // só tenta de novo daqui a pouco. Antes, isso simplesmente desistia pra sempre, e era
+      // exatamente essa a causa de edições que nunca chegavam nos outros computadores.
+      ghAgendarPush();
+      return;
+    }
     ghSyncEmAndamento = true;
     ghEnviarAgora().catch(()=>{}).finally(()=>{ ghSyncEmAndamento = false; });
   }, 2500);
