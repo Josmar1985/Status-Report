@@ -639,6 +639,15 @@ const brDate = iso => { if(!iso) return "—"; const [y,m,d]=iso.split("-"); ret
 function esc(s){ return String(s||"").replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
 function novoId(){ return Date.now()+"_"+Math.random().toString(36).slice(2,7); }
 function diasEntreDatas(a,b){ return Math.round((new Date(b)-new Date(a))/86400000); }
+// volta a data pra segunda-feira da mesma semana — a grade do Cronograma sempre começa numa
+// segunda, não importa em que dia da semana caiu o início real do cronograma/tarefa mais antiga
+function alinharSegunda(dataISO){
+  const d = new Date(dataISO+"T00:00:00");
+  const dia = d.getDay(); // 0=domingo, 1=segunda, ... 6=sábado
+  const diff = dia===0 ? 6 : dia-1;
+  d.setDate(d.getDate()-diff);
+  return d.toISOString().slice(0,10);
+}
 
 /* ---------- modelo de stage-gate (referência fixa) ---------- */
 const MILESTONES_REF = [
@@ -1952,7 +1961,8 @@ function gradeGanttHTML(tarefas, inicioBase, editavel){
 
 function janelaTarefas(tarefas, cronogramaInicio){
   const datas = tarefas.flatMap(t=>[t.inicio,t.fim]).filter(Boolean);
-  const inicioBase = cronogramaInicio || (datas.length ? datas.sort()[0] : hojeISO());
+  const inicioBruto = cronogramaInicio || (datas.length ? datas.sort()[0] : hojeISO());
+  const inicioBase = alinharSegunda(inicioBruto);
   const fimBase = datas.length ? datas.sort().slice(-1)[0] : hojeISO();
   const janela = Math.max(diasEntreDatas(inicioBase, fimBase) + 7, 14);
   return {inicioBase, janela};
