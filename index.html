@@ -981,6 +981,24 @@ function mesclarRemoto(remoto, opcoes={}){
   if(remoto.esteiras){
     Object.keys(remoto.esteiras).forEach(chave=>{
       const rE = remoto.esteiras[chave];
+      // aplica o MESMO remapeamento por nome que já usamos em Tarefas/Histórico — sem isso, um marco
+      // criado num PC antes de nunca ter sincronizado fica com o id "local" daquele PC, que pode ser
+      // diferente do id que o projeto tem no seu lado (mesmo sendo o mesmo projeto de verdade)
+      (rE.timeline||[]).forEach(m=>{ if(remapProjeto[m.projetoId]) m.projetoId = remapProjeto[m.projetoId]; });
+      ["dependencias","riscos","proximosPassos"].forEach(campo=>{
+        (rE[campo]||[]).forEach(item=>{
+          if(Array.isArray(item.projetoIds)) item.projetoIds = item.projetoIds.map(pid=> remapProjeto[pid]||pid);
+        });
+      });
+      if(rE.overridesCard){
+        Object.keys(rE.overridesCard).forEach(pid=>{
+          if(remapProjeto[pid]){
+            const idNovo = remapProjeto[pid];
+            if(rE.overridesCard[idNovo]===undefined) rE.overridesCard[idNovo] = rE.overridesCard[pid];
+            delete rE.overridesCard[pid];
+          }
+        });
+      }
       if(!ESTEIRAS[chave]){ ESTEIRAS[chave] = rE; return; }
       const lE = ESTEIRAS[chave];
       ["timeline","dependencias","riscos","proximosPassos"].forEach(campo=>{
