@@ -1532,6 +1532,30 @@ function consolidarProjetosDuplicados(){
     delete PLANOS[idRemovido];
   });
 
+  // a Esteira também referencia projetoId em vários lugares (timeline, dependências/riscos/
+  // próximos passos, e os cards editados manualmente) — sem isso, um marco/item marcado num
+  // projeto que depois foi consolidado fica "órfão", com um id que não existe mais em lugar nenhum
+  let esteiraReapontada = 0;
+  Object.values(ESTEIRAS).forEach(e=>{
+    (e.timeline||[]).forEach(m=>{ if(remap[m.projetoId]){ m.projetoId = remap[m.projetoId]; esteiraReapontada++; } });
+    ["dependencias","riscos","proximosPassos"].forEach(campo=>{
+      (e[campo]||[]).forEach(item=>{
+        if(!Array.isArray(item.projetoIds)) return;
+        item.projetoIds = item.projetoIds.map(pid=> remap[pid] ? (esteiraReapontada++, remap[pid]) : pid);
+      });
+    });
+    if(e.overridesCard){
+      idsRemovidos.forEach(idRemovido=>{
+        if(e.overridesCard[idRemovido]!==undefined){
+          const idSobrevivente = remap[idRemovido];
+          if(!e.overridesCard[idSobrevivente]) e.overridesCard[idSobrevivente] = e.overridesCard[idRemovido];
+          delete e.overridesCard[idRemovido];
+          esteiraReapontada++;
+        }
+      });
+    }
+  });
+
   const agora = Date.now();
   idsRemovidos.forEach(id=>{ TOMBSTONES.projetos[id] = agora; });
 
@@ -1543,11 +1567,11 @@ function consolidarProjetosDuplicados(){
   });
   const suspeitos = Object.values(porNomeNormalizado).filter(grupo=>grupo.length>1);
 
-  return {removidos, tarefasRemapeadas, historicoRemapeado, suspeitos};
+  return {removidos, tarefasRemapeadas, historicoRemapeado, esteiraReapontada, suspeitos};
 }
 $("btnConsolidarDup").onclick = ()=>{
   const antes = PROJETOS.length;
-  const {removidos, tarefasRemapeadas, historicoRemapeado, suspeitos} = consolidarProjetosDuplicados();
+  const {removidos, tarefasRemapeadas, historicoRemapeado, esteiraReapontada, suspeitos} = consolidarProjetosDuplicados();
   const tarefasDuplicadasRemovidas = consolidarTarefasDuplicadas();
   if(!removidos && !tarefasDuplicadasRemovidas && !suspeitos.length){
     alert("Não encontrei duplicados (nem parecidos). Nada pra corrigir.");
@@ -1559,6 +1583,7 @@ $("btnConsolidarDup").onclick = ()=>{
     : `Nenhum projeto duplicado com nome idêntico encontrado.`;
   if(tarefasRemapeadas) msg += ` ${tarefasRemapeadas} tarefa(s) reapontada(s).`;
   if(historicoRemapeado) msg += ` ${historicoRemapeado} registro(s) de histórico reapontado(s).`;
+  if(esteiraReapontada) msg += ` ${esteiraReapontada} referência(s) na One-Page Esteira reapontada(s).`;
   if(tarefasDuplicadasRemovidas) msg += `\n${tarefasDuplicadasRemovidas} barra(s) duplicada(s) de Marco/VSC/BPx/Fase Atual removida(s) do Cronograma.`;
   if(suspeitos.length){
     msg += `\n\n⚠ Achei ${suspeitos.length} grupo(s) de nomes PARECIDOS (não idênticos) — esses eu não mesclo sozinho, pra não juntar projeto errado. Revise manualmente:\n\n`;
