@@ -962,15 +962,21 @@ function mesclarRemoto(remoto, opcoes={}){
     localLista = localLista || [];
     const porId = {}; localLista.forEach(x=> porId[x.id]=x);
     (remotaLista||[]).forEach(r=>{
-      if(!forcar && TOMBSTONES.esteiraItens[r.id]) return; // já apagamos esse item, não deixa voltar
+      // compara DATA da lápide, igual já fazemos em Projetos/Tarefas/Histórico — uma lápide velha
+      // (de antes de um "Restaurar backup" trazer o item de volta de propósito) não pode continuar
+      // bloqueando pra sempre, senão o item "aparece e some" na sincronização seguinte
+      if(!forcar && TOMBSTONES.esteiraItens[r.id] && TOMBSTONES.esteiraItens[r.id] >= (r.atualizadoEm||0)) return;
       const local = porId[r.id];
-      if(!local){ localLista.push(r); porId[r.id]=r; return; }
+      if(!local){
+        if(forcar) r.atualizadoEm = Date.now(); // restauração forçada sempre "vence" qualquer lápide futura também
+        localLista.push(r); porId[r.id]=r; return;
+      }
       // já existe dos dois lados — compara quem é mais recente de verdade (igual Projetos/Tarefas),
       // em vez de manter local sempre (isso travava edição de fora pra sempre)
-      if(forcar) mesclarPreenchendoLacunas(local, r);
+      if(forcar){ mesclarPreenchendoLacunas(local, r); local.atualizadoEm = Date.now(); }
       else if(vence(r.atualizadoEm, local.atualizadoEm)) Object.assign(local, r, {id: local.id});
     });
-    return forcar ? localLista : localLista.filter(x=> !TOMBSTONES.esteiraItens[x.id]);
+    return forcar ? localLista : localLista.filter(x=> !(TOMBSTONES.esteiraItens[x.id] && TOMBSTONES.esteiraItens[x.id] >= (x.atualizadoEm||0)));
   }
   if(remoto.esteiras){
     Object.keys(remoto.esteiras).forEach(chave=>{
