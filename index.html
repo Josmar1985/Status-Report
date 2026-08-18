@@ -1001,6 +1001,25 @@ function mesclarRemoto(remoto, opcoes={}){
       }
       if(!ESTEIRAS[chave]){ ESTEIRAS[chave] = rE; return; }
       const lE = ESTEIRAS[chave];
+      // o remapeamento acima só corrige o que está CHEGANDO agora — mas se um marco com id de
+      // projeto errado já foi salvo aqui antes (de uma sincronização anterior a essa correção),
+      // ele tem o MESMO horário de sempre, então a comparação "quem é mais novo" empata e nada
+      // muda. Por isso corrige também o que já está salvo localmente, toda vez que sincronizar.
+      (lE.timeline||[]).forEach(m=>{ if(remapProjeto[m.projetoId]) m.projetoId = remapProjeto[m.projetoId]; });
+      ["dependencias","riscos","proximosPassos"].forEach(campo=>{
+        (lE[campo]||[]).forEach(item=>{
+          if(Array.isArray(item.projetoIds)) item.projetoIds = item.projetoIds.map(pid=> remapProjeto[pid]||pid);
+        });
+      });
+      if(lE.overridesCard){
+        Object.keys(lE.overridesCard).forEach(pid=>{
+          if(remapProjeto[pid]){
+            const idNovo = remapProjeto[pid];
+            if(lE.overridesCard[idNovo]===undefined) lE.overridesCard[idNovo] = lE.overridesCard[pid];
+            delete lE.overridesCard[pid];
+          }
+        });
+      }
       ["timeline","dependencias","riscos","proximosPassos"].forEach(campo=>{
         lE[campo] = mesclarItensEsteira(lE[campo], rE[campo]);
       });
