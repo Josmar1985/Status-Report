@@ -94,9 +94,6 @@
     box-shadow:0 0 0 1.5px var(--line);cursor:pointer}
   .th-data{font-size:8.5px;color:var(--gray);font-weight:800;text-transform:uppercase}
   .th-titulo{font-weight:700;font-size:10px;margin-top:1px;line-height:1.2;cursor:pointer}
-  .th-comentario{font-size:11px;color:var(--ink);line-height:1.4;background:var(--bg);border-radius:6px;
-    padding:8px 9px;margin-top:6px;display:none;text-align:left;white-space:pre-wrap}
-  .th-item.aberto .th-comentario{display:block}
   .th-toggle{font-size:10px;color:var(--blue);font-weight:700;margin-top:3px;cursor:pointer}
   /* item da esteira: assim que tem texto preenchido, os chips de projeto somem da TELA também
      (não só da impressão) — fica limpo tipo apresentação; clicar no texto reabre pra editar */
@@ -652,6 +649,57 @@ function alinharSegunda(dataISO){
   const diff = dia===0 ? 6 : dia-1;
   d.setDate(d.getDate()-diff);
   return d.toISOString().slice(0,10);
+}
+
+/* ---------- feriados (nacional + São Paulo) e contagem de dias úteis ---------- */
+function calcularPascoa(ano){
+  // algoritmo de Gauss/anônimo gregoriano — usado pra achar Carnaval, Sexta-feira Santa e Corpus Christi
+  const a=ano%19, b=Math.floor(ano/100), c=ano%100, d=Math.floor(b/4), e=b%4, f=Math.floor((b+8)/25),
+        g=Math.floor((b-f+1)/3), h=(19*a+b-d-g+15)%30, i=Math.floor(c/4), k=c%4, l=(32+2*e+2*i-h-k)%7,
+        m=Math.floor((a+11*h+22*l)/451), mes=Math.floor((h+l-7*m+114)/31), dia=((h+l-7*m+114)%31)+1;
+  return new Date(ano, mes-1, dia);
+}
+const CACHE_FERIADOS = {};
+function feriadosDoAno(ano){
+  if(CACHE_FERIADOS[ano]) return CACHE_FERIADOS[ano];
+  const iso = d=> d.toISOString().slice(0,10);
+  const set = new Set([
+    // nacionais fixos
+    `${ano}-01-01`, `${ano}-04-21`, `${ano}-05-01`, `${ano}-09-07`,
+    `${ano}-10-12`, `${ano}-11-02`, `${ano}-11-15`, `${ano}-11-20`, `${ano}-12-25`,
+    // São Paulo (estado): Revolução Constitucionalista de 1932
+    `${ano}-07-09`,
+  ]);
+  const pascoa = calcularPascoa(ano);
+  const off = n=>{ const dt=new Date(pascoa); dt.setDate(dt.getDate()+n); return iso(dt); };
+  set.add(off(-48)); // Carnaval (segunda)
+  set.add(off(-47)); // Carnaval (terça)
+  set.add(off(-2));  // Sexta-feira Santa
+  set.add(off(60));  // Corpus Christi
+  CACHE_FERIADOS[ano] = set;
+  return set;
+}
+function ehDiaUtil(dataISO){
+  const d = new Date(dataISO+"T00:00:00");
+  const diaSemana = d.getDay();
+  if(diaSemana===0 || diaSemana===6) return false; // fim de semana
+  return !feriadosDoAno(d.getFullYear()).has(dataISO);
+}
+// conta dias úteis entre duas datas ISO. incluirInicio=false (padrão): conta a partir do dia
+// SEGUINTE ao início até o fim, inclusive (uso pra "quantos dias úteis desde o marco anterior").
+// incluirInicio=true: conta a partir do próprio início também (uso pro total do projeto).
+function diasUteisEntre(dataInicioISO, dataFimISO, incluirInicio){
+  if(!dataInicioISO || !dataFimISO) return 0;
+  let d = new Date(dataInicioISO+"T00:00:00");
+  const fim = new Date(dataFimISO+"T00:00:00");
+  if(d>fim) return 0;
+  if(!incluirInicio) d.setDate(d.getDate()+1);
+  let count = 0;
+  while(d<=fim){
+    if(ehDiaUtil(d.toISOString().slice(0,10))) count++;
+    d.setDate(d.getDate()+1);
+  }
+  return count;
 }
 
 /* ---------- modelo de stage-gate (referência fixa) ---------- */
@@ -2850,23 +2898,31 @@ function renderEsteiraOnePage(){
   const itensTimeline = dE.timeline
     .filter(m=> !m.projetoId || m.projetoId===filtroAtual)
     .sort((a,b)=> a.data.localeCompare(b.data));
-  const seletorTimelineHTML = `<select id="esteiraTimelineFiltro" class="no-print" style="max-width:220px">
+  const seletorTimelineHTML = `<select id="esteiraTimelineFiltro" class="no-print" style="max-width:280px">
       <option value="">— Geral (todos os projetos) —</option>
-      ${subprojetos.map(p=>`<option value="${p.id}" ${filtroAtual===p.id?"selected":""}>${esc(nomeCurtoProjeto(p.nome).codigo)}</option>`).join("")}
+      ${subprojetos.map(p=>`<option value="${p.id}" ${filtroAtual===p.id?"selected":""}>${esc(nomeCurtoProjeto(p.nome).codigo)} - ${esc(nomeCurtoProjeto(p.nome).resto)}</option>`).join("")}
     </select>`;
   const timelineHTML = itensTimeline.length
-    ? `<div class="timeline-h-wrap"><div class="timeline-h">` + itensTimeline.map((it,i)=>`
-        <div class="th-item ${i%2===0?"cima":"baixo"} ${it.comentario?"clicavel":""}" data-marco-id="${it.id}">
+    ? `<div class="timeline-h-wrap"><div class="timeline-h">` + itensTimeline.map((it,i)=>{
+        // dias úteis desde o marco ANTERIOR nessa mesma visão (não conta fim de semana nem feriado)
+        const diasUteis = i>0 ? diasUteisEntre(itensTimeline[i-1].data, it.data, false) : null;
+        return `
+        <div class="th-item ${i%2===0?"cima":"baixo"} ${it.comentario?"clicavel":""}" data-marco-id="${it.id}" data-comentario="${esc(it.comentario||"")}">
           <div class="th-conteudo">
             <div class="th-data">${brDate(it.data)}</div>
-            <div class="th-titulo">${esc(it.titulo)}
+            <div class="th-titulo">${esc(it.titulo)}${diasUteis!==null?` (${diasUteis}d)`:""}
               <button class="icon-btn no-print" data-act="editar-marco-esteira" data-id="${it.id}" title="Editar" style="font-size:9px;padding:0 2px">✎</button>
             </div>
-            ${it.comentario?`<div class="th-toggle no-print">ver comentário ▾</div><div class="th-comentario">${esc(it.comentario)}</div>`:""}
+            ${it.comentario?`<div class="th-toggle no-print">ver comentário ▾</div>`:""}
           </div>
           <div class="th-dot"></div>
-        </div>`).join("") + `</div></div>`
+        </div>`;
+      }).join("") + `</div></div>`
     : `<div class="empty">Nenhum marco ainda pra essa visão — clique em "+ Adicionar marco" abaixo e conte a história do seu jeito.</div>`;
+  // legenda: dias úteis do projeto inteiro, da primeira à última data cadastrada nessa visão
+  const legendaDiasUteisHTML = itensTimeline.length>1
+    ? `<b style="color:var(--navy)">${diasUteisEntre(itensTimeline[0].data, itensTimeline[itensTimeline.length-1].data, true)} dias úteis</b> de ${brDate(itensTimeline[0].data)} até ${brDate(itensTimeline[itensTimeline.length-1].data)}`
+    : "";
 
   $("esteiraConteudo").innerHTML = `
     <div class="card esteira-header">
@@ -2913,7 +2969,7 @@ function renderEsteiraOnePage(){
       <div class="toolbar no-print" style="justify-content:space-between;flex-wrap:wrap">
         <div>
           <h2 style="margin:0">Timeline</h2>
-          <div class="desc" style="margin-bottom:0">"Geral" aparece em todas; marco de um projeto específico só aparece nele. Clique num marco pra ver o comentário.</div>
+          ${legendaDiasUteisHTML?`<div class="desc" style="margin-bottom:0;font-size:11.5px">${legendaDiasUteisHTML}</div>`:""}
         </div>
         <div style="display:flex;gap:8px;align-items:center">
           ${seletorTimelineHTML}
@@ -2945,11 +3001,35 @@ function renderEsteiraOnePage(){
   });
   $("esteiraConteudo").querySelectorAll(".th-item.clicavel").forEach(item=>{
     item.onclick = e=>{
-      if(e.target.closest("button")) return; // não expande se clicou no botão de editar
-      item.classList.toggle("aberto");
+      if(e.target.closest("button")) return; // não abre se clicou no botão de editar
+      e.stopPropagation();
+      mostrarComentarioPopover(item, item.dataset.comentario);
     };
   });
 }
+// popover flutuante do comentário — usa position:fixed calculado na hora, então nunca empurra
+// o resto da página pra baixo (era o que acontecia antes, com o comentário abrindo dentro do fluxo)
+function mostrarComentarioPopover(elemento, texto){
+  fecharComentarioPopover();
+  if(!texto) return;
+  const rect = elemento.getBoundingClientRect();
+  const pop = document.createElement("div");
+  pop.id = "comentarioPopoverAtivo";
+  const esquerda = Math.min(rect.left, window.innerWidth-280);
+  pop.style.cssText = `position:fixed;z-index:9999;width:240px;background:#fff;border:1px solid var(--line);
+    border-radius:8px;padding:10px 12px;font-size:12px;line-height:1.5;color:var(--ink);
+    box-shadow:0 8px 24px rgba(0,0,0,.18);white-space:pre-wrap;left:${Math.max(8,esquerda)}px;top:${rect.bottom+8}px`;
+  pop.textContent = texto;
+  document.body.appendChild(pop);
+  setTimeout(()=> document.addEventListener("click", fecharComentarioPopoverClickFora), 0);
+}
+function fecharComentarioPopover(){
+  const existente = document.getElementById("comentarioPopoverAtivo");
+  if(existente) existente.remove();
+  document.removeEventListener("click", fecharComentarioPopoverClickFora);
+}
+function fecharComentarioPopoverClickFora(){ fecharComentarioPopover(); }
+
 let esteiraMarcoAlvo = null; // {esteira, id} ou null quando é criação
 function abrirModalEsteiraMarco(esteira, id, projetoIdPadrao){
   esteiraMarcoAlvo = {esteira, id};
