@@ -2883,11 +2883,15 @@ function renderEsteiraOnePage(){
   const titulo = montarTituloEsteira(subprojetos);
 
   dE.overridesCard = dE.overridesCard || {}; // {projetoId: "texto manual, uma linha por bullet"} — se vazio/ausente, usa automático
-  const cardsHTML = subprojetos.length ? subprojetos.map((p,i)=>{
+  // quando um projeto está filtrado, mostra só o card dele (some os outros) e deixa mais largo,
+  // já que não tem mais concorrência de espaço com os cards vizinhos
+  const cardsSubprojetos = filtroTimelineProjeto[sel] ? subprojetos.filter(p=>p.id===filtroTimelineProjeto[sel]) : subprojetos;
+  const larguraCard = filtroTimelineProjeto[sel] ? "min-width:100%;max-width:100%" : "";
+  const cardsHTML = cardsSubprojetos.length ? cardsSubprojetos.map((p,i)=>{
     const f = calcFarol(p);
     const {codigo, resto} = nomeCurtoProjeto(p.nome);
     const bloqueado = p.statusProjeto==="Bloqueado";
-    const cor = CORES_ESTEIRA_CARD[i % CORES_ESTEIRA_CARD.length];
+    const cor = CORES_ESTEIRA_CARD[subprojetos.indexOf(p) % CORES_ESTEIRA_CARD.length]; // mantém a mesma cor de sempre, mesmo filtrado
     // bloqueado usa o mesmo padrão visual do card de "Bloqueados/Impedidos" do One-Page (Sexta):
     // pílula preta "🛑 Bloqueado" + "Motivo:", em vez das últimas atualizações do Histórico
     // troca o emoji "🟡" (que só existe pro amarelo) por uma bolinha colorida de verdade,
@@ -2909,7 +2913,7 @@ function renderEsteiraOnePage(){
          <ul style="margin:10px 0 0;padding-left:18px;font-size:12.5px;line-height:1.6">
            ${bullets.length ? bullets.map(b=>`<li>${esc(b)}</li>`).join("") : '<li style="color:var(--gray);list-style:none;margin-left:-18px">Sem atualização recente registrada</li>'}
          </ul>`;
-    return `<div class="esteira-subcard" style="background:${cor}${bloqueado?';opacity:.85':''}">
+    return `<div class="esteira-subcard" style="background:${cor}${bloqueado?';opacity:.85':''}${larguraCard?';'+larguraCard:''}">
       <div style="font-size:22px;font-weight:800;line-height:1;cursor:pointer;display:inline-block;padding:2px 10px;border-radius:8px;${bloqueado?'text-decoration:line-through;':''}${filtroTimelineProjeto[sel]===p.id?`background:var(--navy);color:#fff`:`color:var(--navy)`}" data-act="filtrar-por-projeto" data-proj="${p.id}" title="Clique pra ver só as Dependências/Riscos/Próximos Passos/Timeline desse projeto — clique de novo pra voltar ao normal">${esc(codigo)}</div>
       <div style="font-weight:700;font-size:14px;margin:4px 0 8px${bloqueado?';text-decoration:line-through':''}">${esc(resto)}</div>
       ${corpo}
