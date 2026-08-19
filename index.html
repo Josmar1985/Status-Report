@@ -2754,7 +2754,7 @@ function agruparItensPorProjeto(itens, subprojetos){
         const p = subprojetos.find(x=>x.id===id);
         return p ? nomeCurtoProjeto(p.nome).codigo : "?";
       }).join(" e ") : "Geral";
-      grupos.set(chave, {label, temProjeto: ids.length>0, itens:[]});
+      grupos.set(chave, {label, ids, temProjeto: ids.length>0, itens:[]});
     }
     grupos.get(chave).itens.push(item);
   });
@@ -2766,8 +2766,9 @@ function agruparItensPorProjeto(itens, subprojetos){
 function renderListaCampoEsteira(sel, campo, subprojetos){
   const container = $("esteiraLista_"+campo);
   const itens = ESTEIRAS[sel][campo];
-  const grupos = agruparItensPorProjeto(itens, subprojetos);
-  container.innerHTML = itens.length ? grupos.map(g=>`
+  const grupos = agruparItensPorProjeto(itens, subprojetos)
+    .filter(g=> !filtroTimelineProjeto[sel] || !g.temProjeto || g.ids.includes(filtroTimelineProjeto[sel]));
+  container.innerHTML = grupos.length ? grupos.map(g=>`
     <div style="margin-bottom:12px">
       <div style="font-weight:800;font-size:13px;color:var(--navy);margin-bottom:4px">${esc(g.label)}</div>
       <ul style="margin:0;padding:0;list-style:none">
@@ -2791,7 +2792,7 @@ function renderListaCampoEsteira(sel, campo, subprojetos){
           </li>`;
         }).join("")}
       </ul>
-    </div>`).join("") : `<div class="empty" style="padding:10px 0">Nenhum item ainda.</div>`;
+    </div>`).join("") : `<div class="empty" style="padding:10px 0">${filtroTimelineProjeto[sel]?"Nenhum item nesse projeto (nem Geral).":"Nenhum item ainda."}</div>`;
 
   container.querySelectorAll(".ei-texto").forEach(inp=>{
     const li = inp.closest(".item-esteira-linha");
@@ -2885,7 +2886,7 @@ function renderEsteiraOnePage(){
            ${bullets.length ? bullets.map(b=>`<li>${esc(b)}</li>`).join("") : '<li style="color:var(--gray);list-style:none;margin-left:-18px">Sem atualização recente registrada</li>'}
          </ul>`;
     return `<div class="esteira-subcard" style="background:${cor}${bloqueado?';opacity:.85':''}">
-      <div style="font-size:22px;font-weight:800;color:var(--navy);line-height:1${bloqueado?';text-decoration:line-through':''}">${esc(codigo)}</div>
+      <div style="font-size:22px;font-weight:800;line-height:1;cursor:pointer;display:inline-block;padding:2px 10px;border-radius:8px;${bloqueado?'text-decoration:line-through;':''}${filtroTimelineProjeto[sel]===p.id?`background:var(--navy);color:#fff`:`color:var(--navy)`}" data-act="filtrar-por-projeto" data-proj="${p.id}" title="Clique pra ver só as Dependências/Riscos/Próximos Passos/Timeline desse projeto — clique de novo pra voltar ao normal">${esc(codigo)}</div>
       <div style="font-weight:700;font-size:14px;margin:4px 0 8px${bloqueado?';text-decoration:line-through':''}">${esc(resto)}</div>
       ${corpo}
     </div>`;
@@ -2988,6 +2989,13 @@ function renderEsteiraOnePage(){
 
   $("btnAddMarcoEsteira").onclick = ()=> abrirModalEsteiraMarco(sel, null, filtroAtual);
   $("esteiraTimelineFiltro").onchange = e=>{ filtroTimelineProjeto[sel] = e.target.value; renderEsteiraOnePage(); };
+  $("esteiraConteudo").querySelectorAll('[data-act="filtrar-por-projeto"]').forEach(el=>{
+    el.onclick = ()=>{
+      // clica de novo no mesmo projeto = desfiltra (volta a mostrar tudo)
+      filtroTimelineProjeto[sel] = filtroTimelineProjeto[sel]===el.dataset.proj ? "" : el.dataset.proj;
+      renderEsteiraOnePage();
+    };
+  });
   $("esteiraConteudo").querySelectorAll('[data-act="editar-card-esteira"]').forEach(btn=>{
     btn.onclick = ()=> abrirModalCardEsteira(sel, btn.dataset.proj);
   });
