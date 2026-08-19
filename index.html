@@ -176,6 +176,11 @@
   .task-marco.concluido{background:var(--purple)}
   .task-marco.atrasado{background:var(--red)}
 
+  body.modo-apresentacao header{ display:none !important; }
+  body.modo-apresentacao main{ padding-top:16px; }
+  #btnSairApresentacao{ display:none; position:fixed; top:10px; right:10px; z-index:9999; }
+  body.modo-apresentacao #btnSairApresentacao{ display:inline-flex; }
+
   @media print{
     header, nav, .no-print{ display:none !important; }
     body{ background:#fff }
@@ -211,6 +216,7 @@
       <button class="btn btn-soft btn-sm" id="btnExportarBackup">💾 Salvar backup</button>
       <button class="btn btn-ghost btn-sm" id="btnEscolherLocalBackup" title="Escolher outro arquivo/pasta pro backup" style="color:#B9C7DC">📁 Trocar local</button>
       <button class="btn btn-soft btn-sm" id="btnImportarBackup">⬆ Restaurar backup</button>
+      <button class="btn btn-soft btn-sm" id="btnModoApresentacao" title="Esconde esse cabeçalho inteiro e entra em tela cheia">🖥 Modo apresentação</button>
       <input type="file" id="fileBackup" accept=".json" hidden>
       </div>
     </div>
@@ -226,6 +232,8 @@
   <button data-tab="esteira">One-Page Esteira</button>
   <button data-tab="milestones">Milestones</button>
 </nav>
+
+<button class="btn btn-soft btn-sm" id="btnSairApresentacao" title="Sair do modo apresentação">✕ Sair da apresentação</button>
 
 <main>
 
@@ -2747,7 +2755,14 @@ function montarTituloEsteira(subprojetos){
 function agruparItensPorProjeto(itens, subprojetos){
   const grupos = new Map();
   itens.forEach(item=>{
-    const ids = [...(item.projetoIds||[])].sort();
+    // ordena os ids pelo CÓDIGO do projeto (3.2 antes de 3.3), não pelo id interno (que é
+    // baseado em horário de criação e não tem nada a ver com a ordem certa de exibição)
+    const ids = [...(item.projetoIds||[])].sort((idA,idB)=>{
+      const pA = subprojetos.find(x=>x.id===idA), pB = subprojetos.find(x=>x.id===idB);
+      const codA = pA ? nomeCurtoProjeto(pA.nome).codigo : "";
+      const codB = pB ? nomeCurtoProjeto(pB.nome).codigo : "";
+      return codA.localeCompare(codB, "pt", {numeric:true});
+    });
     const chave = ids.join(",");
     if(!grupos.has(chave)){
       const label = ids.length ? ids.map(id=>{
@@ -2976,6 +2991,14 @@ function renderEsteiraOnePage(){
     </div>
     <div class="card">
       <h2>Visão por Esteira</h2>
+      ${filtroTimelineProjeto[sel] ? `<div class="no-print" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">
+          ${subprojetos.map(p=>{
+            const ativo = filtroTimelineProjeto[sel]===p.id;
+            return `<button data-act="filtrar-por-projeto" data-proj="${p.id}"
+              style="font-size:11px;font-weight:700;padding:3px 10px;border-radius:8px;cursor:pointer;
+              border:1px solid ${ativo?"var(--navy)":"var(--line)"};background:${ativo?"var(--navy)":"#fff"};color:${ativo?"#fff":"var(--navy)"}">${esc(nomeCurtoProjeto(p.nome).codigo)}</button>`;
+          }).join("")}
+        </div>` : ""}
       <div style="display:flex;gap:14px;flex-wrap:wrap">${cardsHTML}</div>
     </div>
     <div class="side-by-side" style="grid-template-columns:1fr 1fr 1fr">
@@ -3147,6 +3170,20 @@ $("btnImprimirEsteira").onclick = ()=>{
   if(!$("esteiraSelect").value){ alert("Selecione uma esteira primeiro."); return; }
   window.print();
 };
+function ativarModoApresentacao(){
+  document.body.classList.add("modo-apresentacao");
+  if(document.documentElement.requestFullscreen) document.documentElement.requestFullscreen().catch(()=>{});
+}
+function sairModoApresentacao(){
+  document.body.classList.remove("modo-apresentacao");
+  if(document.fullscreenElement && document.exitFullscreen) document.exitFullscreen().catch(()=>{});
+}
+$("btnModoApresentacao").onclick = ativarModoApresentacao;
+$("btnSairApresentacao").onclick = sairModoApresentacao;
+// se a pessoa sair da tela cheia apertando Esc (em vez de clicar em "Sair"), o cabeçalho volta sozinho
+document.addEventListener("fullscreenchange", ()=>{
+  if(!document.fullscreenElement) document.body.classList.remove("modo-apresentacao");
+});
 
 /* ================= BACKUP ================= */
 let backupFileHandle = null; // fica lembrado enquanto a aba estiver aberta
