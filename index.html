@@ -2768,32 +2768,54 @@ function renderListaCampoEsteira(sel, campo, subprojetos){
   const itens = ESTEIRAS[sel][campo];
   const grupos = agruparItensPorProjeto(itens, subprojetos)
     .filter(g=> !filtroTimelineProjeto[sel] || !g.temProjeto || g.ids.includes(filtroTimelineProjeto[sel]));
-  container.innerHTML = grupos.length ? grupos.map(g=>`
-    <div style="margin-bottom:12px">
-      <div style="font-weight:800;font-size:13px;color:var(--navy);margin-bottom:4px">${esc(g.label)}</div>
-      <ul style="margin:0;padding:0;list-style:none">
-        ${g.itens.map(item=>{
-          const preenchido = !!(item.texto && item.texto.trim());
-          return `<li class="item-esteira-linha${preenchido?" compacto":""}" data-id="${item.id}" style="margin-bottom:10px">
-            <div class="chips-projeto-esteira no-print" style="display:flex;gap:4px;flex-wrap:wrap;margin:0 0 4px 16px">
-              ${subprojetos.map(p=>{
-                const codigo = nomeCurtoProjeto(p.nome).codigo;
-                const ativo = (item.projetoIds||[]).includes(p.id);
-                return `<button class="chip-projeto-esteira" data-item="${item.id}" data-proj="${p.id}"
-                  style="font-size:9.5px;padding:1px 7px;border-radius:10px;cursor:pointer;
-                  border:1px solid ${ativo?"var(--blue)":"var(--line)"};background:${ativo?"var(--blue)":"#fff"};color:${ativo?"#fff":"var(--gray)"}">${esc(codigo)}</button>`;
-              }).join("")}
-            </div>
-            <div style="display:flex;align-items:flex-start;gap:6px">
-              <span style="color:var(--gray);flex-shrink:0;margin-top:3px">•</span>
-              <textarea class="ei-texto" data-id="${item.id}" rows="1" placeholder="descreva..." style="flex:1;border:none;padding:1px 2px;font-size:12.5px;background:transparent;resize:vertical;font-family:inherit;line-height:1.3;field-sizing:content;min-height:18px;max-height:34px;overflow-y:auto">${esc(item.texto)}</textarea>
-              <button class="icon-btn no-print" data-act="del-item-esteira" data-id="${item.id}" title="Excluir" style="flex-shrink:0;margin-top:1px">✕</button>
-            </div>
-          </li>`;
-        }).join("")}
-      </ul>
-    </div>`).join("") : `<div class="empty" style="padding:10px 0">${filtroTimelineProjeto[sel]?"Nenhum item nesse projeto (nem Geral).":"Nenhum item ainda."}</div>`;
 
+  const linhaItemHTML = (item, todosDoGrupo, ehSubitem)=>{
+    const preenchido = !!(item.texto && item.texto.trim());
+    // pais possíveis: qualquer outro item do MESMO grupo que ainda não seja, ele próprio, um sub-item
+    // (fica só 2 níveis, igual a planilha de referência — não deixa sub-item ter sub-item de novo)
+    const paisPossiveis = todosDoGrupo.filter(x=> x.id!==item.id && !x.paiId);
+    const seletorPaiHTML = `<select class="ei-pai no-print" data-id="${item.id}" style="font-size:9px;color:var(--gray);border:none;background:transparent;max-width:130px">
+        <option value="">— item principal —</option>
+        ${paisPossiveis.map(x=>`<option value="${x.id}" ${item.paiId===x.id?"selected":""}>sub-item de: ${esc((x.texto||"(sem texto)").slice(0,30))}</option>`).join("")}
+      </select>`;
+    return `<li class="item-esteira-linha${preenchido?" compacto":""}" data-id="${item.id}" style="margin-bottom:10px${ehSubitem?";margin-left:22px":""}">
+      <div class="chips-projeto-esteira no-print" style="display:flex;gap:4px;flex-wrap:wrap;margin:0 0 4px 16px">
+        ${subprojetos.map(p=>{
+          const codigo = nomeCurtoProjeto(p.nome).codigo;
+          const ativo = (item.projetoIds||[]).includes(p.id);
+          return `<button class="chip-projeto-esteira" data-item="${item.id}" data-proj="${p.id}"
+            style="font-size:9.5px;padding:1px 7px;border-radius:10px;cursor:pointer;
+            border:1px solid ${ativo?"var(--blue)":"var(--line)"};background:${ativo?"var(--blue)":"#fff"};color:${ativo?"#fff":"var(--gray)"}">${esc(codigo)}</button>`;
+        }).join("")}
+      </div>
+      <div style="display:flex;align-items:flex-start;gap:6px">
+        <span style="color:var(--gray);flex-shrink:0;margin-top:3px">${ehSubitem?"◦":"•"}</span>
+        <textarea class="ei-texto" data-id="${item.id}" rows="1" placeholder="descreva..." style="flex:1;border:none;padding:1px 2px;font-size:12.5px;background:transparent;resize:vertical;font-family:inherit;line-height:1.3;field-sizing:content;min-height:18px;max-height:34px;overflow-y:auto">${esc(item.texto)}</textarea>
+        <button class="icon-btn no-print" data-act="del-item-esteira" data-id="${item.id}" title="Excluir" style="flex-shrink:0;margin-top:1px">✕</button>
+      </div>
+      <div class="no-print" style="margin-left:16px">${seletorPaiHTML}</div>
+    </li>`;
+  };
+
+  container.innerHTML = grupos.length ? grupos.map(g=>{
+    // renderiza principais primeiro, e logo abaixo de cada um, seus sub-itens (se tiver)
+    const principais = g.itens.filter(x=> !x.paiId || !g.itens.some(y=>y.id===x.paiId));
+    const linhasHTML = principais.map(item=>{
+      const subitens = g.itens.filter(x=> x.paiId===item.id);
+      return linhaItemHTML(item, g.itens, false) + subitens.map(s=> linhaItemHTML(s, g.itens, true)).join("");
+    }).join("");
+    return `<div style="margin-bottom:12px">
+      <div style="font-weight:800;font-size:13px;color:var(--navy);margin-bottom:4px">${esc(g.label)}</div>
+      <ul style="margin:0;padding:0;list-style:none">${linhasHTML}</ul>
+    </div>`;
+  }).join("") : `<div class="empty" style="padding:10px 0">${filtroTimelineProjeto[sel]?"Nenhum item nesse projeto (nem Geral).":"Nenhum item ainda."}</div>`;
+
+  container.querySelectorAll(".ei-pai").forEach(sel2=>{
+    sel2.onchange = e=>{
+      const item = itens.find(x=>x.id===e.target.dataset.id);
+      if(item){ item.paiId = e.target.value || null; salvar(); renderEsteiraOnePage(); }
+    };
+  });
   container.querySelectorAll(".ei-texto").forEach(inp=>{
     const li = inp.closest(".item-esteira-linha");
     inp.onfocus = ()=> li.classList.add("aberto");
@@ -2808,6 +2830,8 @@ function renderListaCampoEsteira(sel, campo, subprojetos){
   });
   container.querySelectorAll('[data-act="del-item-esteira"]').forEach(btn=>{
     btn.onclick = ()=>{
+      // se o item excluído era pai de algum outro, esses viram item principal de novo (não some, só desindenta)
+      itens.forEach(x=>{ if(x.paiId===btn.dataset.id) x.paiId = null; });
       ESTEIRAS[sel][campo] = itens.filter(x=>x.id!==btn.dataset.id);
       TOMBSTONES.esteiraItens[btn.dataset.id] = Date.now();
       salvar(); renderEsteiraOnePage();
