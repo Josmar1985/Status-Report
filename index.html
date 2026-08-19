@@ -85,15 +85,15 @@
   .timeline-item.aberto .tl-comentario{display:block}
   .timeline-item .tl-toggle{font-size:11px;color:var(--blue);font-weight:700}
   .timeline-h-wrap{overflow-x:auto;padding:10px 4px 4px}
-  .timeline-h{display:grid;grid-auto-flow:column;grid-auto-columns:120px;align-items:stretch;position:relative;min-width:min-content;padding:0 12px}
+  .timeline-h{display:grid;grid-auto-flow:column;grid-auto-columns:80px;align-items:stretch;position:relative;min-width:min-content;padding:0 8px}
   .timeline-h::before{content:"";position:absolute;left:0;right:0;top:50%;height:2px;background:var(--line);z-index:0}
-  .th-item{position:relative;display:grid;grid-template-rows:1fr auto 1fr;justify-items:center;z-index:1;padding:0 4px}
-  .th-item.cima .th-conteudo{grid-row:1;align-self:end;padding-bottom:8px;text-align:center}
-  .th-item.baixo .th-conteudo{grid-row:3;align-self:start;padding-top:8px;text-align:center}
-  .th-dot{grid-row:2;width:11px;height:11px;border-radius:50%;background:var(--blue);border:2px solid #fff;
+  .th-item{position:relative;display:grid;grid-template-rows:1fr auto 1fr;justify-items:center;z-index:1;padding:0 2px}
+  .th-item.cima .th-conteudo{grid-row:1;align-self:end;padding-bottom:6px;text-align:center}
+  .th-item.baixo .th-conteudo{grid-row:3;align-self:start;padding-top:6px;text-align:center}
+  .th-dot{grid-row:2;width:9px;height:9px;border-radius:50%;background:var(--blue);border:2px solid #fff;
     box-shadow:0 0 0 1.5px var(--line);cursor:pointer}
-  .th-data{font-size:9.5px;color:var(--gray);font-weight:800;text-transform:uppercase}
-  .th-titulo{font-weight:700;font-size:11px;margin-top:2px;line-height:1.25;cursor:pointer}
+  .th-data{font-size:8.5px;color:var(--gray);font-weight:800;text-transform:uppercase}
+  .th-titulo{font-weight:700;font-size:10px;margin-top:1px;line-height:1.2;cursor:pointer}
   .th-comentario{font-size:11px;color:var(--ink);line-height:1.4;background:var(--bg);border-radius:6px;
     padding:8px 9px;margin-top:6px;display:none;text-align:left;white-space:pre-wrap}
   .th-item.aberto .th-comentario{display:block}
@@ -130,7 +130,7 @@
   .gantt-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:8px}
   table.gantt-grade{border-collapse:collapse;font-size:10px;white-space:nowrap}
   table.gantt-grade th, table.gantt-grade td{border:1px solid #D8DEE8;padding:0;text-align:center}
-  .gantt-label-col{text-align:left !important;font-size:12px;padding:6px 10px !important;
+  .gantt-label-col{text-align:left !important;font-size:12px;padding:3px 10px !important;
     position:sticky;left:0;background:#fff;z-index:3;min-width:300px;max-width:300px;white-space:normal}
   .gantt-sub-col{position:sticky;background:#fff;z-index:2;font-size:11px;padding:4px 8px !important;min-width:130px;
     border-right:3px solid var(--navy) !important}
@@ -140,6 +140,8 @@
   .gantt-day-head.b{background:#24405F}
   .gantt-day-head.a{background:var(--navy)}
   .gantt-day-cell{width:17px;min-width:17px;height:20px;position:relative}
+  .gantt-etapa-head td{background:#1B6FA8;color:#fff;font-weight:800;font-size:12px;padding:4px 10px !important;text-align:left !important}
+  .gantt-etapa-head.sem-fase td{background:#8A94A3}
   .gantt-day-cell.fds::after{content:"";position:absolute;inset:0;pointer-events:none;
     background:repeating-linear-gradient(45deg, rgba(0,0,0,.22) 0 3px, transparent 3px 6px)}
   .gantt-day-head.fds{filter:brightness(.8)}
@@ -1967,7 +1969,7 @@ function gradeGanttHTML(tarefas, inicioBase, editavel){
     bpx:   {bg:"#EDEFF3", fg:"var(--gray)", rotulo:"BPx", emoji:"⚕️"},
     faseatual: {bg:"var(--blue-soft)", fg:"var(--blue)", rotulo:"Fase Atual", emoji:"📍"},
   };
-  const bodyRows = tarefas.map(t=>{
+  const linhaTarefaHTML = (t, codigoAuto)=>{
     const tipoKey = t.isMarco?"marco":t.isVSC?"vsc":t.isBPX?"bpx":t.isFaseAtual?"faseatual":null;
     const especial = !!tipoKey; // controla o visual (emoji, cor de fundo do texto quando não editável)
     // Marco/VSC/BPx/Fase Atual são travados AQUI DE PROPÓSITO: a origem real deles é o Plano de
@@ -1978,39 +1980,65 @@ function gradeGanttHTML(tarefas, inicioBase, editavel){
     const travado = especial;
     const info = tipoKey ? TIPO_INFO[tipoKey] : null;
     const nomeAtual = t.isMarco ? (t.milestone||t.nome) : t.nome;
-    const sub = especial ? "" : (t.resp||"");
     const emoji = especial ? info.emoji+" " : "";
     const colStatus = (editavel && !travado)
       ? `<select class="tk-status-grid" data-tid="${t.id}" style="width:100%">
           ${["Não iniciado","Em andamento","Concluído","Atrasado"].map(s=>`<option ${s===t.status?"selected":""}>${s}</option>`).join("")}
         </select>`
       : `<span class="pill" style="font-size:10px;background:${especial?info.bg:"#EDEFF3"};color:${especial?info.fg:"var(--gray)"}">${esc(t.status||"—")}</span>`;
-    const delBtn = (editavel && !travado) ? `<button class="icon-btn" data-act="del-t-grid" data-tid="${t.id}" title="Excluir">✕</button>` : "";
+    const delBtn = editavel ? `<button class="icon-btn" data-act="del-t-grid" data-tid="${t.id}" title="Excluir">✕</button>` : "";
     const editBtn = (editavel && !travado) ? `<button class="icon-btn" data-act="edit-t-grid" data-tid="${t.id}" title="Editar datas, responsável ou milestone">✎</button>` : "";
+    // pra Marco/VSC/BPx/Fase Atual (travados nos outros campos), deixa reatribuir só a fase —
+    // isso não mexe em data/status/nome (os campos que causavam o bug de sincronização), só
+    // decide em qual faixa colorida essa linha aparece agrupada
+    const fasesSelectHTML = (editavel && travado) ? `<select class="tk-fase-grid no-print" data-tid="${t.id}" style="font-size:9px;color:var(--gray);border:none;background:transparent;max-width:150px">
+        <option value="">— sem fase —</option>
+        ${MILESTONES.map(m=>`<option value="${esc(m)}" ${t.milestone===m?"selected":""}>${esc(m)}</option>`).join("")}
+      </select>` : "";
     const nomeCampo = (editavel && !travado)
-      ? `<textarea class="tk-nome-grid" data-tid="${t.id}" rows="2" style="font-weight:700;border:none;padding:2px 0;width:100%;background:transparent;resize:vertical;font-family:inherit;font-size:12px;line-height:1.3;overflow:hidden">${esc(emoji+nomeAtual)}</textarea>`
-      : `<div style="font-weight:700">${esc(emoji+nomeAtual)}${travado?` <span class="no-print" style="font-size:9px;color:var(--gray);font-weight:400">(editar na origem)</span>`:""}</div>`;
-    const codigoCampo = (editavel && !travado && !t.isMarco)
-      ? `<input type="text" class="tk-codigo-grid" data-tid="${t.id}" value="${esc(t.codigo||"")}" placeholder="ID" style="width:52px;border:none;padding:1px 2px;font-size:10.5px;color:var(--gray);background:transparent">`
-      : (t.codigo ? `<span style="font-size:10.5px;color:var(--gray)">${esc(t.codigo)}</span>` : "");
-    const milestoneRef = t.milestone;
-    const faseMacro = milestoneRef ? etapaDoMilestone(milestoneRef) : "";
+      ? `<textarea class="tk-nome-grid" data-tid="${t.id}" rows="1" style="font-weight:700;border:none;padding:1px 0;width:100%;background:transparent;resize:vertical;font-family:inherit;font-size:12px;line-height:1.25;overflow:hidden">${esc(emoji+nomeAtual)}</textarea>`
+      : `<div style="font-weight:700">${esc(emoji+nomeAtual)}${travado?` <span class="no-print" style="font-size:9px;color:var(--gray);font-weight:400">(dados na origem —</span> ${fasesSelectHTML} <span class="no-print" style="font-size:9px;color:var(--gray)">)</span>`:""}</div>`;
+    const codigoEfetivo = t.codigo || codigoAuto || "";
+    const ehAutomatico = !t.codigo && !!codigoAuto;
+    const codigoCampo = editavel
+      ? `<input type="text" class="tk-codigo-grid" data-tid="${t.id}" value="${esc(codigoEfetivo)}" placeholder="ID" title="${ehAutomatico?'Calculado sozinho pela ordem de início — digite algo pra travar manualmente':'Definido manualmente'}" style="width:52px;border:none;padding:1px 2px;font-size:10.5px;color:${ehAutomatico?'#AFAFC0':'var(--gray)'};font-style:${ehAutomatico?'italic':'normal'};background:transparent">`
+      : (codigoEfetivo ? `<span style="font-size:10.5px;color:var(--gray)">${esc(codigoEfetivo)}</span>` : "");
     return `<tr data-tid="${t.id}">
       <td class="gantt-label-col">
-        <div style="display:flex;align-items:flex-start;gap:4px">
-          <div style="display:flex;flex-direction:column;gap:2px">${delBtn}${editBtn}</div>
-          <div style="min-width:52px">${codigoCampo}</div>
-          <div style="flex:1;min-width:0">
-            ${faseMacro?`<div style="font-size:9px;color:var(--blue);font-weight:800;text-transform:uppercase;letter-spacing:.02em">${esc(faseMacro)}</div>`:""}
-            ${nomeCampo}
-            ${sub?`<div style="font-size:10.5px;color:var(--gray);font-weight:400">${esc(sub)}</div>`:""}
-          </div>
+        <div style="display:flex;align-items:center;gap:4px">
+          <div style="display:flex;flex-direction:column;gap:1px">${editBtn}${delBtn}</div>
+          <span style="min-width:34px">${codigoCampo}</span>
+          <span style="flex:1;min-width:70px">${nomeCampo}</span>
         </div>
       </td>
       <td class="gantt-sub-col" style="left:300px">${colStatus}</td>
       ${diaCellsHTML(t)}
     </tr>`;
-  }).join("");
+  };
+
+  // agrupa as tarefas pela fase macro (Captação/Discovery/.../Run) do milestone associado, com uma
+  // faixa colorida por grupo — igual a planilha de referência ("4 Explore:", "5 Realize:" etc.)
+  const colspanTotal = 2 + dias.length;
+  const grupos = {}; ETAPAS_UNICAS.forEach(e=> grupos[e]=[]);
+  const semFase = [];
+  tarefas.forEach(t=>{
+    const etapa = t.milestone ? etapaDoMilestone(t.milestone) : "";
+    if(etapa && grupos[etapa]) grupos[etapa].push(t); else semFase.push(t);
+  });
+  let bodyRows = "";
+  ETAPAS_UNICAS.forEach((etapa,i)=>{
+    if(!grupos[etapa].length) return;
+    // dentro da fase, ordena por data de início — quem começa antes fica em cima — e numera
+    // sozinho (5.1, 5.2...). Se a tarefa já tem código digitado manualmente, isso continua
+    // valendo no lugar do automático; o automático só preenche o que está em branco.
+    const itensOrdenados = [...grupos[etapa]].sort((a,b)=> (a.inicio||"9999").localeCompare(b.inicio||"9999"));
+    bodyRows += `<tr class="gantt-etapa-head"><td colspan="${colspanTotal}">${i+1}&nbsp;&nbsp;${esc(etapa)}:</td></tr>`;
+    bodyRows += itensOrdenados.map((t,pos)=> linhaTarefaHTML(t, `${i+1}.${pos+1}`)).join("");
+  });
+  if(semFase.length){
+    bodyRows += `<tr class="gantt-etapa-head sem-fase"><td colspan="${colspanTotal}">Sem fase associada:</td></tr>`;
+    bodyRows += semFase.map(t=> linhaTarefaHTML(t, "")).join("");
+  }
 
   return `<div class="gantt-wrap"><table class="gantt-grade">
     <thead>
@@ -2134,7 +2162,12 @@ function sincronizarFaseAtualCronograma(p){
   // "fecharFaseAtualAnterior", chamado sempre que a Fase Atual muda.
   if(!p.faseAtual || p.faseAtual===MILESTONE_FINAL || p.statusProjeto==="Bloqueado" || !p.prazoPrevisto) return;
   if(!p.faseAtualDesde) p.faseAtualDesde = hojeISO();
-  sincronizarBarraCronograma(p.id, `faseatual_${p.id}_${p.faseAtual}`, `Fase Atual — ${p.faseAtual}`, p.faseAtualDesde, p.prazoPrevisto, null, "isFaseAtual");
+  const chave = `faseatual_${p.id}_${p.faseAtual}`;
+  sincronizarBarraCronograma(p.id, chave, `Fase Atual — ${p.faseAtual}`, p.faseAtualDesde, p.prazoPrevisto, null, "isFaseAtual");
+  // já sabe exatamente qual é a fase (é o próprio p.faseAtual) — não precisa o usuário atribuir
+  // manualmente, então já cai agrupada certa na faixa colorida certa do Cronograma
+  const barra = TAREFAS.find(t=>t.projetoId===p.id && t.isFaseAtual && t.chaveEspecial===chave);
+  if(barra) barra.milestone = p.faseAtual;
 }
 function fecharFaseAtualAnterior(p, faseAnterior){
   if(faseAnterior) concluirBarraCronograma(p.id, `faseatual_${p.id}_${faseAnterior}`, "isFaseAtual", hojeISO());
@@ -2183,6 +2216,12 @@ function wireGradeGanttHandlers(containerId, rerender){
     inp.onchange = e=>{
       const t = TAREFAS.find(x=>x.id===e.target.dataset.tid);
       if(t){ t.codigo = e.target.value.trim(); salvar(); rerender(); }
+    };
+  });
+  container.querySelectorAll(".tk-fase-grid").forEach(sel=>{
+    sel.onchange = e=>{
+      const t = TAREFAS.find(x=>x.id===e.target.dataset.tid);
+      if(t){ t.milestone = e.target.value || ""; salvar(); rerender(); }
     };
   });
   container.querySelectorAll(".tk-status-grid").forEach(sel=>{
