@@ -1125,7 +1125,7 @@ async function ghBuscarEMesclar(){
     localStorage.setItem(LS_PLANOS, JSON.stringify(PLANOS));
     localStorage.setItem(LS_ESTEIRAS, JSON.stringify(ESTEIRAS));
     localStorage.setItem(LS_TOMBSTONES, JSON.stringify(TOMBSTONES));
-    montarSelects(); renderTudo();
+    renderTudoSemAtrapalhar();
     atualizarStatusGh("✓ atualizado às "+new Date().toLocaleTimeString("pt-BR").slice(0,5), "#8FD19E");
     return true;
   }catch(err){
@@ -1156,7 +1156,7 @@ async function ghEnviarAgora(){
       localStorage.setItem(LS_PLANOS, JSON.stringify(PLANOS));
       localStorage.setItem(LS_ESTEIRAS, JSON.stringify(ESTEIRAS));
       localStorage.setItem(LS_TOMBSTONES, JSON.stringify(TOMBSTONES));
-      montarSelects(); renderTudo();
+      renderTudoSemAtrapalhar();
       const novoSha = await ghPut(pacoteAtual(), remoto.sha);
       GH_SHA = novoSha;
       localStorage.setItem(LS_GH_SHA, GH_SHA||"");
@@ -3253,6 +3253,20 @@ $("fileBackup").onchange = async e=>{
 /* ================= INICIALIZAÇÃO ================= */
 function renderTudo(){
   renderPortfolio(); renderOnePage(); renderFicha(); renderHistorico(); renderCronograma(); renderEsteiraOnePage(); renderMilestonesRef();
+}
+// diz se a pessoa está com o cursor num campo de texto agora — usado pra sincronização em segundo
+// plano (busca automática, envio automático) NÃO redesenhar a tela no meio de alguém digitando
+function usuarioDigitando(){
+  const el = document.activeElement;
+  if(!el) return false;
+  const tag = el.tagName;
+  return tag==="TEXTAREA" || (tag==="INPUT" && ["text","date"].includes(el.type));
+}
+// só redesenha se ninguém estiver digitando agora; senão, tenta de novo daqui a pouco, sem
+// perder a atualização — os dados já foram salvos normalmente, é só a tela que espera
+function renderTudoSemAtrapalhar(){
+  if(usuarioDigitando()){ setTimeout(renderTudoSemAtrapalhar, 800); return; }
+  montarSelects(); renderTudo();
 }
 // sincroniza a barra de Fase Atual de todo mundo uma vez, pra cobrir projetos que já tinham
 // Fase Atual + Prazo Previsto preenchidos antes dessa sincronização existir
