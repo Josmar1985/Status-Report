@@ -915,6 +915,14 @@ function pacoteAtual(){
 // continuam os mesmos, só com itens adicionados/atualizados/removidos). Nunca é um "wholesale
 // replace" da base local.
 function vazio(v){ return v===undefined || v===null || v===""; }
+// aceita tanto o formato antigo do overridesCard (texto solto, sem data) quanto o novo
+// ({texto, atualizadoEm}) — formato antigo vira atualizadoEm:0, então qualquer edição nova
+// (que sempre carimba a data de agora) automaticamente vence na comparação
+function normalizarOverrideCard(v){
+  if(v===undefined || v===null) return {texto:"", atualizadoEm:0};
+  if(typeof v==="string") return {texto:v, atualizadoEm:0};
+  return {texto:v.texto||"", atualizadoEm:v.atualizadoEm||0};
+}
 // mescla campo a campo: só copia da origem pro alvo o que o alvo AINDA NÃO TEM preenchido.
 // nunca sobrescreve um campo que já tem valor — usado no "Restaurar backup" (forçado), pra nunca
 // apagar algo que você já preencheu de novo depois que o arquivo antigo foi salvo
@@ -1093,11 +1101,16 @@ function mesclarRemoto(remoto, opcoes={}){
       ["subtitulo","statusCor","statusTexto"].forEach(campo=>{
         if(vazio(lE[campo]) && !vazio(rE[campo])) lE[campo] = rE[campo];
       });
-      // overridesCard (texto manual por sub-projeto): mesmo critério, um projeto por vez
+      // overridesCard (texto manual por sub-projeto): agora compara DATA de verdade, não só "tá
+      // vazio, preenche" — isso que fazia "voltar ao automático" trazer o texto antigo de volta
+      // sozinho na sincronização seguinte, porque campo vazio "parecia" precisar ser preenchido
       if(rE.overridesCard){
         lE.overridesCard = lE.overridesCard || {};
         Object.keys(rE.overridesCard).forEach(pid=>{
-          if(vazio(lE.overridesCard[pid]) && !vazio(rE.overridesCard[pid])) lE.overridesCard[pid] = rE.overridesCard[pid];
+          const remotoItem = normalizarOverrideCard(rE.overridesCard[pid]);
+          const localItem = normalizarOverrideCard(lE.overridesCard[pid]);
+          if(vence(remotoItem.atualizadoEm, localItem.atualizadoEm)) lE.overridesCard[pid] = remotoItem;
+          else lE.overridesCard[pid] = localItem; // normaliza formato antigo (string) mesmo sem trocar
         });
       }
     });
@@ -2921,7 +2934,7 @@ function renderEsteiraOnePage(){
     const rotuloCurto = FAROL_ROTULO_CURTO[f.cor] || f.label;
     const bolinhaFarol = `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${f.cor==='cinza'?'#AAB2BE':FAROL_HEX[f.cor]};margin-right:5px"></span>`;
     const auto = HISTORICO.filter(h=>h.projetoId===p.id).sort((a,b)=> b.data.localeCompare(a.data)).slice(0,3).map(h=>h.nota||"").filter(Boolean);
-    const override = (dE.overridesCard[p.id]||"").trim();
+    const override = normalizarOverrideCard(dE.overridesCard[p.id]).texto.trim();
     const usandoOverride = !bloqueado && !!override;
     const bullets = usandoOverride ? override.split("\n").map(s=>s.trim()).filter(Boolean) : auto;
     const corpo = bloqueado
@@ -3145,7 +3158,7 @@ function abrirModalCardEsteira(esteira, projetoId){
   cardEsteiraAlvo = {esteira, projetoId};
   const p = PROJETOS.find(x=>x.id===projetoId);
   $("ceCodigo").textContent = p ? nomeCurtoProjeto(p.nome).codigo : "";
-  const override = (ESTEIRAS[esteira].overridesCard||{})[projetoId] || "";
+  const override = normalizarOverrideCard((ESTEIRAS[esteira].overridesCard||{})[projetoId]).texto;
   if(override){
     $("ceTexto").value = override;
   } else {
@@ -3159,14 +3172,20 @@ $("ceCancelar").onclick = ()=> $("modalCardEsteira").classList.add("hide");
 $("ceSalvar").onclick = ()=>{
   const {esteira, projetoId} = cardEsteiraAlvo;
   ESTEIRAS[esteira].overridesCard = ESTEIRAS[esteira].overridesCard || {};
-  ESTEIRAS[esteira].overridesCard[projetoId] = $("ceTexto").value;
+  ESTEIRAS[esteira].overridesCard[projetoId] = {texto: $("ceTexto").value, atualizadoEm: Date.now()};
   salvar();
   $("modalCardEsteira").classList.add("hide");
   renderEsteiraOnePage();
 };
 $("ceVoltarAuto").onclick = ()=>{
   const {esteira, projetoId} = cardEsteiraAlvo;
-  if(ESTEIRAS[esteira].overridesCard) delete ESTEIRAS[esteira].overridesCard[projetoId];
+  // "voltar ao automático" NÃO pode só apagar a chave — isso deixava o campo "vazio", e a
+  // sincronização seguinte enxergava vazio como "precisa preencher", trazendo o texto antigo de
+  // volta sozinho. Em vez de apagar, grava um texto vazio só que com carimbo de agora — assim
+  // essa ação sempre vence contra qualquer versão antiga (com ou sem texto) que ainda esteja
+  // por aí, do mesmo jeito que qualquer outra edição
+  ESTEIRAS[esteira].overridesCard = ESTEIRAS[esteira].overridesCard || {};
+  ESTEIRAS[esteira].overridesCard[projetoId] = {texto: "", atualizadoEm: Date.now()};
   salvar();
   $("modalCardEsteira").classList.add("hide");
   renderEsteiraOnePage();
