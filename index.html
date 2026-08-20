@@ -939,13 +939,19 @@ function mesclarRemoto(remoto, opcoes={}){
   const forcar = !!opcoes.forcarVencedor;
   const vence = (remotoTs, localTs)=> forcar ? true : (remotoTs||0) > (localTs||0);
 
-  // lápides remotas entram no nosso conjunto (união, mantendo sempre o timestamp mais recente)
-  ["projetos","tarefas","historico"].forEach(tipo=>{
-    const remotoTomb = (remoto.tombstones && remoto.tombstones[tipo]) || {};
-    Object.keys(remotoTomb).forEach(id=>{
-      if(!TOMBSTONES[tipo][id] || remotoTomb[id] > TOMBSTONES[tipo][id]) TOMBSTONES[tipo][id] = remotoTomb[id];
+  // lápides remotas entram no nosso conjunto (união, mantendo sempre o timestamp mais recente) —
+  // MAS só na sincronização normal. No modo forçado ("Restaurar backup"), a intenção é só
+  // ADICIONAR/PREENCHER dado, nunca trazer exclusão nenhuma — senão um projeto que ainda estava
+  // ativo no outro computador podia sumir sozinho na sincronização seguinte, mesmo o restaurar
+  // em si não tendo apagado nada na hora
+  if(!forcar){
+    ["projetos","tarefas","historico"].forEach(tipo=>{
+      const remotoTomb = (remoto.tombstones && remoto.tombstones[tipo]) || {};
+      Object.keys(remotoTomb).forEach(id=>{
+        if(!TOMBSTONES[tipo][id] || remotoTomb[id] > TOMBSTONES[tipo][id]) TOMBSTONES[tipo][id] = remotoTomb[id];
+      });
     });
-  });
+  }
 
   // Projetos: casados por id; na ausência de id igual, casa por NOME (evita duplicar os 35
   // projetos padrão quando duas pessoas abrem a ferramenta pela 1ª vez em computadores
