@@ -2847,7 +2847,7 @@ function renderListaCampoEsteira(sel, campo, subprojetos){
   container.querySelectorAll(".ei-pai").forEach(sel2=>{
     sel2.onchange = e=>{
       const item = itens.find(x=>x.id===e.target.dataset.id);
-      if(item){ item.paiId = e.target.value || null; salvar(); renderEsteiraOnePage(); }
+      if(item){ item.paiId = e.target.value || null; item.atualizadoEm = Date.now(); salvar(); renderEsteiraOnePage(); }
     };
   });
   container.querySelectorAll(".ei-texto").forEach(inp=>{
@@ -2859,7 +2859,7 @@ function renderListaCampoEsteira(sel, campo, subprojetos){
     };
     inp.onchange = e=>{
       const item = itens.find(x=>x.id===e.target.dataset.id);
-      if(item){ item.texto = e.target.value.trim(); salvar(); }
+      if(item){ item.texto = e.target.value.trim(); item.atualizadoEm = Date.now(); salvar(); }
     };
   });
   container.querySelectorAll('[data-act="del-item-esteira"]').forEach(btn=>{
@@ -2878,6 +2878,7 @@ function renderListaCampoEsteira(sel, campo, subprojetos){
       item.projetoIds = item.projetoIds || [];
       const idx = item.projetoIds.indexOf(chip.dataset.proj);
       if(idx>=0) item.projetoIds.splice(idx,1); else item.projetoIds.push(chip.dataset.proj);
+      item.atualizadoEm = Date.now();
       salvar(); renderListaCampoEsteira(sel, campo, subprojetos);
     };
   });
@@ -3071,7 +3072,7 @@ function renderEsteiraOnePage(){
   });
   $("esteiraConteudo").querySelectorAll(".btn-add-item-esteira").forEach(btn=>{
     btn.onclick = ()=>{
-      ESTEIRAS[sel][btn.dataset.campo].push({id:novoId(), projetoIds:[], texto:""});
+      ESTEIRAS[sel][btn.dataset.campo].push({id:novoId(), projetoIds:[], texto:"", atualizadoEm:Date.now()});
       salvar(); renderEsteiraOnePage();
     };
   });
