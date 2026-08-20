@@ -1363,7 +1363,7 @@ function calcFarol(p){
   const dias = Math.max(diasUteisEntre(prazo, hojeISO()), 0);
 
   // laranja só faz uma coisa: marcar atraso sem impedimento declarado. Nada mais entra aqui.
-  if(dias>5) return {cor:"vermelho", label:`Vermelho (${dias}d úteis)`, dias};
+  if(dias>5) return {cor:"vermelho", label:`Atrasado (${dias}d úteis)`, dias};
   if(dias>0) return {cor:"laranja", label:`Atrasado (${dias}d úteis, sem motivo registrado)`, dias};
   return {cor:"verde", label:"Em andamento", dias:0};
 }
@@ -1737,7 +1737,7 @@ function renderOnePage(){
     <div class="kpi" style="border-top-color:${FAROL_HEX.verde}"><div class="n">${conta("verde")}</div><div class="l">Em andamento</div></div>
     <div class="kpi" style="border-top-color:${FAROL_HEX.amarelo}"><div class="n">${conta("amarelo")}</div><div class="l">Amarelo (impedimento)</div></div>
     <div class="kpi" style="border-top-color:${FAROL_HEX.laranja}"><div class="n">${conta("laranja")}</div><div class="l">Laranja (atraso s/ motivo)</div></div>
-    <div class="kpi" style="border-top-color:${FAROL_HEX.vermelho}"><div class="n">${conta("vermelho")}</div><div class="l">Vermelho</div></div>
+    <div class="kpi" style="border-top-color:${FAROL_HEX.vermelho}"><div class="n">${conta("vermelho")}</div><div class="l">Atrasado crítico</div></div>
     <div class="kpi" style="border-top-color:${FAROL_HEX.azul}"><div class="n">${conta("azul")}</div><div class="l">Concluído</div></div>
     <div class="kpi" style="border-top-color:${FAROL_HEX.cinza}"><div class="n">${conta("cinza")}</div><div class="l">Sem fase/prazo</div></div>
     <div class="kpi" style="border-top-color:${FAROL_HEX.preto}"><div class="n">${conta("preto")}</div><div class="l">🛑 Bloqueados</div></div>`;
@@ -2930,7 +2930,7 @@ function renderEsteiraOnePage(){
     // pílula preta "🛑 Bloqueado" + "Motivo:", em vez das últimas atualizações do Histórico
     // troca o emoji "🟡" (que só existe pro amarelo) por uma bolinha colorida de verdade,
     // igual em todos os farois — fica consistente pra Verde, Atrasado, Vermelho, Concluído, Sem fase
-    const FAROL_ROTULO_CURTO = {amarelo:"Impedimento", laranja:"Atrasado", vermelho:"Vermelho", verde:"Em andamento", azul:"Concluído", cinza:"Sem fase"};
+    const FAROL_ROTULO_CURTO = {amarelo:"Impedimento", laranja:"Atrasado", vermelho:"Atrasado", verde:"Em andamento", azul:"Concluído", cinza:"Sem fase"};
     const rotuloCurto = FAROL_ROTULO_CURTO[f.cor] || f.label;
     const bolinhaFarol = `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${f.cor==='cinza'?'#AAB2BE':FAROL_HEX[f.cor]};margin-right:5px"></span>`;
     const auto = HISTORICO.filter(h=>h.projetoId===p.id).sort((a,b)=> b.data.localeCompare(a.data)).slice(0,3).map(h=>h.nota||"").filter(Boolean);
