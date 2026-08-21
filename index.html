@@ -138,6 +138,7 @@
   .gantt-day-head.b{background:#24405F}
   .gantt-day-head.a{background:var(--navy)}
   .gantt-day-cell{width:17px;min-width:17px;height:20px;position:relative}
+  .only-print{display:none}
   .gantt-etapa-head td{background:#1B6FA8;color:#fff;font-weight:800;font-size:12px;padding:4px 10px !important;text-align:left !important}
   .gantt-etapa-head.sem-fase td{background:#8A94A3}
   .gantt-day-cell.fds::after{content:"";position:absolute;inset:0;pointer-events:none;
@@ -183,6 +184,7 @@
 
   @media print{
     header, nav, .no-print{ display:none !important; }
+    .only-print{ display:inline-block !important; }
     body{ background:#fff }
     main{ max-width:100%; padding:0 }
     .card{ border:none; box-shadow:none; padding:8px 0; margin-bottom:10px; page-break-inside:avoid }
@@ -1368,6 +1370,16 @@ function calcFarol(p){
   return {cor:"verde", label:"Em andamento", dias:0};
 }
 const FAROL_HEX = {vermelho:"#B23A2E", amarelo:"#B9791A", laranja:"#C2530E", verde:"#2C7A4B", azul:"#2758A8", cinza:"#8A94A3", preto:"#3D4148"};
+// status manual do card na Esteira — independente do farol automático do resto do app. Por
+// padrão é automático (calcFarol); a pessoa pode trocar pra um desses 5, ficando fixo até
+// escolher "Automático" de novo
+const STATUS_MANUAL_ESTEIRA = {
+  ok: {label:"Em andamento", cor:"verde"},
+  atencao: {label:"Atenção", cor:"amarelo"},
+  critico: {label:"Crítico", cor:"vermelho"},
+  impedido: {label:"Impedido", cor:"laranja"},
+  bloqueado: {label:"Bloqueado", cor:"vermelho"},
+};
 
 function nomeProjeto(id){ const p = PROJETOS.find(x=>x.id===id); return p?p.nome:"(projeto removido)"; }
 function registrarHistoricoAuto(pid, fase, nota, bloqueio){
@@ -2932,8 +2944,30 @@ function renderEsteiraOnePage(){
     // troca o emoji "🟡" (que só existe pro amarelo) por uma bolinha colorida de verdade,
     // igual em todos os farois — fica consistente pra Verde, Atrasado, Vermelho, Concluído, Sem fase
     const FAROL_ROTULO_CURTO = {amarelo:"Impedimento", laranja:"Atrasado", vermelho:"Atrasado", verde:"Em andamento", azul:"Concluído", cinza:"Sem fase"};
-    const rotuloCurto = FAROL_ROTULO_CURTO[f.cor] || f.label;
-    const bolinhaFarol = `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${f.cor==='cinza'?'#AAB2BE':FAROL_HEX[f.cor]};margin-right:5px"></span>`;
+    // status manual do card (independente do farol automático usado no resto do app): se a pessoa
+    // escolheu um dos 5 fixos, mostra ele; senão, mostra o automático de sempre
+    const statusManual = p.statusManualEsteira ? STATUS_MANUAL_ESTEIRA[p.statusManualEsteira] : null;
+    const corPill = statusManual ? statusManual.cor : f.cor;
+    const rotuloCurto = statusManual ? statusManual.label : (FAROL_ROTULO_CURTO[f.cor] || f.label);
+    const bolinhaFarol = `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${corPill==='cinza'?'#AAB2BE':FAROL_HEX[corPill]};margin-right:5px"></span>`;
+    const opcoesStatusHTML = `<option value="">— Automático —</option>
+        ${Object.entries(STATUS_MANUAL_ESTEIRA).map(([k,v])=>`<option value="${k}" ${p.statusManualEsteira===k?"selected":""}>${esc(v.label)}</option>`).join("")}`;
+    // quando já tem escolha manual, mostra só uma setinha pequena — mas o campo de seleção
+    // continua exatamente por baixo dela (transparente, cobrindo a setinha toda), então clicar
+    // em qualquer canto da setinha abre a lista normalmente. Antes o campo tinha ficado estreito
+    // DEMAIS (16px sem contorno visível), dava pra clicar mas não dava pra ver onde.
+    const seletorStatusHTML = p.statusManualEsteira
+      ? `<span class="no-print" style="position:relative;display:inline-block;width:18px;height:16px;border:1px solid var(--line);border-radius:4px;background:#fff">
+          <span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:9px;color:var(--gray);pointer-events:none">▾</span>
+          <select class="sel-status-manual-esteira" data-proj="${p.id}" title="Status manual definido — clique pra trocar ou voltar ao automático"
+            style="position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;border:none">
+            ${opcoesStatusHTML}
+          </select>
+        </span>`
+      : `<select class="sel-status-manual-esteira no-print" data-proj="${p.id}" title="Escolher status manual"
+          style="font-size:9px;color:var(--gray);border:none;background:transparent;max-width:110px">
+          ${opcoesStatusHTML}
+        </select>`;
     const auto = HISTORICO.filter(h=>h.projetoId===p.id).sort((a,b)=> b.data.localeCompare(a.data)).slice(0,3).map(h=>h.nota||"").filter(Boolean);
     const override = normalizarOverrideCard(dE.overridesCard[p.id]).texto.trim();
     const usandoOverride = !bloqueado && !!override;
@@ -2941,9 +2975,12 @@ function renderEsteiraOnePage(){
     const corpo = bloqueado
       ? `<span class="pill" style="background:${FAROL_HEX.preto}22;color:${FAROL_HEX.preto}">🛑 Bloqueado</span>
          <div class="ri-nota" style="margin-top:8px"><b>Motivo:</b> ${esc(p.motivoBloqueioProjeto||"Sem motivo registrado")}</div>`
-      : `<div style="display:flex;justify-content:space-between;align-items:center">
-           <span class="pill" style="background:${f.cor==='cinza'?'#EDEFF3':FAROL_HEX[f.cor]+'22'};color:${f.cor==='cinza'?'var(--gray)':FAROL_HEX[f.cor]}">${bolinhaFarol}${esc(rotuloCurto)}</span>
-           <button class="icon-btn no-print" data-act="editar-card-esteira" data-proj="${p.id}" title="${usandoOverride?'Editar texto manual':'Editar (por padrão é automático, puxado do Histórico)'}" style="font-size:10px">✎${usandoOverride?" (manual)":""}</button>
+      : `<div style="display:flex;justify-content:space-between;align-items:center;gap:6px;flex-wrap:wrap">
+           <div style="display:flex;flex-direction:column;gap:2px">
+             <span class="pill" style="width:fit-content;background:${corPill==='cinza'?'#EDEFF3':FAROL_HEX[corPill]+'22'};color:${corPill==='cinza'?'var(--gray)':FAROL_HEX[corPill]}">${bolinhaFarol}${esc(rotuloCurto)}</span>
+             ${seletorStatusHTML}
+           </div>
+           <button class="icon-btn no-print" data-act="editar-card-esteira" data-proj="${p.id}" title="${usandoOverride?'Editar texto manual':'Editar (por padrão é automático, puxado do Histórico)'}" style="font-size:10px">✎</button>
          </div>
          <ul style="margin:10px 0 0;padding-left:18px;font-size:12.5px;line-height:1.6">
            ${bullets.length ? bullets.map(b=>`<li>${esc(b)}</li>`).join("") : '<li style="color:var(--gray);list-style:none;margin-left:-18px">Sem atualização recente registrada</li>'}
@@ -3069,6 +3106,12 @@ function renderEsteiraOnePage(){
   });
   $("esteiraConteudo").querySelectorAll('[data-act="editar-card-esteira"]').forEach(btn=>{
     btn.onclick = ()=> abrirModalCardEsteira(sel, btn.dataset.proj);
+  });
+  $("esteiraConteudo").querySelectorAll('.sel-status-manual-esteira').forEach(sel2=>{
+    sel2.onchange = e=>{
+      const p = PROJETOS.find(x=>x.id===e.target.dataset.proj);
+      if(p){ p.statusManualEsteira = e.target.value || null; salvar(); renderEsteiraOnePage(); }
+    };
   });
   $("esteiraConteudo").querySelectorAll(".btn-add-item-esteira").forEach(btn=>{
     btn.onclick = ()=>{
