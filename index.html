@@ -4,6 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Portfólio de Projetos — Acompanhamento Semanal</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
   :root{
     --ink:#101826; --navy:#0F2A4A; --blue:#2758A8; --blue-soft:#E8EFFA;
@@ -68,22 +70,6 @@
   .modal{background:#fff;border-radius:12px;padding:22px;max-width:480px;width:100%;max-height:88vh;overflow-y:auto}
   .modal h3{margin:0 0 14px;font-size:15px}
   .row-item{border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin-bottom:10px;background:#fff}
-  .timeline{position:relative;padding-left:26px;margin-top:6px}
-  .timeline::before{content:"";position:absolute;left:6px;top:2px;bottom:2px;width:2px;background:var(--line)}
-  .timeline-item{position:relative;padding-bottom:20px}
-  .timeline-item:last-child{padding-bottom:0}
-  .timeline-item::before{content:"";position:absolute;left:-26px;top:2px;width:13px;height:13px;border-radius:50%;
-    border:2.5px solid #fff;box-shadow:0 0 0 1.5px var(--line)}
-  .timeline-item.marco::before{background:#C9A227}
-  .timeline-item.gate::before{background:var(--purple)}
-  .timeline-item .tl-data{font-size:10.5px;color:var(--gray);font-weight:800;text-transform:uppercase}
-  .timeline-item .tl-titulo{font-weight:700;font-size:13px;margin:2px 0}
-  .timeline-item .tl-desc{font-size:12px;color:var(--ink);line-height:1.4}
-  .timeline-item.clicavel{cursor:pointer}
-  .timeline-item .tl-comentario{font-size:12px;color:var(--ink);line-height:1.5;background:var(--bg);
-    border-radius:8px;padding:10px 12px;margin-top:6px;display:none;white-space:pre-wrap}
-  .timeline-item.aberto .tl-comentario{display:block}
-  .timeline-item .tl-toggle{font-size:11px;color:var(--blue);font-weight:700}
   .timeline-h-wrap{overflow-x:auto;padding:10px 4px 4px}
   .timeline-h{display:grid;grid-auto-flow:column;grid-auto-columns:80px;align-items:stretch;position:relative;min-width:min-content;padding:0 8px}
   .timeline-h::before{content:"";position:absolute;left:0;right:0;top:50%;height:2px;background:var(--line);z-index:0}
@@ -114,16 +100,6 @@
   .ri-meta{display:flex;flex-wrap:wrap;gap:12px;font-size:11.5px;color:var(--gray)}
   .ri-meta b{color:var(--ink)}
   .ri-actions{display:flex;gap:8px;margin-top:8px}
-  .task-track{position:relative;height:16px;background:#EEF1F6;border-radius:99px;overflow:hidden;margin:6px 0 2px}
-  .task-bar{position:absolute;top:0;bottom:0;border-radius:99px}
-  .task-bar.nao_iniciado{background:#E6E0F5}
-  .task-bar.em_andamento{background:#A996DE}
-  .task-bar.concluido{background:#5B3FA0}
-  .task-bar.atrasado{background:#C0392B}
-  .task-bar.marco{background:repeating-linear-gradient(45deg,var(--navy),var(--navy) 4px,#3A5A85 4px,#3A5A85 8px)}
-  .task-bar.marco.concluido{background:repeating-linear-gradient(45deg,var(--purple),var(--purple) 4px,#8B72C9 4px,#8B72C9 8px)}
-  .task-bar.marco.atrasado{background:repeating-linear-gradient(45deg,var(--red),var(--red) 4px,#D97166 4px,#D97166 8px)}
-
   /* ---- grade de Gantt diária (igual à aba Gantt do Excel) ---- */
   .gantt-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:8px}
   table.gantt-grade{border-collapse:collapse;font-size:10px;white-space:nowrap}
@@ -149,9 +125,6 @@
   .gc-em_andamento{background:#A996DE}
   .gc-concluido{background:#5B3FA0}
   .gc-atrasado{background:#C0392B}
-  .gc-marco{background:var(--navy)}
-  .gc-marco-concluido{background:var(--purple)}
-  .gc-marco-atrasado{background:var(--red)}
   .gc-pop{background:#3B4499}
   .gc-pop-concluido{background:#2A3170}
   .gc-pop-atrasado{background:#C0392B}
@@ -171,11 +144,6 @@
   .kanban-card .kc-nome{font-weight:700;font-size:12px;line-height:1.3;margin-bottom:3px}
   .kanban-card .kc-fase{font-size:10.5px;color:var(--gray);line-height:1.3}
   .kanban-empty{font-size:11px;color:#AAB2BE;text-align:center;padding:14px 0}
-  .task-hoje{position:absolute;top:-3px;bottom:-3px;width:2px;background:var(--red)}
-  .task-marco{position:absolute;top:50%;width:12px;height:12px;background:var(--navy);
-    transform:translate(-50%,-50%) rotate(45deg);border-radius:2px}
-  .task-marco.concluido{background:var(--purple)}
-  .task-marco.atrasado{background:var(--red)}
 
   body.modo-apresentacao header{ display:none !important; }
   body.modo-apresentacao main{ padding-top:16px; }
@@ -230,7 +198,6 @@
   <button data-tab="onepage">One-Page (Sexta)</button>
   <button data-tab="ficha">Ficha do Projeto</button>
   <button data-tab="historico">Histórico</button>
-  <button data-tab="cronograma">Cronograma</button>
   <button data-tab="esteira">One-Page Esteira</button>
   <button data-tab="milestones">Milestones</button>
 </nav>
@@ -347,15 +314,17 @@
     <div id="fichaConteudo" class="hide">
       <div class="card" id="fichaCabecalho"></div>
       <div class="card">
-        <h2>Milestone atual — condição do gate</h2>
-        <div id="fichaGate"></div>
-      </div>
-      <div class="card">
-        <div class="toolbar no-print" style="justify-content:space-between">
-          <h2 style="margin:0">Timeline do Projeto</h2>
+        <h2>Compromissos</h2>
+        <div class="desc">O que ficou combinado agora, com quem e até quando — vira um registro no Histórico com prazo.</div>
+        <div class="grid2 no-print">
+          <div class="field"><label>O que ficou combinado</label><textarea id="cpNota" placeholder="Ex.: enviar cotação atualizada"></textarea></div>
+          <div>
+            <div class="field"><label>Responsável</label><input type="text" id="cpResp" placeholder="nome"></div>
+            <div class="field"><label>Prazo</label><input type="date" id="cpPrazo"></div>
+          </div>
         </div>
-        <div class="desc">Marcos importantes registrados no Histórico, e milestones do Plano de Marcos já realizados — em ordem cronológica.</div>
-        <div id="fichaTimeline"></div>
+        <button class="btn btn-sm no-print" id="btnAddCompromisso">+ Registrar compromisso</button>
+        <div id="fichaCompromissos" style="margin-top:14px"></div>
       </div>
       <div class="card">
         <h2>Compliance de Qualidade (BPx)</h2>
@@ -383,9 +352,32 @@
         <div class="desc">Planejado x realizado, milestone a milestone — disponível a partir de "Escopo em assinatura" (G2), quando já existe um cronograma pra basear as datas.</div>
         <div id="fichaPlanoMarcos"></div>
       </div>
-      <div class="card">
-        <h2>Histórico completo</h2>
-        <div id="fichaHistorico"></div>
+      <div class="card no-print">
+        <div class="toolbar" style="justify-content:space-between">
+          <h2 style="margin:0">Nova tarefa</h2>
+          <label style="margin:0;text-transform:none;font-weight:600;color:var(--ink);display:flex;align-items:center;gap:6px">
+            Início do cronograma: <input type="date" id="cronoDataInicio" style="width:auto">
+          </label>
+        </div>
+        <div class="grid2">
+          <div class="field"><label>Código (ex.: 5.6.1)</label><input type="text" id="tfCodigo" placeholder="opcional"></div>
+          <div class="field"><label>Tarefa</label><input type="text" id="tfNome" placeholder="Ex.: Compra do domínio"></div>
+        </div>
+        <div class="grid2">
+          <div class="field"><label>Responsável</label><input type="text" id="tfResp" placeholder="nome"></div>
+          <div class="field"><label>Início Previsto</label><input type="date" id="tfInicio"></div>
+        </div>
+        <div class="grid2">
+          <div class="field"><label>Término Previsto</label><input type="date" id="tfFim"></div>
+          <div class="field"><label>Milestone Associado</label><select id="tfMilestone"><option value="">— selecione —</option></select></div>
+        </div>
+        <div class="grid2">
+          <div class="field"><label>Status</label>
+            <select id="tfStatus"><option>Não iniciado</option><option>Em andamento</option><option>Concluído</option><option>Atrasado</option></select>
+          </div>
+          <div></div>
+        </div>
+        <button class="btn" id="btnAddTarefa">+ Adicionar tarefa</button>
       </div>
       <div class="card">
         <h2>Cronograma</h2>
@@ -411,61 +403,13 @@
     </div>
   </section>
 
-  <!-- ===== CRONOGRAMA ===== -->
-  <section id="tab-cronograma" class="hide">
-    <div class="card no-print">
-      <div class="toolbar" style="justify-content:space-between">
-        <div>
-          <h2 style="margin-bottom:2px">Cronograma por projeto</h2>
-          <div class="desc" style="margin-bottom:0">Use nos projetos que já saíram de Escopo e têm tarefas reais definidas.</div>
-        </div>
-        <button class="btn btn-soft btn-sm" id="btnImprimirCronograma">🖨 Imprimir / Exportar PDF</button>
-      </div>
-      <div class="toolbar">
-        <select id="cronoProjeto" style="max-width:320px"><option value="">— selecione um projeto —</option></select>
-        <label style="margin:0;text-transform:none;font-weight:600;color:var(--ink);display:flex;align-items:center;gap:6px">
-          Início do cronograma: <input type="date" id="cronoDataInicio" style="width:auto">
-        </label>
-      </div>
-    </div>
-    <div class="card" id="cronoTituloImpresso" style="display:none"></div>
-    <div class="card" id="cronoSemProjeto"><div class="empty">Selecione um projeto acima.</div></div>
-    <div id="cronoConteudo" class="hide">
-      <div class="card no-print">
-        <h2>Nova tarefa</h2>
-        <div class="grid2">
-          <div class="field"><label>Código (ex.: 5.6.1)</label><input type="text" id="tfCodigo" placeholder="opcional"></div>
-          <div class="field"><label>Tarefa</label><input type="text" id="tfNome" placeholder="Ex.: Compra do domínio"></div>
-        </div>
-        <div class="grid2">
-          <div class="field"><label>Responsável</label><input type="text" id="tfResp" placeholder="nome"></div>
-          <div class="field"><label>Início Previsto</label><input type="date" id="tfInicio"></div>
-        </div>
-        <div class="grid2">
-          <div class="field"><label>Término Previsto</label><input type="date" id="tfFim"></div>
-          <div class="field"><label>Milestone Associado</label><select id="tfMilestone"><option value="">— selecione —</option></select></div>
-        </div>
-        <div class="grid2">
-          <div class="field"><label>Status</label>
-            <select id="tfStatus"><option>Não iniciado</option><option>Em andamento</option><option>Concluído</option><option>Atrasado</option></select>
-          </div>
-          <div></div>
-        </div>
-        <button class="btn" id="btnAddTarefa">+ Adicionar tarefa</button>
-      </div>
-      <div class="card">
-        <h2>Tarefas (<span id="totalTarefas">0</span>)</h2>
-        <div id="listaTarefas"></div>
-      </div>
-    </div>
-  </section>
-
   <!-- ===== ONE-PAGE ESTEIRA ===== -->
   <section id="tab-esteira" class="hide">
     <div class="card no-print">
       <div class="toolbar" style="justify-content:space-between">
         <select id="esteiraSelect" style="max-width:280px"><option value="">— selecione a esteira —</option></select>
         <button class="btn btn-soft btn-sm" id="btnImprimirEsteira">🖨 Imprimir / Exportar PDF</button>
+        <button class="btn btn-soft btn-sm" id="btnEnviarEmailEsteira">📧 Enviar por e-mail</button>
       </div>
     </div>
     <div class="card" id="esteiraSemSelecao"><div class="empty">Selecione uma esteira acima — agrupa sozinho os projetos pelo número antes do ponto no nome (ex.: "3.2" e "3.3" caem na esteira 3).</div></div>
@@ -628,14 +572,18 @@
     </div>
     <div class="grid2">
       <div class="field"><label>Responsável</label><input type="text" id="mrResp"></div>
+      <div class="field"><label>Prazo do compromisso <span style="text-transform:none;font-weight:400;color:var(--gray)">(opcional)</span></label><input type="date" id="mrPrazoCompromisso"></div>
+    </div>
+    <div class="grid2">
       <div class="field">
         <label style="display:flex;align-items:center;gap:6px;margin-bottom:5px">
           <input type="checkbox" id="mrDecisao" style="width:auto">Precisa de decisão
         </label>
         <label style="display:flex;align-items:center;gap:6px;margin-bottom:5px">
-          <input type="checkbox" id="mrMarco" style="width:auto">⭐ Marco importante (aparece na timeline)
+          <input type="checkbox" id="mrMarco" style="width:auto">⭐ Marco importante (destaca no Histórico)
         </label>
       </div>
+      <div></div>
     </div>
     <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:6px">
       <button class="btn btn-soft btn-sm" id="mrCancelar">Cancelar</button>
@@ -847,8 +795,9 @@ function salvar(){
   temMudancasSemBackup = true;
   ghAgendarPush();
 }
+let suprimirAvisoSair = false; // liga temporariamente durante o envio por e-mail, pra "Sair do site?" não interromper
 window.addEventListener("beforeunload", e=>{
-  if(temMudancasSemBackup){
+  if(temMudancasSemBackup && !suprimirAvisoSair){
     e.preventDefault();
     e.returnValue = ""; // o texto customizado não aparece na maioria dos navegadores, mas o aviso sim
     return "";
@@ -978,8 +927,15 @@ function mesclarRemoto(remoto, opcoes={}){
     if(!forcar && TOMBSTONES.projetos[p.id] && TOMBSTONES.projetos[p.id] >= (p.atualizadoEm||0)) return; // já apagamos, e é mais novo
     const existenteLocal = PROJETOS.find(x=>x.id===p.id);
     if(existenteLocal){
+      // Anotação livre (log): mescla item a item por id, SEMPRE — independente de quem "vence"
+      // o registro inteiro logo abaixo. Sem isso, o Object.assign de baixo faria um "wholesale
+      // replace" do array inteiro sempre que o outro lado ganhasse por ter mexido em QUALQUER
+      // outro campo do projeto (fase, prazo, etc.), apagando anotações antigas silenciosamente —
+      // a mesma classe de bug já corrigida uma vez no Plano de Marcos.
+      const anotMesclado = mesclarAnotacaoLog(existenteLocal.anotacaoLog, p.anotacaoLog);
       if(forcar) mesclarPreenchendoLacunas(existenteLocal, p);
       else if(vence(p.atualizadoEm, existenteLocal.atualizadoEm)) Object.assign(existenteLocal, p);
+      if(anotMesclado) existenteLocal.anotacaoLog = anotMesclado;
       return;
     }
     const nome = (p.nome||"").trim();
@@ -988,6 +944,7 @@ function mesclarRemoto(remoto, opcoes={}){
       if(p.id!==existentePorNome.id) remapProjeto[p.id] = existentePorNome.id;
       // casou só pelo nome (ids diferentes) — precisa trazer os DADOS do lado mais recente também,
       // senão o merge só redireciona tarefas/histórico e perde fase/prazo/farol do remoto (era o bug)
+      const anotMescladoNome = mesclarAnotacaoLog(existentePorNome.anotacaoLog, p.anotacaoLog);
       if(forcar){
         mesclarPreenchendoLacunas(existentePorNome, p);
       } else if(vence(p.atualizadoEm, existentePorNome.atualizadoEm)){
@@ -995,6 +952,7 @@ function mesclarRemoto(remoto, opcoes={}){
         Object.assign(existentePorNome, p);
         existentePorNome.id = idLocalPreservado; // nunca troca o id local, tudo mais referencia ele
       }
+      if(anotMescladoNome) existentePorNome.anotacaoLog = anotMescladoNome;
       return;
     }
     if(!idsProjLocais.has(p.id)){ PROJETOS.push(p); porNomeLocal[nome]=p; idsProjLocais.add(p.id); }
@@ -1023,12 +981,25 @@ function mesclarRemoto(remoto, opcoes={}){
   TAREFAS = mesclarLista(TAREFAS, remoto.tarefas, "tarefas");
   HISTORICO = mesclarLista(HISTORICO, remoto.historico, "historico");
 
-  // Planos de marcos: estrutura aninhada (sem id por linha) — simplificado, quem sincronizou
-  // por último "ganha" nos projetos em que os dois mexeram; projetos que só um lado tem plano
-  // não se perdem
+  // Planos de marcos: estrutura aninhada (sem id por linha, casada por nome do milestone —
+  // a lista de milestones é fixa). Cada LINHA carrega seu próprio atualizadoEm (carimbado em
+  // atualizarLinha, dentro de renderPlanoMarcos) e a mesclagem compara linha a linha, igual
+  // Projetos/Tarefas/Histórico — nunca um "wholesale replace" do plano inteiro, que apagava
+  // datas recém-digitadas sempre que uma sincronização terminava antes do push local (a data
+  // "sumia" do Plano de Marcos mesmo com o Cronograma já refletindo o valor certo).
   if(remoto.planos){
-    if(forcar){ Object.keys(remoto.planos).forEach(chave=>{ if(!PLANOS[chave]) PLANOS[chave] = remoto.planos[chave]; }); }
-    else { PLANOS = {...PLANOS, ...remoto.planos}; }
+    Object.keys(remoto.planos).forEach(chave=>{
+      const remotoPlano = remoto.planos[chave];
+      if(!Array.isArray(remotoPlano)) return;
+      if(!PLANOS[chave]){ PLANOS[chave] = remotoPlano; return; }
+      const localPlano = PLANOS[chave];
+      remotoPlano.forEach(rm=>{
+        const lm = localPlano.find(x=>x.milestone===rm.milestone);
+        if(!lm){ localPlano.push(rm); return; }
+        if(forcar) mesclarPreenchendoLacunas(lm, rm);
+        else if(vence(rm.atualizadoEm, lm.atualizadoEm)) Object.assign(lm, rm);
+      });
+    });
   }
   // Esteiras: cada lista dentro dela (timeline, dependências, riscos, próximos passos) mescla
   // ITEM POR ITEM, por id — nunca troca a esteira inteira de uma vez, senão um item novo criado
@@ -1392,6 +1363,95 @@ function ultimaAtualizacao(projetoId){
   return itens.length ? itens[0] : null;
 }
 
+/* ---------- Anotação livre do projeto: log com data, igual ao "Informações do projeto" do Daily
+   (substituiu o campo único antigo p.bloqueio). Cada entrada tem id próprio, pra sincronizar sem
+   perder anotação de ninguém — nunca é um "wholesale replace" do log inteiro (era exatamente esse
+   tipo de bug, já corrigido uma vez no Plano de Marcos, que a gente evita aqui de propósito). ---------- */
+function hashTextoAnot(s){
+  // hash simples e determinístico (mesmo texto = sempre o mesmo id, em qualquer computador) — usado
+  // só pra batizar entradas antigas que nunca tiveram id (de antes dessa funcionalidade existir)
+  let h = 0; for(let i=0;i<s.length;i++){ h = ((h<<5)-h + s.charCodeAt(i))|0; }
+  return "legado_"+Math.abs(h).toString(36);
+}
+function anotacaoLogDe(p){
+  if(!p.anotacaoLog){
+    p.anotacaoLog = [];
+    if(p.bloqueio){ p.anotacaoLog.push({id:novoId(), data:hojeISO(), texto:p.bloqueio}); delete p.bloqueio; }
+  }
+  p.anotacaoLog.forEach(e=>{ if(!e.id) e.id = hashTextoAnot((e.data||"")+"|"+(e.texto||"")); });
+  return p.anotacaoLog;
+}
+function ultimaAnotacao(p){
+  const log = anotacaoLogDe(p).filter(e=>!e.excluido);
+  return log.length ? log[log.length-1] : null;
+}
+function renderAnotacaoLogHTML(p){
+  const log = anotacaoLogDe(p).filter(e=>!e.excluido);
+  if(!log.length) return '<div style="color:var(--gray);font-size:12.5px">Nenhuma anotação registrada ainda.</div>';
+  return [...log].reverse().map(e=>
+    `<div style="font-size:12.5px;margin-bottom:6px;padding-bottom:6px;border-bottom:1px solid var(--line)">
+      <div><b>${brDate(e.data)}:</b> ${esc(e.texto)}</div>
+      <div style="margin-top:3px"><a href="#" data-act="editar-anot" data-id="${e.id}" style="font-size:11.5px;color:var(--blue);text-decoration:none;margin-right:10px">✎ editar</a><a href="#" data-act="excluir-anot" data-id="${e.id}" style="font-size:11.5px;color:var(--red);text-decoration:none">✕ cancelar</a></div>
+    </div>`
+  ).join("");
+}
+function wireAnotacaoLog(pid, rerender){
+  const p = PROJETOS.find(x=>x.id===pid);
+  if(!p || !$("fcAnotHistorico")) return;
+  $("fcAnotHistorico").innerHTML = renderAnotacaoLogHTML(p);
+  $("fcAnotHistorico").querySelectorAll('[data-act="editar-anot"]').forEach(a=>{
+    a.onclick = ev=>{
+      ev.preventDefault();
+      const entrada = anotacaoLogDe(p).find(x=>x.id===a.dataset.id);
+      if(!entrada) return;
+      const novoTexto = prompt("Editar anotação:", entrada.texto);
+      if(novoTexto===null) return;
+      if(!novoTexto.trim()){ alert('A anotação não pode ficar em branco — use "cancelar" se quiser removê-la.'); return; }
+      entrada.texto = novoTexto.trim(); entrada.editadoEm = Date.now();
+      salvar(); rerender();
+    };
+  });
+  $("fcAnotHistorico").querySelectorAll('[data-act="excluir-anot"]').forEach(a=>{
+    a.onclick = ev=>{
+      ev.preventDefault();
+      if(!confirm("Cancelar esta anotação?")) return;
+      const entrada = anotacaoLogDe(p).find(x=>x.id===a.dataset.id);
+      if(!entrada) return;
+      entrada.excluido = true; entrada.excluidoEm = Date.now(); entrada.editadoEm = Date.now();
+      salvar(); rerender();
+    };
+  });
+  if($("btnFcAnotAdd")) $("btnFcAnotAdd").onclick = ()=>{
+    const texto = $("fcAnotNova").value.trim();
+    if(!texto) return;
+    anotacaoLogDe(p).push({id:novoId(), data:hojeISO(), texto});
+    registrarHistoricoAuto(p.id, p.faseAtual, `Anotação: ${texto}`, "");
+    salvar();
+    $("fcAnotNova").value = "";
+    renderPortfolio(); renderHistorico(); rerender();
+  };
+}
+// mescla item a item por id (nunca substitui o log inteiro de uma vez) — usado tanto na
+// sincronização remota quanto na consolidação de projetos duplicados
+function mesclarAnotacaoLog(localLog, remotoLog){
+  if(!remotoLog || !remotoLog.length) return localLog || null;
+  localLog = localLog || [];
+  const carimbar = log=> log.forEach(e=>{ if(!e.id) e.id = hashTextoAnot((e.data||"")+"|"+(e.texto||"")); });
+  carimbar(localLog); carimbar(remotoLog);
+  const porId = {}; localLog.forEach(e=> porId[e.id]=e);
+  remotoLog.forEach(e=>{
+    const local = porId[e.id];
+    if(!local){ localLog.push({...e}); porId[e.id]=e; return; }
+    const tLocal = local.editadoEm||0, tRemoto = e.editadoEm||0;
+    if(tRemoto > tLocal){
+      local.texto = e.texto; local.editadoEm = e.editadoEm;
+      if(e.excluido) local.excluido = true;
+      if(e.excluidoEm) local.excluidoEm = e.excluidoEm;
+    }
+  });
+  return localLog;
+}
+
 /* ---------- navegação por abas ---------- */
 document.querySelectorAll("nav button").forEach(b=>{
   b.onclick = ()=> irParaAba(b.dataset.tab);
@@ -1417,10 +1477,6 @@ function montarSelects(){
   const filtroAtual = $("filtroHistProjeto").value;
   $("filtroHistProjeto").innerHTML = '<option value="">Todos os projetos</option>' + optsProj;
   $("filtroHistProjeto").value = filtroAtual;
-
-  const cronoAtual = $("cronoProjeto").value;
-  $("cronoProjeto").innerHTML = '<option value="">— selecione um projeto —</option>' + optsProj;
-  $("cronoProjeto").value = cronoAtual;
 
   const fichaAtual = $("fichaProjeto").value;
   $("fichaProjeto").innerHTML = '<option value="">— selecione um projeto —</option>' + optsProj;
@@ -1457,7 +1513,11 @@ function renderPortfolio(){
       <td><select class="p-fase">${optsFase(p.faseAtual)}</select></td>
       <td><input type="date" class="p-prazo" value="${p.prazoPrevisto||""}"></td>
       <td><input type="text" class="p-resp" value="${esc(p.responsavel||"")}" placeholder="responsável"></td>
-      <td style="min-width:260px"><input type="text" class="p-bloq" value="${esc(p.bloqueio||"")}" placeholder="anotação livre (não afeta o farol)" style="width:100%"></td>
+      <td style="min-width:260px">${(()=>{ const u = ultimaAnotacao(p);
+        return u
+          ? `<div class="p-bloq" data-act="ver-anot" title="${esc(brDate(u.data)+": "+u.texto)} — clique para ver/editar na Ficha" style="cursor:pointer;color:var(--ink);font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:260px">${esc(u.texto)}</div>`
+          : `<div class="p-bloq" data-act="ver-anot" title="Nenhuma anotação — clique para adicionar na Ficha" style="cursor:pointer;color:var(--gray);font-size:12.5px">— sem anotação —</div>`;
+      })()}</td>
       <td>${f.cor==='preto'
           ? `<span title="${esc(f.label)}" style="cursor:help;font-size:15px">🛑</span>`
           : `<span title="${esc(f.label)}" style="display:inline-block;width:15px;height:15px;border-radius:50%;background:${f.cor==='cinza'?'#AAB2BE':FAROL_HEX[f.cor]};cursor:help;vertical-align:middle"></span>`
@@ -1468,7 +1528,6 @@ function renderPortfolio(){
         <button class="icon-btn" data-act="bloquear" title="${p.statusProjeto==='Bloqueado'?'Reativar projeto':'Marcar como Bloqueado/Parado'}" style="color:${p.statusProjeto==='Bloqueado'?FAROL_HEX.preto:'var(--gray)'}">🛑</button>
         <button class="icon-btn" data-act="ficha" title="Ver ficha completa (one-page deste projeto)">📄</button>
         <button class="icon-btn" data-act="hist" title="Ver histórico deste projeto">🕘</button>
-        <button class="icon-btn" data-act="crono" title="Ver cronograma">📅</button>
         <button class="icon-btn" data-act="del" title="Remover">✕</button>
       </td>
     </tr>`;
@@ -1482,23 +1541,14 @@ function renderPortfolio(){
       p.faseAtual = e.target.value; p.faseAtualDesde = hojeISO(); salvar();
       const nota = faseAnterior ? `Fase alterada de "${faseAnterior}" para "${p.faseAtual}"` : `Fase definida como "${p.faseAtual}"`;
       registrarHistoricoAuto(pid, p.faseAtual, nota, "");
-      fecharFaseAtualAnterior(p, faseAnterior);
-      sincronizarFaseAtualCronograma(p); salvar();
       renderTudo();
     };
     tr.querySelector(".p-prazo").onchange = e=>{
       p.prazoPrevisto = e.target.value || null; salvar();
-      sincronizarFaseAtualCronograma(p); salvar();
       renderTudo();
     };
     tr.querySelector(".p-resp").onchange = e=>{ p.responsavel = e.target.value.trim(); salvar(); };
-    tr.querySelector(".p-bloq").onchange = e=>{
-      p.bloqueio = e.target.value.trim(); salvar();
-      if(p.bloqueio){
-        registrarHistoricoAuto(pid, p.faseAtual, `Anotação: ${p.bloqueio}`, "");
-      }
-      renderTudo();
-    };
+    tr.querySelector('[data-act="ver-anot"]').onclick = ()=>{ $("fichaProjeto").value = pid; irParaAba("ficha"); };
     tr.querySelector('[data-act="impedimento"]').onclick = ()=>{
       if(p.temImpedimento){
         if(confirm(`O impedimento de "${p.nome}" foi resolvido? O farol volta a considerar só o prazo.`)){
@@ -1521,7 +1571,7 @@ function renderPortfolio(){
         if(confirm(`Reativar "${p.nome}"? Ele volta a aparecer no fluxo normal do pipeline.`)){
           p.statusProjeto = "";
           registrarHistoricoAuto(pid, p.faseAtual, "Projeto reativado — voltou a andar.", "");
-          sincronizarFaseAtualCronograma(p); salvar(); renderTudo();
+          salvar(); renderTudo();
         }
       } else {
         const motivo = prompt(`Por que "${p.nome}" está parando ou não vai ter continuação?`);
@@ -1529,7 +1579,7 @@ function renderPortfolio(){
         p.statusProjeto = "Bloqueado";
         p.motivoBloqueioProjeto = motivo.trim();
         registrarHistoricoAuto(pid, p.faseAtual, `Projeto marcado como BLOQUEADO/PARADO: ${motivo.trim()||"(sem motivo informado)"}`, "");
-        sincronizarFaseAtualCronograma(p); salvar(); renderTudo();
+        salvar(); renderTudo();
       }
     };
     tr.querySelector('[data-act="add"]').onclick = ()=>{
@@ -1537,7 +1587,8 @@ function renderPortfolio(){
         `Prazo ${p.prazoPrevisto?brDate(p.prazoPrevisto):"não definido"}`,
         `Responsável ${p.responsavel||"não definido"}`];
       let nota = "Checkpoint: " + partes.join(", ");
-      if(p.bloqueio) nota += ` — Anotação: ${p.bloqueio}`;
+      const anot = ultimaAnotacao(p);
+      if(anot) nota += ` — Anotação: ${anot.texto}`;
       if(!confirm(`Registrar checkpoint no Histórico de "${p.nome}"?\n\n${nota}`)) return;
       registrarHistoricoAuto(pid, p.faseAtual, nota, "");
       renderTudo();
@@ -1547,7 +1598,6 @@ function renderPortfolio(){
       $("filtroHistProjeto").value = pid;
       irParaAba("historico");
     };
-    tr.querySelector('[data-act="crono"]').onclick = ()=>{ $("cronoProjeto").value = pid; irParaAba("cronograma"); };
     tr.querySelector('[data-act="del"]').onclick = ()=>{
       if(confirm(`Remover "${p.nome}"? O histórico e cronograma dele também serão removidos.`)){
         const agora = Date.now();
@@ -1580,7 +1630,7 @@ function pontuarCompletudeProjeto(p){
   if(p.faseAtual) pontos += 1000;
   if(p.prazoPrevisto) pontos += 100;
   if(p.responsavel) pontos += 50;
-  if(p.bloqueio) pontos += 20;
+  if(ultimaAnotacao(p)) pontos += 20;
   if(p.statusProjeto==="Bloqueado") pontos += 10;
   if(p.temImpedimento) pontos += 10;
   pontos += Math.min((p.atualizadoEm||0) / 1e15, 5); // desempate fino, nunca domina os critérios acima
@@ -1594,7 +1644,7 @@ function pontuarCompletudeProjeto(p){
 function consolidarTarefasDuplicadas(){
   const grupos = {};
   TAREFAS.forEach(t=>{
-    const tipoKey = t.isMarco?"marco":t.isVSC?"vsc":t.isBPX?"bpx":t.isFaseAtual?"faseatual":null;
+    const tipoKey = t.isMarco?"marco":t.isVSC?"vsc":t.isBPX?"bpx":null;
     if(!tipoKey) return; // só afeta as sincronizadas, nunca tarefa normal
     const identificador = t.isMarco ? (t.milestone||"") : (t.nome||"");
     const chave = t.projetoId+"|"+tipoKey+"|"+identificador;
@@ -1634,7 +1684,7 @@ function consolidarProjetosDuplicados(){
       remap[perdedor.id] = vencedor.id;
       // completa no vencedor qualquer campo que ele não tenha mas o perdedor tinha —
       // não perde dado nenhum que só existia no duplicado descartado
-      ["faseAtual","prazoPrevisto","responsavel","bloqueio","faseAtualDesde","motivoImpedimento","motivoBloqueioProjeto"].forEach(campo=>{
+      ["faseAtual","prazoPrevisto","responsavel","faseAtualDesde","motivoImpedimento","motivoBloqueioProjeto"].forEach(campo=>{
         if(!vencedor[campo] && perdedor[campo]) vencedor[campo] = perdedor[campo];
       });
       if(!vencedor.temImpedimento && perdedor.temImpedimento) vencedor.temImpedimento = true;
@@ -1642,6 +1692,11 @@ function consolidarProjetosDuplicados(){
       if(!vencedor.bpxItens && perdedor.bpxItens) vencedor.bpxItens = perdedor.bpxItens;
       if(!vencedor.vscEtapas && perdedor.vscEtapas) vencedor.vscEtapas = perdedor.vscEtapas;
       if(!vencedor.popEtapas && perdedor.popEtapas) vencedor.popEtapas = perdedor.popEtapas;
+      // Anotação livre: junta os dois logs por id — nunca perde anotação do duplicado
+      // descartado, mesmo que o vencedor já tenha anotações próprias (migra o campo antigo
+      // p.bloqueio do perdedor pro log dele antes de juntar, caso ainda não tivesse sido migrado)
+      const anotMesclado = mesclarAnotacaoLog(anotacaoLogDe(vencedor), anotacaoLogDe(perdedor));
+      if(anotMesclado) vencedor.anotacaoLog = anotMesclado;
     });
     sobreviventes.push(vencedor);
   });
@@ -1864,7 +1919,7 @@ function kanbanColHeaderHTML(col, count, colUltima){
         <span><b>Responsável:</b> ${esc(p.responsavel||"—")}</span>
       </div>
       ${f.cor==="amarelo" && p.motivoImpedimento?`<div class="ri-nota"><b>Impedimento:</b> ${esc(p.motivoImpedimento)}</div>`:""}
-      ${p.bloqueio?`<div class="ri-nota" style="color:var(--gray)"><b>Anotação:</b> ${esc(p.bloqueio)}</div>`:""}
+      ${(()=>{ const anot = ultimaAnotacao(p); return anot ? `<div class="ri-nota" style="color:var(--gray)"><b>Anotação:</b> ${esc(anot.texto)}</div>` : ""; })()}
       <div class="ri-meta"><span><b>Última atualização:</b> ${ultimaTxt}</span></div>
     </div>`;
   }).join("") : `<div class="empty">Nenhum projeto em atenção agora 🎉</div>`;
@@ -1894,7 +1949,7 @@ $("btnExportarStatusCSV").onclick = ()=>{
   const linhas = [["Projeto","Fase Atual","Etapa","Prazo Previsto","Responsável","Impedimento","Anotação","Farol"]];
   PROJETOS.forEach(p=>{
     const f = calcFarol(p);
-    linhas.push([p.nome, p.faseAtual||"", etapaDoMilestone(p.faseAtual||""), p.prazoPrevisto?brDate(p.prazoPrevisto):"", p.responsavel||"", p.temImpedimento?(p.motivoImpedimento||"sim"):"", p.bloqueio||"", f.label]);
+    linhas.push([p.nome, p.faseAtual||"", etapaDoMilestone(p.faseAtual||""), p.prazoPrevisto?brDate(p.prazoPrevisto):"", p.responsavel||"", p.temImpedimento?(p.motivoImpedimento||"sim"):"", (ultimaAnotacao(p)||{}).texto||"", f.label]);
   });
   baixarCSV(linhas, "portfolio_status_"+hojeISO()+".csv");
 };
@@ -1936,35 +1991,59 @@ function renderHistorico(){
   const filtro = $("filtroHistProjeto").value;
   let itens = HISTORICO.filter(h=> !filtro || h.projetoId===filtro);
   itens.sort((a,b)=> b.data.localeCompare(a.data) || (b.criadoEm||0)-(a.criadoEm||0));
-  $("listaHistorico").innerHTML = itens.length ? itens.map(h=>{
-    const tagDecisao = h.precisaDecisao ? `<span class="pill" style="background:var(--amber-soft);color:var(--amber)">Precisa decisão</span>` : "";
-    const tagMarco = h.marcoImportante ? `<span class="pill" style="background:#FFF3CD;color:#8A6D00">⭐ Marco</span>` : "";
-    return `<div class="row-item">
-      <div class="ri-top">
-        <div class="ri-proj">${esc(nomeProjeto(h.projetoId))}
-          ${h.fase?`<span class="pill" style="background:var(--blue-soft);color:var(--blue)">${esc(h.fase)}</span>`:""}
-          ${tagDecisao}${tagMarco}
-        </div>
-        <span style="font-size:11.5px;color:var(--gray)">${brDate(h.data)}</span>
-      </div>
-      ${h.nota?`<div class="ri-nota">${esc(h.nota)}</div>`:""}
-      <div class="ri-meta">
-        ${h.bloqueio?`<span><b>Bloqueio:</b> ${esc(h.bloqueio)}</span>`:""}
-        ${h.proximaAcao?`<span><b>Próxima ação:</b> ${esc(h.proximaAcao)}</span>`:""}
-        ${h.resp?`<span><b>Responsável:</b> ${esc(h.resp)}</span>`:""}
-      </div>
-      <div class="ri-actions">
-        <button class="btn btn-ghost btn-sm" data-act="edit-h" data-id="${h.id}">✎ editar</button>
-        <button class="btn btn-ghost btn-sm" data-act="del-h" data-id="${h.id}" style="color:var(--red)">excluir</button>
-      </div>
-    </div>`;
-  }).join("") : `<div class="empty">Nenhum registro ainda${filtro?" pra esse projeto":""}.</div>`;
+  $("listaHistorico").innerHTML = itens.length ? itens.map(h=> linhaHistoricoHTML(h, true)).join("")
+    : `<div class="empty">Nenhum registro ainda${filtro?" pra esse projeto":""}.</div>`;
 
-  $("listaHistorico").querySelectorAll('[data-act="del-h"]').forEach(btn=>{
-    btn.onclick = ()=>{ if(confirm("Excluir este registro?")){ TOMBSTONES.historico[btn.dataset.id]=Date.now(); HISTORICO = HISTORICO.filter(x=>x.id!==btn.dataset.id); salvar(); renderTudo(); } };
+  wireLinhasHistorico("listaHistorico", renderTudo);
+}
+// pill de compromisso (prazo + responsável) — reaproveitado no Histórico e no bloco "Compromissos" da Ficha
+function pillCompromisso(h){
+  if(!h.prazoCompromisso) return "";
+  const vencido = !h.compromissoResolvido && h.prazoCompromisso < hojeISO();
+  const cor = h.compromissoResolvido ? FAROL_HEX.verde : (vencido ? FAROL_HEX.vermelho : FAROL_HEX.azul);
+  const rotulo = h.compromissoResolvido ? "Resolvido" : (vencido ? "Vencido" : "Prazo");
+  return `<span class="pill" style="background:${cor}22;color:${cor}">🗓 ${rotulo}: ${brDate(h.prazoCompromisso)}${h.resp?" — "+esc(h.resp):""}</span>`;
+}
+// linha de registro do Histórico — usada tanto na aba Histórico quanto no bloco "Compromissos" da
+// Ficha (com mostrarProjeto=false lá, já que a Ficha é de um projeto só)
+function linhaHistoricoHTML(h, mostrarProjeto){
+  const tagDecisao = h.precisaDecisao ? `<span class="pill" style="background:var(--amber-soft);color:var(--amber)">Precisa decisão</span>` : "";
+  const tagMarco = h.marcoImportante ? `<span class="pill" style="background:#FFF3CD;color:#8A6D00">⭐ Marco</span>` : "";
+  const tagCompromisso = pillCompromisso(h);
+  return `<div class="row-item">
+    <div class="ri-top">
+      <div class="ri-proj">${mostrarProjeto?esc(nomeProjeto(h.projetoId)):""}
+        ${h.fase?`<span class="pill" style="background:var(--blue-soft);color:var(--blue)">${esc(h.fase)}</span>`:""}
+        ${tagDecisao}${tagMarco}${tagCompromisso}
+      </div>
+      <span style="font-size:11.5px;color:var(--gray)">${brDate(h.data)}</span>
+    </div>
+    ${h.nota?`<div class="ri-nota">${esc(h.nota)}</div>`:""}
+    <div class="ri-meta">
+      ${h.bloqueio?`<span><b>Bloqueio:</b> ${esc(h.bloqueio)}</span>`:""}
+      ${h.proximaAcao?`<span><b>Próxima ação:</b> ${esc(h.proximaAcao)}</span>`:""}
+      ${(h.resp && !h.prazoCompromisso)?`<span><b>Responsável:</b> ${esc(h.resp)}</span>`:""}
+    </div>
+    <div class="ri-actions">
+      ${h.prazoCompromisso ? `<button class="btn btn-soft btn-sm" data-act="${h.compromissoResolvido?"reabrir-cp":"resolver-cp"}" data-id="${h.id}">${h.compromissoResolvido?"↺ reabrir":"✓ marcar resolvido"}</button>` : ""}
+      <button class="btn btn-ghost btn-sm" data-act="edit-h" data-id="${h.id}">✎ editar</button>
+      <button class="btn btn-ghost btn-sm" data-act="del-h" data-id="${h.id}" style="color:var(--red)">excluir</button>
+    </div>
+  </div>`;
+}
+function wireLinhasHistorico(containerId, rerender){
+  const container = $(containerId);
+  container.querySelectorAll('[data-act="del-h"]').forEach(btn=>{
+    btn.onclick = ()=>{ if(confirm("Excluir este registro?")){ TOMBSTONES.historico[btn.dataset.id]=Date.now(); HISTORICO = HISTORICO.filter(x=>x.id!==btn.dataset.id); salvar(); rerender(); } };
   });
-  $("listaHistorico").querySelectorAll('[data-act="edit-h"]').forEach(btn=>{
+  container.querySelectorAll('[data-act="edit-h"]').forEach(btn=>{
     btn.onclick = ()=> abrirModalRegistro(HISTORICO.find(x=>x.id===btn.dataset.id));
+  });
+  container.querySelectorAll('[data-act="resolver-cp"], [data-act="reabrir-cp"]').forEach(btn=>{
+    btn.onclick = ()=>{
+      const h = HISTORICO.find(x=>x.id===btn.dataset.id);
+      if(h){ h.compromissoResolvido = !h.compromissoResolvido; salvar(); rerender(); }
+    };
   });
 }
 $("filtroHistProjeto").onchange = renderHistorico;
@@ -1980,6 +2059,7 @@ function abrirModalRegistro(h, projetoIdPreset, prefill){
   $("mrBloqueio").value = h ? (h.bloqueio||"") : (prefill&&prefill.bloqueio || "");
   $("mrProximaAcao").value = h ? (h.proximaAcao||"") : "";
   $("mrResp").value = h ? (h.resp||"") : "";
+  $("mrPrazoCompromisso").value = h ? (h.prazoCompromisso||"") : "";
   $("mrDecisao").checked = h ? !!h.precisaDecisao : false;
   $("mrMarco").checked = h ? !!h.marcoImportante : false;
   $("modalRegistro").classList.remove("hide");
@@ -1996,9 +2076,12 @@ $("mrSalvar").onclick = ()=>{
     projetoId: $("mrProjeto").value, data: $("mrData").value || hojeISO(), fase: $("mrFase").value || "",
     nota, bloqueio: $("mrBloqueio").value.trim(), proximaAcao: $("mrProximaAcao").value.trim(),
     resp: $("mrResp").value.trim(), precisaDecisao: $("mrDecisao").checked, marcoImportante: $("mrMarco").checked,
+    prazoCompromisso: $("mrPrazoCompromisso").value || null,
   };
+  // compromissoResolvido não entra em `dados` de propósito: editar outra coisa nesse registro não
+  // pode reabrir sozinho um compromisso já marcado como resolvido — só o botão dedicado faz isso
   if(registroModalAlvo){ Object.assign(registroModalAlvo, dados); }
-  else { HISTORICO.unshift({id:novoId(), criadoEm:Date.now(), ...dados}); }
+  else { HISTORICO.unshift({id:novoId(), criadoEm:Date.now(), compromissoResolvido:false, ...dados}); }
   salvar();
   $("modalRegistro").classList.add("hide");
   renderTudo();
@@ -2044,8 +2127,7 @@ function gradeGanttHTML(tarefas, inicioBase, editavel){
     const fimDeSemana = [0,6].includes(new Date(d+"T00:00:00").getDay());
     let cls = "gantt-day-cell" + (fimDeSemana?" fds":"");
     if(t.inicio && t.fim && d>=t.inicio && d<=t.fim){
-      if(t.isMarco) cls += (t.status==="Concluído" ? " gc-marco-concluido" : (t.status==="Atrasado" ? " gc-marco-atrasado" : " gc-marco"));
-      else cls += " gc-"+statusSlug(t.status); // VSC, BPx e Fase Atual usam as mesmas cores de status normais
+      cls += " gc-"+statusSlug(t.status); // Marco, VSC, BPx e Fase Atual usam as mesmas 4 cores de status das tarefas normais
     }
     if(d===hojeStr) cls += " hoje";
     return `<td class="${cls}"></td>`;
@@ -2055,10 +2137,9 @@ function gradeGanttHTML(tarefas, inicioBase, editavel){
     marco: {bg:"var(--purple-soft)", fg:"var(--purple)", rotulo:"marco", emoji:"🚩"},
     vsc:   {bg:"#EDEFF3", fg:"var(--gray)", rotulo:"VSC", emoji:"🧪"},
     bpx:   {bg:"#EDEFF3", fg:"var(--gray)", rotulo:"BPx", emoji:"⚕️"},
-    faseatual: {bg:"var(--blue-soft)", fg:"var(--blue)", rotulo:"Fase Atual", emoji:"📍"},
   };
   const linhaTarefaHTML = (t, codigoAuto)=>{
-    const tipoKey = t.isMarco?"marco":t.isVSC?"vsc":t.isBPX?"bpx":t.isFaseAtual?"faseatual":null;
+    const tipoKey = t.isMarco?"marco":t.isVSC?"vsc":t.isBPX?"bpx":null;
     const especial = !!tipoKey; // controla o visual (emoji, cor de fundo do texto quando não editável)
     // Marco/VSC/BPx/Fase Atual são travados AQUI DE PROPÓSITO: a origem real deles é o Plano de
     // Marcos, o checklist de VSC, o checklist de BPx (na Ficha) ou o campo Fase Atual (no Portfólio).
@@ -2144,8 +2225,6 @@ function gradeGanttHTML(tarefas, inicioBase, editavel){
     <span><span class="sw" style="background:#A996DE"></span>Em andamento</span>
     <span><span class="sw" style="background:#5B3FA0"></span>Concluído</span>
     <span><span class="sw" style="background:#C0392B"></span>Atrasado</span>
-    <span><span class="sw" style="background:var(--navy)"></span>Marco planejado</span>
-    <span><span class="sw" style="background:var(--purple)"></span>Marco concluído</span>
   </div>`;
 }
 
@@ -2157,40 +2236,6 @@ function janelaTarefas(tarefas, cronogramaInicio){
   const janela = Math.max(diasEntreDatas(inicioBase, fimBase) + 7, 14);
   return {inicioBase, janela};
 }
-function barraTarefaHTML(t, inicioBase, janela){
-  const slug = statusSlug(t.status);
-  const offsetHoje = diasEntreDatas(inicioBase, hojeISO());
-  const hojePct = (offsetHoje>=0 && offsetHoje<=janela) ? (offsetHoje/janela*100)+"%" : "";
-  if(t.isMarco){
-    // barra do PERÍODO PREVISTO (início–fim) do milestone, cor sólida de marco
-    let pos="", larg="";
-    if(t.inicio && t.fim){
-      const offset = Math.max(diasEntreDatas(inicioBase, t.inicio), 0);
-      const dur = Math.max(diasEntreDatas(t.inicio, t.fim)+1, 1);
-      pos = (offset/janela*100)+"%"; larg = (dur/janela*100)+"%";
-    }
-    const marcoSlug = t.status==="Concluído" ? "concluido" : (t.status==="Atrasado" ? "atrasado" : "");
-    // losango na DATA REAL (quando preenchida), marcando o ponto exato em que foi concluído
-    let posReal = "";
-    if(t.real){ posReal = (Math.max(diasEntreDatas(inicioBase, t.real),0)/janela*100)+"%"; }
-    return `<div class="task-track">
-      ${pos!==""?`<div class="task-bar marco ${marcoSlug}" style="left:${pos};width:${larg}"></div>`:""}
-      ${posReal!==""?`<div class="task-marco concluido" style="left:${posReal}" title="Realizado em ${brDate(t.real)}"></div>`:""}
-      ${hojePct!==""?`<div class="task-hoje" style="left:${hojePct}" title="Hoje"></div>`:""}
-    </div>`;
-  }
-  let pos="", larg="";
-  if(t.inicio && t.fim){
-    const offset = Math.max(diasEntreDatas(inicioBase, t.inicio), 0);
-    const dur = Math.max(diasEntreDatas(t.inicio, t.fim)+1, 1);
-    pos = (offset/janela*100)+"%"; larg = (dur/janela*100)+"%";
-  }
-  return `<div class="task-track">
-    ${pos!==""?`<div class="task-bar ${slug}" style="left:${pos};width:${larg}"></div>`:""}
-    ${hojePct!==""?`<div class="task-hoje" style="left:${hojePct}" title="Hoje"></div>`:""}
-  </div>`;
-}
-
 /* ---------- sincroniza o Plano de Marcos (Início/Fim/Real) com uma barra no Cronograma ---------- */
 function sincronizarMarcoCronograma(pid, milestone, inicio, fim, real){
   const existente = TAREFAS.find(t=>t.projetoId===pid && t.isMarco && t.milestone===milestone);
@@ -2240,45 +2285,6 @@ function sincronizarBarraCronograma(pid, chave, nomeExibicao, inicio, fim, real,
 }
 
 /* ---------- sincroniza a Fase Atual + Prazo Previsto do Portfólio direto como barra no Cronograma ---------- */
-function concluirBarraCronograma(pid, chave, tipoFlag, dataReal){
-  const t = TAREFAS.find(x=>x.projetoId===pid && x[tipoFlag] && x.chaveEspecial===chave);
-  if(t){ t.real = dataReal; if(dataReal>t.fim) t.fim = dataReal; t.status = "Concluído"; salvar(); }
-}
-function sincronizarFaseAtualCronograma(p){
-  // cada fase tem sua própria barra (chave inclui o nome da fase) — assim, quando a fase muda,
-  // a barra antiga não é sobrescrita, ela fica registrada como histórico. Ver fechamento em
-  // "fecharFaseAtualAnterior", chamado sempre que a Fase Atual muda.
-  if(!p.faseAtual || p.faseAtual===MILESTONE_FINAL || p.statusProjeto==="Bloqueado" || !p.prazoPrevisto) return;
-  if(!p.faseAtualDesde) p.faseAtualDesde = hojeISO();
-  const chave = `faseatual_${p.id}_${p.faseAtual}`;
-  sincronizarBarraCronograma(p.id, chave, `Fase Atual — ${p.faseAtual}`, p.faseAtualDesde, p.prazoPrevisto, null, "isFaseAtual");
-  // já sabe exatamente qual é a fase (é o próprio p.faseAtual) — não precisa o usuário atribuir
-  // manualmente, então já cai agrupada certa na faixa colorida certa do Cronograma
-  const barra = TAREFAS.find(t=>t.projetoId===p.id && t.isFaseAtual && t.chaveEspecial===chave);
-  if(barra) barra.milestone = p.faseAtual;
-}
-function fecharFaseAtualAnterior(p, faseAnterior){
-  if(faseAnterior) concluirBarraCronograma(p.id, `faseatual_${p.id}_${faseAnterior}`, "isFaseAtual", hojeISO());
-}
-function renderCronograma(){
-  const pid = $("cronoProjeto").value;
-  $("cronoSemProjeto").classList.toggle("hide", !!pid);
-  $("cronoConteudo").classList.toggle("hide", !pid);
-  $("cronoTituloImpresso").style.display = pid ? "block" : "none";
-  if(!pid) return;
-  const p = PROJETOS.find(x=>x.id===pid);
-  if(!p) return;
-  $("cronoDataInicio").value = p.cronogramaInicio || "";
-  $("cronoTituloImpresso").innerHTML = `<h2 style="margin:0">Cronograma — ${esc(p.nome)}</h2><div class="desc" style="margin-bottom:0">Gerado em ${brDate(hojeISO())}</div>`;
-
-  const tarefas = TAREFAS.filter(t=>t.projetoId===pid).sort(compararTarefas);
-  $("totalTarefas").textContent = tarefas.length;
-  if(!tarefas.length){ $("listaTarefas").innerHTML = `<div class="empty">Nenhuma tarefa lançada ainda.</div>`; return; }
-
-  const {inicioBase} = janelaTarefas(tarefas, p.cronogramaInicio);
-  $("listaTarefas").innerHTML = gradeGanttHTML(tarefas, inicioBase, true);
-  wireGradeGanttHandlers("listaTarefas", renderCronograma);
-}
 function wireGradeGanttHandlers(containerId, rerender){
   const container = $(containerId);
   container.querySelectorAll('[data-act="del-t-grid"]').forEach(btn=>{
@@ -2352,15 +2358,14 @@ $("tfeSalvar").onclick = ()=>{
   t.status = $("tfeStatus").value || "Não iniciado";
   salvar();
   $("modalTarefa").classList.add("hide");
-  renderCronograma(); renderFicha();
+  renderFicha();
 };
-$("cronoProjeto").onchange = renderCronograma;
 $("cronoDataInicio").onchange = e=>{
-  const p = PROJETOS.find(x=>x.id===$("cronoProjeto").value);
-  if(p){ p.cronogramaInicio = e.target.value || null; salvar(); renderCronograma(); }
+  const p = PROJETOS.find(x=>x.id===$("fichaProjeto").value);
+  if(p){ p.cronogramaInicio = e.target.value || null; salvar(); renderFicha(); }
 };
 $("btnAddTarefa").onclick = ()=>{
-  const pid = $("cronoProjeto").value;
+  const pid = $("fichaProjeto").value;
   if(!pid){ alert("Selecione um projeto primeiro."); return; }
   const nome = $("tfNome").value.trim();
   if(!nome){ alert("Digite o nome da tarefa."); return; }
@@ -2370,7 +2375,7 @@ $("btnAddTarefa").onclick = ()=>{
   salvar();
   $("tfCodigo").value=""; $("tfNome").value=""; $("tfResp").value=""; $("tfInicio").value=""; $("tfFim").value="";
   $("tfMilestone").value=""; $("tfStatus").value="Não iniciado";
-  renderCronograma();
+  renderFicha();
 };
 
 /* ================= FICHA DO PROJETO (one-page individual) ================= */
@@ -2413,8 +2418,20 @@ function renderFicha(){
       <div class="field"><label>Responsável</label><input type="text" id="fcResp" value="${esc(p.responsavel||"")}" placeholder="responsável"></div>
     </div>
     <div class="grid2" style="margin-bottom:0">
-      <div class="field"><label>Anotação livre <span style="text-transform:none;font-weight:400;color:var(--gray)">(não afeta o farol)</span></label><input type="text" id="fcBloqueio" value="${esc(p.bloqueio||"")}" placeholder="observação qualquer"></div>
-      <div></div>
+      <div class="field"><label>E-mails da equipe (Para) <span style="text-transform:none;font-weight:400;color:var(--gray)">(separados por vírgula — usados no botão "Enviar por e-mail")</span></label>
+        <input type="text" id="fcEmails" value="${esc(p.emailsProjeto||"")}" placeholder="nome@empresa.com, outro@empresa.com"></div>
+    </div>
+    <div class="grid2" style="margin-bottom:0">
+      <div class="field"><label>E-mails em cópia (Cc) <span style="text-transform:none;font-weight:400;color:var(--gray)">(opcional, separados por vírgula)</span></label>
+        <input type="text" id="fcEmailsCC" value="${esc(p.emailsCC||"")}" placeholder="gestor@empresa.com"></div>
+    </div>
+    <div style="background:#F4F7FB;border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin-bottom:0">
+      <label style="margin:0 0 6px">ℹ️ Anotação livre <span style="text-transform:none;font-weight:400;color:var(--gray)">(contexto geral, não afeta o farol)</span></label>
+      <div id="fcAnotHistorico" style="max-height:160px;overflow-y:auto;margin-bottom:10px"></div>
+      <div class="no-print" style="display:flex;gap:8px;align-items:flex-start">
+        <textarea id="fcAnotNova" placeholder="Nova anotação — Ex.: decisão tomada, dependência nova, observação qualquer…" style="min-height:52px;background:#fff"></textarea>
+        <button class="btn btn-soft btn-sm" id="btnFcAnotAdd" style="white-space:nowrap">+ Adicionar</button>
+      </div>
     </div>
     ${bpxPendente(p)?`<div class="ri-nota" style="margin-top:2px;color:var(--amber)"><b>⚠ Pendência de qualidade (BPx):</b> ainda faltam itens do checklist de compliance.</div>`:""}
     ${vscPendente(p)?`<div class="ri-nota" style="margin-top:2px;color:var(--amber)"><b>⚠ Pendência de VSC:</b> ainda faltam etapas de QI/QO/QD.</div>`:""}`;
@@ -2424,23 +2441,16 @@ function renderFicha(){
     p.faseAtual = e.target.value; p.faseAtualDesde = hojeISO(); salvar(); renderPortfolio(); renderFicha();
     const nota = faseAnterior ? `Fase alterada de "${faseAnterior}" para "${p.faseAtual}"` : `Fase definida como "${p.faseAtual}"`;
     registrarHistoricoAuto(p.id, p.faseAtual, nota, "");
-    fecharFaseAtualAnterior(p, faseAnterior);
-    sincronizarFaseAtualCronograma(p); salvar();
-    renderHistorico(); renderCronograma();
+    renderHistorico();
   };
   $("fcPrazo").onchange = e=>{
     p.prazoPrevisto = e.target.value || null; salvar();
-    sincronizarFaseAtualCronograma(p); salvar();
-    renderPortfolio(); renderFicha(); renderCronograma();
+    renderPortfolio(); renderFicha();
   };
   $("fcResp").onchange = e=>{ p.responsavel = e.target.value.trim(); salvar(); renderPortfolio(); };
-  $("fcBloqueio").onchange = e=>{
-    p.bloqueio = e.target.value.trim(); salvar(); renderPortfolio();
-    if(p.bloqueio){
-      registrarHistoricoAuto(p.id, p.faseAtual, `Anotação: ${p.bloqueio}`, "");
-      renderHistorico();
-    }
-  };
+  $("fcEmails").onchange = e=>{ p.emailsProjeto = e.target.value.trim(); salvar(); };
+  $("fcEmailsCC").onchange = e=>{ p.emailsCC = e.target.value.trim(); salvar(); };
+  wireAnotacaoLog(pid, ()=>renderFicha());
   if($("fcMarcarImpedimento")) $("fcMarcarImpedimento").onclick = ()=>{
     const motivo = prompt(`Qual impedimento está travando "${p.nome}" de prosseguir?`);
     if(motivo===null) return;
@@ -2456,37 +2466,15 @@ function renderFicha(){
     renderPortfolio(); renderFicha(); renderHistorico();
   };
 
-  const gate = MILESTONES_REF.find(m=>m[1]===p.faseAtual);
-  $("fichaGate").innerHTML = gate ? `
-    <div class="ri-meta" style="margin-bottom:8px">
-      <span><b>Quality Gate:</b> ${esc(gate[2])}</span>
-    </div>
-    <div class="ri-nota"><b>Condição mínima para aprovação:</b> ${esc(gate[3])}</div>`
-    : `<div class="empty">Nenhuma fase selecionada pra este projeto ainda.</div>`;
-
+  renderCompromissosFicha(pid);
   renderCompliance(pid);
-  renderTimelineProjeto(pid);
   renderVSC(pid);
   renderPlanoMarcos(pid);
 
-  const itensHist = HISTORICO.filter(h=>h.projetoId===pid).sort((a,b)=> b.data.localeCompare(a.data) || (b.criadoEm||0)-(a.criadoEm||0));
-  $("fichaHistorico").innerHTML = itensHist.length ? itensHist.map(h=>`
-    <div class="row-item">
-      <div class="ri-top">
-        <div class="ri-proj">${h.fase?`<span class="pill" style="background:var(--blue-soft);color:var(--blue)">${esc(h.fase)}</span>`:""}
-          ${h.precisaDecisao?`<span class="pill" style="background:var(--amber-soft);color:var(--amber)">Precisa decisão</span>`:""}
-          ${h.marcoImportante?`<span class="pill" style="background:#FFF3CD;color:#8A6D00">⭐ Marco</span>`:""}
-        </div>
-        <span style="font-size:11.5px;color:var(--gray)">${brDate(h.data)}</span>
-      </div>
-      ${h.nota?`<div class="ri-nota">${esc(h.nota)}</div>`:""}
-      <div class="ri-meta">
-        ${h.bloqueio?`<span><b>Bloqueio:</b> ${esc(h.bloqueio)}</span>`:""}
-        ${h.proximaAcao?`<span><b>Próxima ação:</b> ${esc(h.proximaAcao)}</span>`:""}
-        ${h.resp?`<span><b>Responsável:</b> ${esc(h.resp)}</span>`:""}
-      </div>
-    </div>`).join("") : `<div class="empty">Nenhum registro no histórico ainda.</div>`;
+  // Histórico completo desse projeto agora só na aba Histórico (filtre por lá) — evita ter a
+  // mesma lista duplicada em dois lugares.
 
+  $("cronoDataInicio").value = p.cronogramaInicio || "";
   const tarefas = TAREFAS.filter(t=>t.projetoId===pid).sort(compararTarefas);
   if(!tarefas.length){
     $("fichaCronograma").innerHTML = `<div class="empty">Nenhuma tarefa lançada ainda.</div>`;
@@ -2496,37 +2484,29 @@ function renderFicha(){
     wireGradeGanttHandlers("fichaCronograma", ()=>renderFicha());
   }
 }
-/* ---------- Compliance de Qualidade (BPx) — obrigatório quando o projeto impacta Boas Práticas ---------- */
-/* ---------- Timeline do Projeto (marcos do Histórico + gates realizados) ---------- */
-function renderTimelineProjeto(pid){
-  const p = PROJETOS.find(x=>x.id===pid);
-  if(!p) return;
-  const itens = [];
-
-  HISTORICO.filter(h=>h.projetoId===pid && h.marcoImportante).forEach(h=>{
-    itens.push({data:h.data, tipo:"marco", titulo:"⭐ "+(h.fase?`[${h.fase}] `:"")+"Marco importante", desc:h.nota||""});
-  });
-  const plano = PLANOS[pid];
-  if(plano){
-    plano.filter(m=>m.real).forEach(m=>{
-      itens.push({data:m.real, tipo:"gate", titulo:"🏁 "+m.milestone+" — concluído", desc:""});
-    });
-  }
-
-  itens.sort((a,b)=> a.data.localeCompare(b.data));
-
-  if(!itens.length){
-    $("fichaTimeline").innerHTML = `<div class="empty">Nada pra mostrar ainda. Marque anotações do Histórico como "⭐ Marco importante", ou conclua milestones no Plano de Marcos.</div>`;
-    return;
-  }
-  $("fichaTimeline").innerHTML = `<div class="timeline">` + itens.map(it=>`
-    <div class="timeline-item ${it.tipo}">
-      <div class="tl-data">${brDate(it.data)}</div>
-      <div class="tl-titulo">${esc(it.titulo)}</div>
-      ${it.desc?`<div class="tl-desc">${esc(it.desc)}</div>`:""}
-    </div>`).join("") + `</div>`;
+/* ---------- Compromissos (nota + responsável + prazo) — vira registro no Histórico ---------- */
+function renderCompromissosFicha(pid){
+  const abertos = HISTORICO.filter(h=>h.projetoId===pid && h.prazoCompromisso && !h.compromissoResolvido)
+    .sort((a,b)=> a.prazoCompromisso.localeCompare(b.prazoCompromisso));
+  $("fichaCompromissos").innerHTML = abertos.length
+    ? abertos.map(h=> linhaHistoricoHTML(h, false)).join("")
+    : `<div class="empty">Nenhum compromisso em aberto pra este projeto.</div>`;
+  wireLinhasHistorico("fichaCompromissos", ()=>{ renderFicha(); renderHistorico(); });
 }
-
+$("btnAddCompromisso").onclick = ()=>{
+  const pid = $("fichaProjeto").value;
+  if(!pid){ alert("Selecione um projeto primeiro."); return; }
+  const p = PROJETOS.find(x=>x.id===pid);
+  const nota = $("cpNota").value.trim();
+  if(!nota){ alert("Escreva o que ficou combinado."); return; }
+  HISTORICO.unshift({id:novoId(), criadoEm:Date.now(), projetoId:pid, data:hojeISO(), fase:p?p.faseAtual||"":"",
+    nota, bloqueio:"", proximaAcao:"", resp:$("cpResp").value.trim(), precisaDecisao:false, marcoImportante:false,
+    prazoCompromisso:$("cpPrazo").value||null, compromissoResolvido:false});
+  salvar();
+  $("cpNota").value=""; $("cpResp").value=""; $("cpPrazo").value="";
+  renderFicha(); renderHistorico();
+};
+/* ---------- Compliance de Qualidade (BPx) — obrigatório quando o projeto impacta Boas Práticas ---------- */
 function renderCompliance(pid){
   const p = PROJETOS.find(x=>x.id===pid);
   if(!p) return;
@@ -2579,7 +2559,7 @@ function renderCompliance(pid){
     } else {
       sincronizarBarraCronograma(pid, `bpx_${el.dataset.nome}`, `BPx — ${el.dataset.nome}`, it.inicio, it.fim, it.real, "isBPX");
     }
-    salvar(); renderCompliance(pid); renderPortfolio(); renderCronograma(); renderFicha();
+    salvar(); renderCompliance(pid); renderPortfolio(); renderFicha();
   };
   $("fichaComplianceItens").querySelectorAll(".bc-inicio").forEach(inp=>{
     inp.onchange = e=>{ pegarItem(e.target).inicio = e.target.value||null; atualizar(e.target); };
@@ -2600,7 +2580,7 @@ $("fichaBpxImpacto").onchange = e=>{
       COMPLIANCE_ITENS_SIMPLES.forEach(nome=> sincronizarBarraCronograma(pid, `bpx_${nome}`, "", null, null, null, "isBPX"));
       POP_ETAPAS.forEach(step=> sincronizarBarraCronograma(pid, `bpx_POP_${step}`, "", null, null, null, "isBPX"));
     }
-    salvar(); renderCompliance(pid); renderPortfolio(); renderCronograma(); renderFicha();
+    salvar(); renderCompliance(pid); renderPortfolio(); renderFicha();
   }
 };
 
@@ -2640,7 +2620,7 @@ function renderVSC(pid){
     const it = p.vscEtapas[ekey];
     const eLabel = VSC_ETAPAS.find(e=>e.key===ekey).label;
     sincronizarBarraCronograma(pid, `${pid}_${ekey}`, `VSC — ${eLabel}`, it.inicio, it.fim, it.real, "isVSC");
-    salvar(); renderVSC(pid); renderCronograma(); renderFicha();
+    salvar(); renderVSC(pid); renderFicha();
   };
   $("fichaVscConteudo").querySelectorAll(".vsc-inicio").forEach(inp=>{
     inp.onchange = e=>{ p.vscEtapas[e.target.dataset.e].inicio = e.target.value||null; atualizarEtapa(e.target.dataset.e); };
@@ -2676,7 +2656,7 @@ function renderPlanoMarcos(pid){
     $("fichaPlanoAcoes").innerHTML = `<button class="btn btn-soft btn-sm" id="btnCriarPlano">+ Criar plano de marcos</button>`;
     $("fichaPlanoMarcos").innerHTML = `<div class="empty">Nenhum plano criado ainda pra este projeto.</div>`;
     $("btnCriarPlano").onclick = ()=>{
-      PLANOS[pid] = MILESTONES.map(m=>({milestone:m, inicio:null, fim:null, real:null}));
+      PLANOS[pid] = MILESTONES.map(m=>({milestone:m, inicio:null, fim:null, real:null, atualizadoEm:0}));
       salvar(); renderPlanoMarcos(pid);
     };
     return;
@@ -2690,7 +2670,7 @@ function renderPlanoMarcos(pid){
   $("fichaPlanoAcoes").querySelector("#btnRemoverPlano").onclick = ()=>{
     if(confirm("Remover o plano de marcos deste projeto? As barras correspondentes no Cronograma também somem.")){
       plano.forEach(m=> sincronizarMarcoCronograma(pid, m.milestone, null, null, null));
-      delete PLANOS[pid]; salvar(); renderPlanoMarcos(pid); renderCronograma(); renderFicha();
+      delete PLANOS[pid]; salvar(); renderPlanoMarcos(pid); renderFicha();
     }
   };
 
@@ -2711,8 +2691,9 @@ function renderPlanoMarcos(pid){
 
   const atualizarLinha = (i)=>{
     const m = plano[i];
+    m.atualizadoEm = Date.now(); // essencial pra essa linha "ganhar" na sincronização — ver mesclarRemoto
     sincronizarMarcoCronograma(pid, m.milestone, m.inicio, m.fim, m.real);
-    salvar(); renderPlanoMarcos(pid); renderCronograma(); renderFicha();
+    salvar(); renderPlanoMarcos(pid); renderFicha();
   };
   $("fichaPlanoMarcos").querySelectorAll(".pm-inicio").forEach(inp=>{
     inp.onchange = e=>{ plano[+e.target.dataset.i].inicio = e.target.value || null; atualizarLinha(+e.target.dataset.i); };
@@ -2742,10 +2723,6 @@ $("btnImprimirFicha").onclick = ()=>{
   window.print();
 };
 $("btnImprimirOnePage").onclick = ()=> window.print();
-$("btnImprimirCronograma").onclick = ()=>{
-  if(!$("cronoProjeto").value){ alert("Selecione um projeto primeiro."); return; }
-  window.print();
-};
 
 /* ================= MILESTONES (REFERÊNCIA) ================= */
 function renderMilestonesRef(){
@@ -3239,6 +3216,90 @@ $("btnImprimirEsteira").onclick = ()=>{
   if(!$("esteiraSelect").value){ alert("Selecione uma esteira primeiro."); return; }
   window.print();
 };
+$("btnEnviarEmailEsteira").onclick = async ()=>{
+  const sel = $("esteiraSelect").value;
+  if(!sel){ alert("Selecione uma esteira primeiro."); return; }
+  const projId = filtroTimelineProjeto[sel];
+  if(!projId){ alert('Selecione um projeto específico primeiro — clique no código dele (ex.: "2.1") na "Visão por Esteira", que aí sim filtra pra um projeto só. O e-mail é sempre de um projeto por vez.'); return; }
+  const p = PROJETOS.find(x=>x.id===projId);
+  if(!p) return;
+  const nomeCompleto = p.nome; // nome do projeto por extenso (ex.: "2.1 - Centro 1200"), não só o código
+  const codigo = nomeCurtoProjeto(p.nome).codigo;
+  const emails = (p.emailsProjeto||"").trim();
+  if(!emails){ alert(`Esse projeto ainda não tem e-mails cadastrados.\n\nVá na Ficha do Projeto "${codigo}" e preencha o campo "E-mails da equipe" antes de enviar.`); return; }
+
+  const btn = $("btnEnviarEmailEsteira");
+  const textoOriginal = btn.textContent;
+  btn.textContent = "⏳ Gerando PDF..."; btn.disabled = true;
+  suprimirAvisoSair = true;
+  try{
+    const dataHoje = brDate(hojeISO());
+    const nomeArquivo = `Status_Report_${nomeCompleto.replace(/[^\w.-]+/g,"_")}_${hojeISO()}.pdf`;
+
+    // fotografa o conteúdo da Esteira (a mesma área usada pra imprimir) e monta um PDF de
+    // verdade — não é o diálogo de impressão, é o arquivo em si, pronto pra compartilhar
+    const alvo = $("esteiraConteudo");
+    const canvas = await html2canvas(alvo, {scale:2, backgroundColor:"#ffffff", windowWidth:alvo.scrollWidth});
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF({orientation:"p", unit:"pt", format:"a4"});
+    const pageW = pdf.internal.pageSize.getWidth(), pageH = pdf.internal.pageSize.getHeight();
+    const imgW = pageW - 40, imgH = imgW * canvas.height / canvas.width;
+    const imgData = canvas.toDataURL("image/jpeg", 0.92);
+    let yRestante = imgH, yOffset = 0, primeira = true;
+    while(yRestante > 0){
+      if(!primeira) pdf.addPage();
+      pdf.addImage(imgData, "JPEG", 20, 20 - yOffset, imgW, imgH);
+      yRestante -= (pageH - 40);
+      yOffset += (pageH - 40);
+      primeira = false;
+    }
+    const pdfBlob = pdf.output("blob");
+    const arquivo = new File([pdfBlob], nomeArquivo, {type:"application/pdf"});
+
+    const assunto = `Status Report — ${nomeCompleto}`;
+    const corpo = `Olá,\n\nSegue em anexo o status report do projeto ${nomeCompleto}, referente à última reunião de status report.\n\nQualquer dúvida, fico à disposição.`;
+    const emailsLista = emails.split(",").map(e=>e.trim()).filter(Boolean).join(",");
+
+    // a tela de compartilhar nativa NÃO tem campo de destinatário/assunto (só "título" e
+    // "texto" genéricos — nenhum protocolo de compartilhamento de arquivo tem esse campo, em
+    // navegador nenhum). O mailto: já funciona certinho (destinatário/assunto/texto), agora
+    // que o Outlook está configurado como padrão — mas ele não consegue anexar arquivo.
+    // não dá pra ter destinatário-automático E anexo-automático na MESMA janela — são dois
+    // mecanismos diferentes (mailto: vs. compartilhar arquivo), cada um só faz uma das coisas.
+    // Solução: dispara os dois. ORDEM IMPORTA MUITO: o compartilhar só funciona se disparar bem
+    // coladinho no clique do usuário, sem NENHUMA outra coisa no meio (nem alert, nem clipboard)
+    // — qualquer coisa no meio "quebra" a permissão e ele falha calado. Por isso ele vem
+    // primeiro de tudo, sem nada antes. Aviso e mailto (que também "sai da página") vêm depois.
+    // copiar pra área de transferência precisa da página em foco — o compartilhar tira o foco
+    // assim que abre (passa pro sistema/Outlook), então tem que copiar ANTES dele, não depois.
+    // Copiar é rápido e não trava nada, então não quebra a permissão do compartilhar (diferente
+    // do alert(), que travava esperando clique e por isso tinha que vir depois)
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      try{ await navigator.clipboard.writeText(emailsLista); }catch(e){}
+    }
+    let compartilhouComAnexo = false;
+    if(navigator.canShare && navigator.canShare({files:[arquivo]})){
+      try{ await navigator.share({files:[arquivo], title:assunto, text:corpo}); compartilhouComAnexo = true; }
+      catch(e){ if(e.name==="AbortError") compartilhouComAnexo = true; } // cancelou de propósito, não é falha
+    }
+    if(compartilhouComAnexo){
+      prompt(`PDF anexado! Destinatário já colado (Ctrl+V). Agora copia o ASSUNTO abaixo (já vem selecionado, é só Ctrl+C) e cola no campo "Assunto" do Outlook:`, assunto);
+      const ccLista = (p.emailsCC||"").split(",").map(e=>e.trim()).filter(Boolean).join(",");
+      if(ccLista) prompt(`Agora copia os e-mails em CÓPIA abaixo (já vêm selecionados, é só Ctrl+C) e cola no campo "Cc" do Outlook:`, ccLista);
+    } else {
+      const url = URL.createObjectURL(pdfBlob);
+      const a = document.createElement("a"); a.href = url; a.download = nomeArquivo; a.click();
+      URL.revokeObjectURL(url);
+      window.location.href = `mailto:${emailsLista}?subject=${encodeURIComponent(assunto)}&body=${encodeURIComponent(corpo)}`;
+      alert("Não deu pra anexar direto dessa vez — o PDF foi baixado. O e-mail abriu com destinatário/assunto prontos, só arrastar o PDF baixado pro anexo.");
+    }
+  }catch(err){
+    if(err.name!=="AbortError") console.error("Erro ao gerar/compartilhar PDF:", err);
+  }finally{
+    btn.textContent = textoOriginal; btn.disabled = false;
+    setTimeout(()=>{ suprimirAvisoSair = false; }, 2000); // religa o aviso um pouco depois, dando tempo do compartilhar terminar
+  }
+};
 function ativarModoApresentacao(){
   document.body.classList.add("modo-apresentacao");
   if(document.documentElement.requestFullscreen) document.documentElement.requestFullscreen().catch(()=>{});
@@ -3321,7 +3382,7 @@ $("fileBackup").onchange = async e=>{
 
 /* ================= INICIALIZAÇÃO ================= */
 function renderTudo(){
-  renderPortfolio(); renderOnePage(); renderFicha(); renderHistorico(); renderCronograma(); renderEsteiraOnePage(); renderMilestonesRef();
+  renderPortfolio(); renderOnePage(); renderFicha(); renderHistorico(); renderEsteiraOnePage(); renderMilestonesRef();
 }
 // diz se a pessoa está com o cursor num campo de texto agora — usado pra sincronização em segundo
 // plano (busca automática, envio automático) NÃO redesenhar a tela no meio de alguém digitando
@@ -3337,12 +3398,16 @@ function renderTudoSemAtrapalhar(){
   if(usuarioDigitando()){ setTimeout(renderTudoSemAtrapalhar, 800); return; }
   montarSelects(); renderTudo();
 }
-// sincroniza a barra de Fase Atual de todo mundo uma vez, pra cobrir projetos que já tinham
-// Fase Atual + Prazo Previsto preenchidos antes dessa sincronização existir
-// limpeza: remove barras de "Fase Atual" com o formato antigo de chave (faseatual_<id>, sem a fase no
-// final) — eram órfãs desde que passamos a ter uma barra por fase, e apareciam duplicadas na grade
-TAREFAS = TAREFAS.filter(t=> !(t.isFaseAtual && t.chaveEspecial && !t.chaveEspecial.includes(`faseatual_${t.projetoId}_`)));
-PROJETOS.forEach(p=> sincronizarFaseAtualCronograma(p));
+// a barra automática de "Fase Atual" no Cronograma foi removida (ficava redundante com o
+// cabeçalho da Ficha, que já mostra a fase atual) — limpa as barras antigas geradas antes disso,
+// com lápide, pra não ressuscitarem numa sincronização com outro computador que ainda não atualizou
+(function limparBarrasFaseAtualAntigas(){
+  const antigas = TAREFAS.filter(t=>t.isFaseAtual);
+  if(!antigas.length) return;
+  const agora = Date.now();
+  antigas.forEach(t=> TOMBSTONES.tarefas[t.id] = agora);
+  TAREFAS = TAREFAS.filter(t=> !t.isFaseAtual);
+})();
 salvar();
 montarSelects();
 renderTudo();
