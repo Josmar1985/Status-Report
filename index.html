@@ -3081,7 +3081,6 @@ function renderEsteiraOnePage(){
         </div>` : ""}
       <div style="display:flex;gap:14px;flex-wrap:wrap">${cardsHTML}</div>
     </div>
-    ${navEsteiraBarraHTML("navEsteiraMeio", listaEst, idxEst)}
     <div class="side-by-side" style="grid-template-columns:1fr 1fr 1fr">
       <div class="card">
         <h2 style="color:var(--blue)">Dependências</h2>
@@ -3099,6 +3098,7 @@ function renderEsteiraOnePage(){
         <button class="btn btn-soft btn-sm no-print btn-add-item-esteira" data-campo="proximosPassos">+ Adicionar</button>
       </div>
     </div>
+    ${navEsteiraBarraHTML("navEsteiraFim", listaEst, idxEst)}
     <div class="card">
       <div class="toolbar no-print" style="justify-content:space-between;flex-wrap:wrap">
         <div>
@@ -3111,13 +3111,10 @@ function renderEsteiraOnePage(){
         </div>
       </div>
       ${timelineHTML}
-    </div>
-    ${navEsteiraBarraHTML("navEsteiraFim", listaEst, idxEst)}`;
+    </div>`;
 
-  ["navEsteiraMeio","navEsteiraFim"].forEach(prefixo=>{
-    if($(prefixo+"Anterior")) $(prefixo+"Anterior").onclick = ()=> esteiraIrPara(idxEst-1);
-    if($(prefixo+"Proxima")) $(prefixo+"Proxima").onclick = ()=> esteiraIrPara(idxEst+1);
-  });
+  if($("navEsteiraFimAnterior")) $("navEsteiraFimAnterior").onclick = ()=> esteiraIrPara(idxEst-1);
+  if($("navEsteiraFimProxima")) $("navEsteiraFimProxima").onclick = ()=> esteiraIrPara(idxEst+1);
 
   const salvarCampoEsteira = (campo, valor)=>{ ESTEIRAS[sel][campo] = valor; salvar(); };
   $("esteiraSubtitulo").onchange = e=> salvarCampoEsteira("subtitulo", e.target.value.trim());
