@@ -3306,7 +3306,6 @@ $("btnEnviarEmailEsteira").onclick = async ()=>{
       primeira = false;
     }
     const pdfBlob = pdf.output("blob");
-    const arquivo = new File([pdfBlob], nomeArquivo, {type:"application/pdf"});
 
     const assunto = `Status Report — ${nomeCompleto}`;
     const corpo = `Olá,\n\nSegue em anexo o status report do projeto ${nomeCompleto}, referente à última reunião de status report.\n\nQualquer dúvida, fico à disposição.`;
@@ -3320,50 +3319,31 @@ $("btnEnviarEmailEsteira").onclick = async ()=>{
     // usa ";" — funciona em qualquer configuração de Windows, ao contrário da vírgula.
     const emailsLista = emails.split(",").map(e=>e.trim()).filter(Boolean).join(";");
 
-    // a tela de compartilhar nativa NÃO tem campo de destinatário/assunto (só "título" e
-    // "texto" genéricos — nenhum protocolo de compartilhamento de arquivo tem esse campo, em
-    // navegador nenhum). O mailto: já funciona certinho (destinatário/assunto/texto), agora
-    // que o Outlook está configurado como padrão — mas ele não consegue anexar arquivo.
-    // não dá pra ter destinatário-automático E anexo-automático na MESMA janela — são dois
-    // mecanismos diferentes (mailto: vs. compartilhar arquivo), cada um só faz uma das coisas.
-    // Solução: dispara os dois. ORDEM IMPORTA MUITO: o compartilhar só funciona se disparar bem
-    // coladinho no clique do usuário, sem NENHUMA outra coisa no meio (nem alert, nem clipboard)
-    // — qualquer coisa no meio "quebra" a permissão e ele falha calado. Por isso ele vem
-    // primeiro de tudo, sem nada antes. Aviso e mailto (que também "sai da página") vêm depois.
-    // copiar pra área de transferência precisa da página em foco — o compartilhar tira o foco
-    // assim que abre (passa pro sistema/Outlook), então tem que copiar ANTES dele, não depois.
-    // Copiar é rápido e não trava nada, então não quebra a permissão do compartilhar (diferente
-    // do alert(), que travava esperando clique e por isso tinha que vir depois)
-    if(navigator.clipboard && navigator.clipboard.writeText){
-      try{ await navigator.clipboard.writeText(emailsLista); }catch(e){}
-    }
-    let compartilhouComAnexo = false;
-    if(navigator.canShare && navigator.canShare({files:[arquivo]})){
-      try{ await navigator.share({files:[arquivo], title:assunto, text:corpo}); compartilhouComAnexo = true; }
-      catch(e){ if(e.name==="AbortError") compartilhouComAnexo = true; } // cancelou de propósito, não é falha
-    }
+    // Removido o caminho de "compartilhar com anexo automático" (Web Share API): dependia de
+    // colar/copiar manualmente em 3 passos (Para, Assunto, Cc) trocando de janela entre o
+    // navegador e o Outlook, e falhava sem aviso claro quando um desses passos escorregava ou o
+    // Outlook não ficava em foco na hora certa. Agora é sempre o mesmo caminho único e previsível:
+    // baixa o PDF (pra anexar na mão, um arraste só) e abre o e-mail já com Para/Assunto/Corpo
+    // preenchidos de uma vez, sem precisar copiar nada.
     const ccLista = (p.emailsCC||"").split(",").map(e=>e.trim()).filter(Boolean).join(";"); // mesmo motivo do emailsLista acima
-    if(compartilhouComAnexo){
-      prompt(`PDF anexado! Destinatário já colado (Ctrl+V). Agora copia o ASSUNTO abaixo (já vem selecionado, é só Ctrl+C) e cola no campo "Assunto" do Outlook:`, assunto);
-      if(ccLista) prompt(`Agora copia os e-mails em CÓPIA abaixo (já vêm selecionados, é só Ctrl+C) e cola no campo "Cc" do Outlook:`, ccLista);
-    } else {
-      const url = URL.createObjectURL(pdfBlob);
-      const a = document.createElement("a"); a.href = url; a.download = nomeArquivo; a.click();
-      URL.revokeObjectURL(url);
-      // dispara o mailto: via clique num link de verdade (em vez de window.location.href) — é o
-      // jeito mais compatível de acionar um protocolo externo entre navegadores/SOs. Mesmo assim,
-      // ALGUNS clientes de e-mail (relatado com Outlook Desktop em certos Windows) abrem a partir
-      // do mailto: mas ignoram destinatário/assunto/corpo — o link chega, mas o e-mail abre vazio.
-      // Não tem como detectar isso por código (o navegador não avisa se o app externo ignorou os
-      // parâmetros), então SEMPRE mostra o texto pronto pra copiar manualmente, logo em seguida —
-      // se o e-mail abriu certinho, é só ignorar; se abriu vazio, é só colar.
-      let mailtoUrl = `mailto:${emailsLista}?subject=${encodeURIComponent(assunto)}&body=${encodeURIComponent(corpo)}`;
-      if(ccLista) mailtoUrl += `&cc=${encodeURIComponent(ccLista)}`;
-      const linkEmail = document.createElement("a");
-      linkEmail.href = mailtoUrl;
-      linkEmail.click();
-      alert(`O PDF foi baixado — é só arrastar pro anexo.\n\nSe o e-mail abriu SEM destinatário/assunto/texto (acontece em alguns Outlook/Windows, que ignoram esses dados do link), copie manualmente daqui:\n\nPara: ${emailsLista}${ccLista?`\nCc: ${ccLista}`:""}\nAssunto: ${assunto}\n\n${corpo}`);
-    }
+
+    const url = URL.createObjectURL(pdfBlob);
+    const a = document.createElement("a"); a.href = url; a.download = nomeArquivo;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    // dispara o mailto: via clique num link de verdade, anexado ao DOM antes do clique — é o jeito
+    // mais compatível de acionar um protocolo externo entre navegadores/SOs. Mesmo assim, ALGUNS
+    // clientes de e-mail (relatado com Outlook Desktop em certos Windows) abrem a partir do
+    // mailto: mas ignoram destinatário/assunto/corpo — o link chega, mas o e-mail abre vazio.
+    // Não tem como detectar isso por código (o navegador não avisa se o app externo ignorou os
+    // parâmetros), então SEMPRE mostra o texto pronto pra copiar manualmente, logo em seguida —
+    // se o e-mail abriu certinho, é só ignorar; se abriu vazio, é só colar.
+    let mailtoUrl = `mailto:${emailsLista}?subject=${encodeURIComponent(assunto)}&body=${encodeURIComponent(corpo)}`;
+    if(ccLista) mailtoUrl += `&cc=${encodeURIComponent(ccLista)}`;
+    const linkEmail = document.createElement("a");
+    linkEmail.href = mailtoUrl;
+    document.body.appendChild(linkEmail); linkEmail.click(); document.body.removeChild(linkEmail);
+    alert(`O PDF foi baixado — é só arrastar pro anexo.\n\nSe o e-mail abriu SEM destinatário/assunto/texto (acontece em alguns Outlook/Windows, que ignoram esses dados do link), copie manualmente daqui:\n\nPara: ${emailsLista}${ccLista?`\nCc: ${ccLista}`:""}\nAssunto: ${assunto}\n\n${corpo}`);
   }catch(err){
     if(err.name==="AbortError") { /* usuário cancelou de propósito, não é falha */ }
     else if(typeof html2canvas==="undefined" || !window.jspdf){
