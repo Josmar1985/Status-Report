@@ -1291,7 +1291,7 @@ $("ghDesconectar").onclick = ()=>{
 };
 
 // carga inicial — só entra se ainda não houver nada salvo neste navegador
-const PROJETOS_SEED = ["1.1 - Gestão de ativos SW (COI)", "1.2 - Plataforma de Integração Cloud", "2.1 - Centro 1200", "2.2 - Compliance de Emissão de Documentos", "2.3 - Expansão da Unidade de Faturamento (QUAR)", "3.1 - Automação de Recebimento Fiscal (Inbound)", "3.2 - Planejamento reforma 2027 (etapa 2)", "3.3 - Implementação do split payment", "3.4 - Transferência digital trib. (Aastax)", "3.5 - CNPJ Alfanumérico", "4.1 - Cartões de Crédito", "4.2 - Wflow governança contab. (Lct direto)", "4.3 - Integração de despesas (Concur)", "4.4 - Compensação de Documentos Bloqueados", "5.1 - Governança de Acessos (GRC/IAG)", "5.2 - Modernização de Vendas/Distr. (SD)", "5.3 - Segurança das Informações Comerciais (Revisão de Perfis)", "5.4 - Eficiência Wflow reembolso (user SAP)", "6.1 - Gestão Estratégica de Armazéns (EWM)", "6.2 - Gestão de Compliance de Fornecedores", "7.1 - Digitalização de Processos de P&D (Lote Piloto SAP)", "8.1 - Interligação dados financeiros (Crebinfar)", "8.2 - Padronização de Relatórios de Qualidade", "8.3 - Transparência em Custos de Produção", "8.4 - Melhoria em Relatórios Comerciais", "8.5 - Gestão inteligente devoluções", "8.6 - Saneamento Contábil (uso/consumo)", "8.7 - Gestão Contábil de Bonificações", "8.8 - Compliance ANVISA (Produtos Controlados)", "8.9 - Controle de Qualidade em Liberação de Lote", "9.1 - Segurança em conectividade bancária (Bank Manager)", "9.2 - Gestão de Prazos e Cash flow", "10.1 - Saneamento Mestre de Materiais (PDM)", "11.1 - Integração e Planejamento Integrado (S&OP)", "11.2 - Otimização de Documentação de Produção"];
+const PROJETOS_SEED = ["1.1 - Gestão de ativos SW (COI)", "1.2 - Plataforma de Integração Cloud", "2.1 - Centro 1200", "2.2 - Compliance de Emissão de Documentos", "2.3 - Expansão da Unidade de Faturamento (QUAR)", "3.1 - Automação de Recebimento Fiscal (Inbound)", "3.2 - Planejamento reforma 2027 (etapa 2)", "3.3 - Implementação do split payment", "3.4 - Transferência digital trib. (Aastax)", "3.5 - CNPJ Alfanumérico", "4.1 - Cartões de Crédito", "4.2 - Wflow governança contab. (Lct direto)", "4.3 - Integração de despesas (Concur)", "4.4 - Compensação de Documentos Bloqueados", "5.1 - Governança de Acessos (GRC/IAG)", "5.2 - Modernização de Vendas/Distr. (SD)", "5.3 - Segurança das Informações Comerciais (Revisão de Perfis)", "5.4 - Eficiência Wflow reembolso (user SAP)", "6.1 - Gestão Estratégica de Armazéns (EWM)", "6.2 - Gestão de Compliance de Fornecedores", "7.1 - Digitalização de Processos de P&D (Lote Piloto SAP)", "8.1 - Interligação dados financeiros (Credinfar)", "8.2 - Padronização de Relatórios de Qualidade", "8.3 - Transparência em Custos de Produção", "8.4 - Melhoria em Relatórios Comerciais", "8.5 - Gestão inteligente devoluções", "8.6 - Saneamento Contábil (uso/consumo)", "8.7 - Gestão Contábil de Bonificações", "8.8 - Compliance ANVISA (Produtos Controlados)", "8.9 - Controle de Qualidade em Liberação de Lote", "9.1 - Segurança em conectividade bancária (Bank Manager)", "9.2 - Gestão de Prazos e Cash flow", "10.1 - Saneamento Mestre de Materiais (PDM)", "11.1 - Integração e Planejamento Integrado (S&OP)", "11.2 - Otimização de Documentação de Produção"];
 if(PROJETOS.length===0 && localStorage.getItem(LS_PROJ)===null){
   PROJETOS = PROJETOS_SEED.map(nome=>({id:novoId(), nome, faseAtual:"", prazoPrevisto:null, responsavel:"", bloqueio:""}));
   salvar();
@@ -1513,7 +1513,7 @@ function renderPortfolio(){
     const f = calcFarol(p);
     const bloqueado = p.statusProjeto==="Bloqueado";
     return `<tr data-pid="${p.id}" ${bloqueado?'style="background:#F2F2F3"':(p.temImpedimento?'style="background:#FFF8E6"':"")}>
-      <td style="font-weight:700;position:sticky;left:0;background:${bloqueado?'#F2F2F3':(p.temImpedimento?'#FFF8E6':'#fff')};z-index:1${bloqueado?';text-decoration:line-through;color:var(--gray)':""}">${esc(p.nome)}</td>
+      <td style="font-weight:700;position:sticky;left:0;background:${bloqueado?'#F2F2F3':(p.temImpedimento?'#FFF8E6':'#fff')};z-index:1${bloqueado?';text-decoration:line-through;color:var(--gray)':""}"><span class="p-nome-texto">${esc(p.nome)}</span> <button class="icon-btn no-print" data-act="renomear" title="Renomear projeto" style="font-size:11px">✎</button></td>
       <td><select class="p-fase">${optsFase(p.faseAtual)}</select></td>
       <td><input type="date" class="p-prazo" value="${p.prazoPrevisto||""}"></td>
       <td><input type="text" class="p-resp" value="${esc(p.responsavel||"")}" placeholder="responsável"></td>
@@ -1540,6 +1540,20 @@ function renderPortfolio(){
   tb.querySelectorAll("tr[data-pid]").forEach(tr=>{
     const pid = tr.dataset.pid;
     const p = PROJETOS.find(x=>x.id===pid);
+    tr.querySelector('[data-act="renomear"]').onclick = ()=>{
+      const novoNome = prompt("Novo nome do projeto:", p.nome);
+      if(novoNome===null) return; // cancelou
+      const nomeLimpo = novoNome.trim();
+      if(!nomeLimpo){ alert("O nome não pode ficar em branco."); return; }
+      if(nomeLimpo===p.nome) return;
+      const jaExiste = PROJETOS.some(x=>x.id!==p.id && x.nome.trim()===nomeLimpo);
+      if(jaExiste && !confirm(`Já existe um projeto chamado exatamente "${nomeLimpo}". Renomear mesmo assim? (isso pode juntar os dois na próxima "Consolidar duplicados")`)) return;
+      const nomeAnterior = p.nome;
+      p.nome = nomeLimpo;
+      salvar();
+      registrarHistoricoAuto(pid, p.faseAtual, `Projeto renomeado de "${nomeAnterior}" para "${nomeLimpo}"`, "");
+      montarSelects(); renderTudo();
+    };
     tr.querySelector(".p-fase").onchange = e=>{
       const faseAnterior = p.faseAtual;
       p.faseAtual = e.target.value; p.faseAtualDesde = hojeISO(); salvar();
@@ -3323,19 +3337,37 @@ $("btnEnviarEmailEsteira").onclick = async ()=>{
       try{ await navigator.share({files:[arquivo], title:assunto, text:corpo}); compartilhouComAnexo = true; }
       catch(e){ if(e.name==="AbortError") compartilhouComAnexo = true; } // cancelou de propósito, não é falha
     }
+    const ccLista = (p.emailsCC||"").split(",").map(e=>e.trim()).filter(Boolean).join(",");
     if(compartilhouComAnexo){
       prompt(`PDF anexado! Destinatário já colado (Ctrl+V). Agora copia o ASSUNTO abaixo (já vem selecionado, é só Ctrl+C) e cola no campo "Assunto" do Outlook:`, assunto);
-      const ccLista = (p.emailsCC||"").split(",").map(e=>e.trim()).filter(Boolean).join(",");
       if(ccLista) prompt(`Agora copia os e-mails em CÓPIA abaixo (já vêm selecionados, é só Ctrl+C) e cola no campo "Cc" do Outlook:`, ccLista);
     } else {
       const url = URL.createObjectURL(pdfBlob);
       const a = document.createElement("a"); a.href = url; a.download = nomeArquivo; a.click();
       URL.revokeObjectURL(url);
-      window.location.href = `mailto:${emailsLista}?subject=${encodeURIComponent(assunto)}&body=${encodeURIComponent(corpo)}`;
-      alert("Não deu pra anexar direto dessa vez — o PDF foi baixado. O e-mail abriu com destinatário/assunto prontos, só arrastar o PDF baixado pro anexo.");
+      // dispara o mailto: via clique num link de verdade (em vez de window.location.href) — é o
+      // jeito mais compatível de acionar um protocolo externo entre navegadores/SOs. Mesmo assim,
+      // ALGUNS clientes de e-mail (relatado com Outlook Desktop em certos Windows) abrem a partir
+      // do mailto: mas ignoram destinatário/assunto/corpo — o link chega, mas o e-mail abre vazio.
+      // Não tem como detectar isso por código (o navegador não avisa se o app externo ignorou os
+      // parâmetros), então SEMPRE mostra o texto pronto pra copiar manualmente, logo em seguida —
+      // se o e-mail abriu certinho, é só ignorar; se abriu vazio, é só colar.
+      let mailtoUrl = `mailto:${emailsLista}?subject=${encodeURIComponent(assunto)}&body=${encodeURIComponent(corpo)}`;
+      if(ccLista) mailtoUrl += `&cc=${encodeURIComponent(ccLista)}`;
+      const linkEmail = document.createElement("a");
+      linkEmail.href = mailtoUrl;
+      linkEmail.click();
+      alert(`O PDF foi baixado — é só arrastar pro anexo.\n\nSe o e-mail abriu SEM destinatário/assunto/texto (acontece em alguns Outlook/Windows, que ignoram esses dados do link), copie manualmente daqui:\n\nPara: ${emailsLista}${ccLista?`\nCc: ${ccLista}`:""}\nAssunto: ${assunto}\n\n${corpo}`);
     }
   }catch(err){
-    if(err.name!=="AbortError") console.error("Erro ao gerar/compartilhar PDF:", err);
+    if(err.name==="AbortError") { /* usuário cancelou de propósito, não é falha */ }
+    else if(typeof html2canvas==="undefined" || !window.jspdf){
+      console.error("Erro ao gerar/compartilhar PDF:", err);
+      alert("Não consegui gerar o PDF porque as bibliotecas necessárias não carregaram (elas vêm de um endereço externo — cdnjs.cloudflare.com). Se este computador está numa rede corporativa que bloqueia esse endereço, ou está sem internet no momento, esse é o motivo. Peça pro TI liberar cdnjs.cloudflare.com, ou tente em outra rede.");
+    } else {
+      console.error("Erro ao gerar/compartilhar PDF:", err);
+      alert("Não consegui gerar/enviar o PDF dessa vez. Detalhe técnico no console do navegador (F12), se quiser me passar pra eu investigar.");
+    }
   }finally{
     btn.textContent = textoOriginal; btn.disabled = false;
     setTimeout(()=>{ suprimirAvisoSair = false; }, 2000); // religa o aviso um pouco depois, dando tempo do compartilhar terminar
