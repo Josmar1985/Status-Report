@@ -3310,7 +3310,15 @@ $("btnEnviarEmailEsteira").onclick = async ()=>{
 
     const assunto = `Status Report — ${nomeCompleto}`;
     const corpo = `Olá,\n\nSegue em anexo o status report do projeto ${nomeCompleto}, referente à última reunião de status report.\n\nQualquer dúvida, fico à disposição.`;
-    const emailsLista = emails.split(",").map(e=>e.trim()).filter(Boolean).join(",");
+    // ATENÇÃO: destinatário no Outlook precisa ser separado por PONTO E VÍRGULA, não vírgula.
+    // O Outlook lê a lista de "Para" usando o separador de lista configurado no Windows (Painel
+    // de Controle > Região) — em Windows em português (e boa parte da Europa), esse separador é
+    // ";", não ",". Um mailto: com vírgula (que é o padrão da própria especificação de mailto)
+    // chega no Outlook, mas como ele não reconhece a vírgula como separador nesse Windows, trata
+    // a lista inteira como um endereço só, inválido — e descarta tudo, abrindo o "Para" vazio.
+    // Por isso todo texto que vai pro Outlook (mailto e o que é copiado/colado manualmente)
+    // usa ";" — funciona em qualquer configuração de Windows, ao contrário da vírgula.
+    const emailsLista = emails.split(",").map(e=>e.trim()).filter(Boolean).join(";");
 
     // a tela de compartilhar nativa NÃO tem campo de destinatário/assunto (só "título" e
     // "texto" genéricos — nenhum protocolo de compartilhamento de arquivo tem esse campo, em
@@ -3334,7 +3342,7 @@ $("btnEnviarEmailEsteira").onclick = async ()=>{
       try{ await navigator.share({files:[arquivo], title:assunto, text:corpo}); compartilhouComAnexo = true; }
       catch(e){ if(e.name==="AbortError") compartilhouComAnexo = true; } // cancelou de propósito, não é falha
     }
-    const ccLista = (p.emailsCC||"").split(",").map(e=>e.trim()).filter(Boolean).join(",");
+    const ccLista = (p.emailsCC||"").split(",").map(e=>e.trim()).filter(Boolean).join(";"); // mesmo motivo do emailsLista acima
     if(compartilhouComAnexo){
       prompt(`PDF anexado! Destinatário já colado (Ctrl+V). Agora copia o ASSUNTO abaixo (já vem selecionado, é só Ctrl+C) e cola no campo "Assunto" do Outlook:`, assunto);
       if(ccLista) prompt(`Agora copia os e-mails em CÓPIA abaixo (já vêm selecionados, é só Ctrl+C) e cola no campo "Cc" do Outlook:`, ccLista);
