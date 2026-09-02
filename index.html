@@ -1532,6 +1532,7 @@ function renderPortfolio(){
         <button class="icon-btn" data-act="bloquear" title="${p.statusProjeto==='Bloqueado'?'Reativar projeto':'Marcar como Bloqueado/Parado'}" style="color:${p.statusProjeto==='Bloqueado'?FAROL_HEX.preto:'var(--gray)'}">🛑</button>
         <button class="icon-btn" data-act="ficha" title="Ver ficha completa (one-page deste projeto)">📄</button>
         <button class="icon-btn" data-act="hist" title="Ver histórico deste projeto">🕘</button>
+        <button class="icon-btn" data-act="unir" title="Unir com outro projeto (quando dois computadores criaram o mesmo projeto separadamente, ou um foi renomeado e o 'Corrigir duplicados' não achou por causa do nome diferente)">🔗</button>
         <button class="icon-btn" data-act="del" title="Remover">✕</button>
       </td>
     </tr>`;
@@ -1615,6 +1616,27 @@ function renderPortfolio(){
     tr.querySelector('[data-act="hist"]').onclick = ()=>{
       $("filtroHistProjeto").value = pid;
       irParaAba("historico");
+    };
+    tr.querySelector('[data-act="unir"]').onclick = ()=>{
+      const outros = PROJETOS.filter(x=>x.id!==p.id);
+      if(!outros.length){ alert("Não há outro projeto pra unir."); return; }
+      const lista = outros.map((x,i)=> `${i+1}. ${x.nome}`).join("\n");
+      const resposta = prompt(`Unir "${p.nome}" com qual projeto? Digite o número da lista:\n\n${lista}\n\n(Cancelar para não unir)`);
+      if(resposta===null) return;
+      const idx = parseInt((resposta||"").trim(), 10) - 1;
+      if(isNaN(idx) || idx<0 || idx>=outros.length){ alert("Número inválido — nada foi unido."); return; }
+      const alvo = outros[idx];
+      const escolha = prompt(`Unir "${p.nome}" com "${alvo.nome}"?\n\nOs dados dos dois serão combinados (fase, prazo, responsável, anotações, tarefas, histórico e itens da Esteira do lado descartado são preservados/migrados pro que sobrar — nada se perde). Só um dos dois nomes fica no final. Qual?\n\n1 = manter "${p.nome}"\n2 = manter "${alvo.nome}"\n\n(Cancelar para não unir)`, "1");
+      if(escolha===null) return;
+      const opc = (escolha||"").trim();
+      if(opc!=="1" && opc!=="2"){ alert("Digite 1 ou 2 — nada foi unido."); return; }
+      const idSobrevivente = opc==="1" ? p.id : alvo.id;
+      const idDescartado = opc==="1" ? alvo.id : p.id;
+      const nomeSobrevivente = opc==="1" ? p.nome : alvo.nome;
+      const nomeDescartado = opc==="1" ? alvo.nome : p.nome;
+      unirProjetosManualmente(idSobrevivente, idDescartado);
+      salvar(); montarSelects(); renderTudo();
+      alert(`Projetos unidos: "${nomeDescartado}" foi incorporado a "${nomeSobrevivente}".`);
     };
     tr.querySelector('[data-act="del"]').onclick = ()=>{
       if(confirm(`Remover "${p.nome}"? O histórico e cronograma dele também serão removidos.`)){
@@ -1768,6 +1790,52 @@ function consolidarProjetosDuplicados(){
   const suspeitos = Object.values(porNomeNormalizado).filter(grupo=>grupo.length>1);
 
   return {removidos, tarefasRemapeadas, historicoRemapeado, esteiraReapontada, suspeitos};
+}
+// une DOIS projetos escolhidos manualmente pelo usuário, mesmo com nomes bem diferentes — caso
+// que o "Corrigir duplicados" não cobre de propósito (ele só mescla nome IDÊNTICO, pra nunca
+// juntar projeto errado sozinho). Casos como um projeto renomeado num computador antes de nunca
+// ter sincronizado com o outro (ex.: "Plataforma de Integração Cloud" virou "...Cloud BTP" num
+// PC, mas o outro PC ainda tinha a versão de antes do rename com um id próprio) exigem essa
+// escolha manual: qual dos dois nomes fica valendo. Reaproveita a mesma lógica de preservar
+// dado (nunca perde campo, tarefa, histórico ou item de Esteira do lado descartado).
+function unirProjetosManualmente(idSobrevivente, idDescartado){
+  const vencedor = PROJETOS.find(x=>x.id===idSobrevivente);
+  const perdedor = PROJETOS.find(x=>x.id===idDescartado);
+  if(!vencedor || !perdedor) return false;
+
+  ["faseAtual","prazoPrevisto","responsavel","faseAtualDesde","motivoImpedimento","motivoBloqueioProjeto"].forEach(campo=>{
+    if(!vencedor[campo] && perdedor[campo]) vencedor[campo] = perdedor[campo];
+  });
+  if(!vencedor.temImpedimento && perdedor.temImpedimento) vencedor.temImpedimento = true;
+  if(!vencedor.statusProjeto && perdedor.statusProjeto) vencedor.statusProjeto = perdedor.statusProjeto;
+  if(!vencedor.bpxItens && perdedor.bpxItens) vencedor.bpxItens = perdedor.bpxItens;
+  if(!vencedor.vscEtapas && perdedor.vscEtapas) vencedor.vscEtapas = perdedor.vscEtapas;
+  if(!vencedor.popEtapas && perdedor.popEtapas) vencedor.popEtapas = perdedor.popEtapas;
+  const anotMesclado = mesclarAnotacaoLog(anotacaoLogDe(vencedor), anotacaoLogDe(perdedor));
+  if(anotMesclado) vencedor.anotacaoLog = anotMesclado;
+
+  TAREFAS.forEach(t=>{ if(t.projetoId===idDescartado) t.projetoId = idSobrevivente; });
+  HISTORICO.forEach(h=>{ if(h.projetoId===idDescartado) h.projetoId = idSobrevivente; });
+  if(PLANOS[idDescartado] && !PLANOS[idSobrevivente]) PLANOS[idSobrevivente] = PLANOS[idDescartado];
+  delete PLANOS[idDescartado];
+
+  Object.values(ESTEIRAS).forEach(e=>{
+    (e.timeline||[]).forEach(m=>{ if(m.projetoId===idDescartado) m.projetoId = idSobrevivente; });
+    ["dependencias","riscos","proximosPassos"].forEach(campo=>{
+      (e[campo]||[]).forEach(item=>{
+        if(!Array.isArray(item.projetoIds)) return;
+        item.projetoIds = item.projetoIds.map(pid=> pid===idDescartado ? idSobrevivente : pid);
+      });
+    });
+    if(e.overridesCard && e.overridesCard[idDescartado]!==undefined){
+      if(!e.overridesCard[idSobrevivente]) e.overridesCard[idSobrevivente] = e.overridesCard[idDescartado];
+      delete e.overridesCard[idDescartado];
+    }
+  });
+
+  PROJETOS = PROJETOS.filter(x=>x.id!==idDescartado);
+  TOMBSTONES.projetos[idDescartado] = Date.now();
+  return true;
 }
 $("btnConsolidarDup").onclick = ()=>{
   const antes = PROJETOS.length;
