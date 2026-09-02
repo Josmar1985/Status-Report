@@ -1618,10 +1618,19 @@ function renderPortfolio(){
       irParaAba("historico");
     };
     tr.querySelector('[data-act="unir"]').onclick = ()=>{
-      const outros = PROJETOS.filter(x=>x.id!==p.id);
-      if(!outros.length){ alert("Não há outro projeto pra unir."); return; }
+      if(!PROJETOS.some(x=>x.id!==p.id)){ alert("Não há outro projeto pra unir."); return; }
+      // lista completa, mas com os projetos da MESMA esteira (mais prováveis de ser o duplicado
+      // procurado, ex.: "1.1 COI" e "1.1 CPI") aparecendo primeiro — sem isso, um projeto que já
+      // está entre os últimos criados sempre acaba lá embaixo da lista, obrigando a rolar tudo
+      // (o prompt() nativo do navegador tem altura limitada e não é óbvio que dá pra rolar)
+      const minhaEsteira = esteiraDoProjeto(p.nome);
+      const outros = PROJETOS.filter(x=>x.id!==p.id).sort((a,b)=>{
+        const aMesma = esteiraDoProjeto(a.nome)===minhaEsteira ? 0 : 1;
+        const bMesma = esteiraDoProjeto(b.nome)===minhaEsteira ? 0 : 1;
+        return aMesma - bMesma;
+      });
       const lista = outros.map((x,i)=> `${i+1}. ${x.nome}`).join("\n");
-      const resposta = prompt(`Unir "${p.nome}" com qual projeto? Digite o número da lista:\n\n${lista}\n\n(Cancelar para não unir)`);
+      const resposta = prompt(`Unir "${p.nome}" com qual projeto? Digite o número da lista (os da mesma esteira aparecem primeiro; role pra baixo se precisar ver o resto):\n\n${lista}\n\n(Cancelar para não unir)`);
       if(resposta===null) return;
       const idx = parseInt((resposta||"").trim(), 10) - 1;
       if(isNaN(idx) || idx<0 || idx>=outros.length){ alert("Número inválido — nada foi unido."); return; }
