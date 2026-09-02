@@ -1475,7 +1475,10 @@ function montarSelects(){
   $("mrFase").innerHTML = optsFaseObrig;
   $("tfMilestone").innerHTML = optsFaseObrig;
 
-  const optsProj = PROJETOS.map(p=>`<option value="${p.id}">${esc(p.nome)}</option>`).join("");
+  // mesma ordenação numérica da tabela do Portfólio (1.1, 1.2, 2.1... 11.10) — sem isso esses
+  // seletores seguiam a ordem de chegada/sincronização, fora de ordem
+  const optsProj = [...PROJETOS].sort((a,b)=> (a.nome||"").localeCompare(b.nome||"", "pt", {numeric:true}))
+    .map(p=>`<option value="${p.id}">${esc(p.nome)}</option>`).join("");
   $("mrProjeto").innerHTML = optsProj;
 
   const filtroAtual = $("filtroHistProjeto").value;
@@ -1509,7 +1512,13 @@ function renderPortfolio(){
     return;
   }
   const optsFase = sel => '<option value="">— sem fase —</option>' + MILESTONES.map(f=>`<option ${f===sel?"selected":""}>${esc(f)}</option>`).join("");
-  tb.innerHTML = PROJETOS.map(p=>{
+  // ordena pela numeração do projeto (1.1, 1.2, 2.1... até 11.10) sempre que renderiza — assim
+  // qualquer edição (renomear, mudar fase, etc.) já deixa a tabela na ordem certa sozinha, em vez
+  // de simplesmente seguir a ordem de chegada/sincronização (que jogava duplicados e renomeados
+  // lá no fim da lista, fora de ordem). localeCompare com numeric:true trata "11.10" como maior
+  // que "1.2" de verdade, não como comparação de texto (que colocaria "11" antes de "2").
+  const projetosOrdenados = [...PROJETOS].sort((a,b)=> (a.nome||"").localeCompare(b.nome||"", "pt", {numeric:true}));
+  tb.innerHTML = projetosOrdenados.map(p=>{
     const f = calcFarol(p);
     const bloqueado = p.statusProjeto==="Bloqueado";
     return `<tr data-pid="${p.id}" ${bloqueado?'style="background:#F2F2F3"':(p.temImpedimento?'style="background:#FFF8E6"':"")}>
