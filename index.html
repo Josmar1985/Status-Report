@@ -3145,7 +3145,7 @@ function renderEsteiraOnePage(){
       <textarea id="esteiraStatusTexto" rows="2" placeholder="Resumo de uma frase do status geral da esteira..." style="width:100%">${esc(dE.statusTexto)}</textarea>
     </div>
     <div class="card">
-      <h2>Visão por Esteira</h2>
+      <h2>Visão por Projeto</h2>
       ${filtroTimelineProjeto[sel] ? `<div class="no-print" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">
           ${subprojetos.map(p=>{
             const ativo = filtroTimelineProjeto[sel]===p.id;
@@ -3347,7 +3347,7 @@ $("btnEnviarEmailEsteira").onclick = async ()=>{
   const sel = $("esteiraSelect").value;
   if(!sel){ alert("Selecione uma esteira primeiro."); return; }
   const projId = filtroTimelineProjeto[sel];
-  if(!projId){ alert('Selecione um projeto específico primeiro — clique no código dele (ex.: "2.1") na "Visão por Esteira", que aí sim filtra pra um projeto só. O e-mail é sempre de um projeto por vez.'); return; }
+  if(!projId){ alert('Selecione um projeto específico primeiro — clique no código dele (ex.: "2.1") na "Visão por Projeto", que aí sim filtra pra um projeto só. O e-mail é sempre de um projeto por vez.'); return; }
   const p = PROJETOS.find(x=>x.id===projId);
   if(!p) return;
   const nomeCompleto = p.nome; // nome do projeto por extenso (ex.: "2.1 - Centro 1200"), não só o código
