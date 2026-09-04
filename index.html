@@ -182,6 +182,7 @@
       <div class="header-actions">
       <span id="ghSyncStatus" style="font-size:11px;color:#B9C7DC;white-space:nowrap;align-self:center"></span>
       <button class="btn btn-soft btn-sm" id="btnAtualizarAgora" title="Busca agora mesmo o que outras pessoas já gravaram">🔄 Atualizar dados</button>
+      <button class="btn btn-soft btn-sm" id="btnToggleModoEdicao" title="Por padrão a ferramenta abre em modo leitura, pra evitar alteração sem querer. Clique e digite a senha pra habilitar edição.">🔒 Somente leitura</button>
       <button class="btn btn-soft btn-sm" id="btnGhConfig" title="Configurar sincronização com o GitHub, pra mais de uma pessoa usar">🔗 GitHub</button>
       <button class="btn btn-soft btn-sm" id="btnExportarBackup">💾 Salvar backup</button>
       <button class="btn btn-ghost btn-sm" id="btnEscolherLocalBackup" title="Escolher outro arquivo/pasta pro backup" style="color:#B9C7DC">📁 Trocar local</button>
@@ -266,22 +267,22 @@
     <div class="card">
       <div class="toolbar" style="justify-content:space-between">
         <div>
-          <h2 style="margin-bottom:2px">Atrasados por Responsável</h2>
-          <div class="desc" style="margin-bottom:0">Pronto pra responder "quem tem o quê atrasado" numa reunião.</div>
-        </div>
-        <button class="btn btn-soft btn-sm no-print" id="btnExportarAtrasadosCSV">⬇ Exportar (CSV)</button>
-      </div>
-      <table id="tabelaAtrasadosResp"></table>
-    </div>
-    <div class="card">
-      <div class="toolbar" style="justify-content:space-between">
-        <div>
           <h2 style="margin-bottom:2px">Pipeline do Portfólio</h2>
           <div class="desc" style="margin-bottom:0">Uma coluna por etapa, um card por projeto. Cor da barra lateral = farol. Clique num card pra abrir a Ficha dele.</div>
         </div>
         <button class="btn btn-soft btn-sm no-print" id="btnExportarVisaoGeralCSV">⬇ Exportar (CSV)</button>
       </div>
       <div class="kanban-wrap"><div class="kanban-board" id="kanbanPipeline"></div></div>
+    </div>
+    <div class="card">
+      <div class="toolbar" style="justify-content:space-between">
+        <div>
+          <h2 style="margin-bottom:2px">Atrasados por Responsável</h2>
+          <div class="desc" style="margin-bottom:0">Pronto pra responder "quem tem o quê atrasado" numa reunião.</div>
+        </div>
+        <button class="btn btn-soft btn-sm no-print" id="btnExportarAtrasadosCSV">⬇ Exportar (CSV)</button>
+      </div>
+      <table id="tabelaAtrasadosResp"></table>
     </div>
     <div class="card">
       <h2>Atividade da Semana</h2>
@@ -598,6 +599,70 @@
 
 <script>
 const $=id=>document.getElementById(id);
+
+/* ================= MODO SOMENTE LEITURA / EDIÇÃO ================= */
+// Por padrão a ferramenta abre travada (só leitura), pra evitar que alguém mude algo sem querer
+// numa apresentação ou numa versão mandada pra diretoria. Uma senha libera o modo edição.
+// Isso NÃO é segurança de verdade (é tudo client-side, dá pra burlar inspecionando o código) —
+// é só uma trava prática contra edição acidental. Pra trocar a senha, edite a linha abaixo.
+const SENHA_MODO_EDICAO = "myralis2026";
+const LS_MODO_EDICAO = "portfolioApp_modoEdicao_v1";
+let MODO_EDICAO = localStorage.getItem(LS_MODO_EDICAO) === "1";
+
+// ids que continuam liberados mesmo em modo leitura — ações de navegação/visualização/exportação,
+// que não alteram nenhum dado do portfólio
+const IDS_LIBERADOS_LEITURA = new Set([
+  "btnAtualizarAgora","btnToggleModoEdicao","btnGhConfig","btnExportarBackup","btnEscolherLocalBackup",
+  "btnModoApresentacao","btnSairApresentacao",
+  "btnImprimirOnePage","btnExportarStatusCSV","btnExportarVisaoGeralCSV","btnExportarAtrasadosCSV",
+  "btnFichaAnterior","btnFichaProximo","btnImprimirFicha",
+  "btnEsteiraAnteriorTopo","btnEsteiraProximaTopo","btnImprimirEsteira","btnEnviarEmailEsteira",
+  "mpCancelar","tfeCancelar","emCancelar","ceCancelar","mrCancelar","ghCancelar","ghCopiarResumo",
+  "filtroHistProjeto","esteiraSelect","fichaProjeto","esteiraTimelineFiltro","cronoDataInicio",
+]);
+// data-act que só navegam/filtram/exibem — não alteram dado nenhum
+const ACOES_LIBERADAS_LEITURA = new Set(["abrir-ficha","ficha","hist","ver-anot","filtrar-por-projeto"]);
+
+// varre botões/campos e trava (disabled) tudo que não estiver na lista acima, sempre que
+// MODO_EDICAO estiver desligado — roda de novo a cada render e também de tempos em tempos,
+// pra pegar modais e telas que não passam pelo render principal
+function aplicarModoLeitura(){
+  document.querySelectorAll("main button, .modal button, main select, .modal select, main input, .modal input, main textarea, .modal textarea")
+    .forEach(el=>{
+      if(el.classList.contains("leitura-ok")) return;
+      if(el.dataset && ACOES_LIBERADAS_LEITURA.has(el.dataset.act)) return;
+      if(IDS_LIBERADOS_LEITURA.has(el.id)) return;
+      if(el.type==="file") return; // input de restaurar backup — o próprio import já é bloqueado pelo guard dentro da função
+      el.disabled = !MODO_EDICAO;
+    });
+}
+
+function atualizarBotaoModoEdicao(){
+  const btn = $("btnToggleModoEdicao");
+  if(!btn) return;
+  if(MODO_EDICAO){
+    btn.textContent = "🔓 Modo edição";
+    btn.title = "Clique pra voltar ao modo somente leitura";
+  } else {
+    btn.textContent = "🔒 Somente leitura";
+    btn.title = "Por padrão a ferramenta abre em modo leitura, pra evitar alteração sem querer. Clique e digite a senha pra habilitar edição.";
+  }
+}
+
+function definirModoEdicao(v){
+  MODO_EDICAO = v;
+  try{ localStorage.setItem(LS_MODO_EDICAO, v?"1":"0"); }catch(e){}
+  atualizarBotaoModoEdicao();
+  aplicarModoLeitura();
+}
+
+// guard central — qualquer ação que grave algo pode chamar isso antes de mexer no dado
+function exigirEdicao(){
+  if(MODO_EDICAO) return true;
+  alert('Você está em modo somente leitura. Clique em "🔒 Somente leitura", no topo, e digite a senha pra habilitar edição.');
+  return false;
+}
+
 const LS_PROJ="portfolioApp_projetos_v1", LS_HIST="portfolioApp_historico_v1", LS_TAR="portfolioApp_tarefas_v1", LS_PLANOS="portfolioApp_planos_v1", LS_ESTEIRAS="portfolioApp_esteiras_v1";
 const hojeISO = ()=> new Date().toISOString().slice(0,10);
 const brDate = iso => { if(!iso) return "—"; const [y,m,d]=iso.split("-"); return `${d}/${m}/${y}`; };
@@ -1311,6 +1376,20 @@ function diasUteisEntre(a, b){ // dias úteis (seg-sex) estritamente após 'a' a
   }
   return count;
 }
+// qual prazo vale pra um projeto: o Fim Previsto do Plano de Marcos pra fase ATUAL quando existir
+// (mais preciso), senão o Prazo Previsto solto do Portfólio. Extraído do calcFarol pra ser a ÚNICA
+// fonte dessa escolha — reaproveitado pra EXIBIR o prazo no card do Kanban também, pra nunca mostrar
+// uma data diferente da que decidiu a cor do farol (isso ia parecer contradição/bug)
+function prazoEfetivoDoProjeto(p){
+  let prazo = p.prazoPrevisto;
+  let origem = prazo ? "geral" : null;
+  const plano = PLANOS[p.id];
+  if(plano){
+    const linha = plano.find(m=>m.milestone===p.faseAtual);
+    if(linha && linha.fim){ prazo = linha.fim; origem = "fase"; }
+  }
+  return {prazo, origem};
+}
 function calcFarol(p){
   if(p.statusProjeto==="Bloqueado") return {cor:"preto", label:"🛑 Bloqueado/Parado", dias:null};
   if(!p.faseAtual) return {cor:"cinza", label:"Sem fase", dias:null};
@@ -1322,14 +1401,7 @@ function calcFarol(p){
     return {cor:"amarelo", label:"Amarelo (impedimento — não conseguimos prosseguir)", dias:null};
   }
 
-  // usa o Fim Previsto do Plano de Marcos pra fase atual quando existir (mais preciso);
-  // cai pro Prazo Previsto solto do Portfólio quando não houver plano
-  let prazo = p.prazoPrevisto;
-  const plano = PLANOS[p.id];
-  if(plano){
-    const linha = plano.find(m=>m.milestone===p.faseAtual);
-    if(linha && linha.fim) prazo = linha.fim;
-  }
+  const {prazo} = prazoEfetivoDoProjeto(p);
 
   if(!prazo){
     // sem prazo definido já é, em si, um sinal de atenção — é exatamente o problema que esta
@@ -1345,6 +1417,26 @@ function calcFarol(p){
   return {cor:"verde", label:"Em andamento", dias:0};
 }
 const FAROL_HEX = {vermelho:"#B23A2E", amarelo:"#B9791A", laranja:"#C2530E", verde:"#2C7A4B", azul:"#2758A8", cinza:"#8A94A3", preto:"#3D4148"};
+// rótulo curto de farol pra espaço apertado (card de Kanban, Esteira) — versão enxuta do label
+// verboso do calcFarol ("Atrasado (5d úteis, sem motivo registrado)" vira só "Atrasado"). Global
+// porque é usado tanto pela Esteira quanto pelo Kanban.
+const FAROL_ROTULO_CURTO = {amarelo:"Impedimento", laranja:"Atrasado", vermelho:"Atrasado", verde:"Em andamento", azul:"Concluído", cinza:"Sem fase"};
+// indicador de "há quanto tempo ninguém mexe nisso" — INDEPENDENTE do farol de propósito (farol
+// mede só prazo/impedimento; isso mede qualidade da atualização gerencial, uma pergunta diferente).
+// nunca usa a cor do farol pra não parecer a mesma régua.
+function diasUteisSemAtualizacao(p){
+  const u = ultimaAtualizacao(p.id);
+  if(!u) return {dias:null, nunca:true};
+  return {dias: diasUteisEntre(u.data, hojeISO()), nunca:false};
+}
+function statusAtualizacao(p){
+  const info = diasUteisSemAtualizacao(p);
+  if(info.nunca) return {texto:"Nunca atualizado", nivel:"critico"};
+  if(info.dias<=5) return {texto:`${info.dias}d úteis sem atualização`, nivel:"normal"};
+  if(info.dias<=10) return {texto:`${info.dias}d úteis sem atualização`, nivel:"atencao"};
+  return {texto:`${info.dias}d úteis sem atualização`, nivel:"critico"};
+}
+const COR_NIVEL_ATUALIZACAO = {normal:"#8A94A3", atencao:"#B9791A", critico:"#B23A2E"};
 // status manual do card na Esteira — independente do farol automático do resto do app. Por
 // padrão é automático (calcFarol); a pessoa pode trocar pra um desses 5, ficando fixo até
 // escolher "Automático" de novo
@@ -1992,12 +2084,34 @@ function kanbanColHeaderHTML(col, count, colUltima){
         if(x.p.statusProjeto==="Bloqueado") return false; // bloqueados só aparecem na coluna própria
         return col==="Sem fase" ? !x.p.faseAtual : x.p.faseAtual===col;
       })
-      .sort((a,b)=> a.p.nome.localeCompare(b.p.nome));
-    const cards = itens.map(({p,f})=>`
-      <div class="kanban-card" style="border-left-color:${f.cor==='cinza'?'#AAB2BE':FAROL_HEX[f.cor]}${p.statusProjeto==='Bloqueado'?';opacity:.75':''}" data-act="abrir-ficha" data-pid="${p.id}">
-        <div class="kc-nome"${p.statusProjeto==='Bloqueado'?' style="text-decoration:line-through"':''}>${esc(p.nome)}</div>
-        <div class="kc-fase">${p.statusProjeto==='Bloqueado' ? esc(p.motivoBloqueioProjeto||"sem motivo registrado") : (p.temImpedimento ? "🟡 "+esc(p.motivoImpedimento||"impedimento sem motivo") : esc(p.responsavel||""))}</div>
-      </div>`).join("");
+      .sort((a,b)=> a.p.nome.localeCompare(b.p.nome, "pt", {numeric:true}));
+    const cards = itens.map(({p,f})=>{
+      const bloqueado = p.statusProjeto==="Bloqueado";
+      const {prazo, origem} = prazoEfetivoDoProjeto(p);
+      const prazoTxt = prazo ? `${brDate(prazo)} (${origem==="fase" ? "prazo da fase" : "prazo do projeto"})` : "sem prazo definido";
+      const atual = statusAtualizacao(p);
+      const corAtual = COR_NIVEL_ATUALIZACAO[atual.nivel];
+      const rodape = bloqueado
+        ? `<div class="kc-fase">🛑 ${esc(p.motivoBloqueioProjeto||"sem motivo registrado")}</div>`
+        : p.temImpedimento
+          ? `<div class="kc-fase">🟡 ${esc(p.motivoImpedimento||"impedimento sem motivo")}</div>`
+          : `<div class="kc-fase">${esc(p.responsavel||"sem responsável")}</div>`;
+      const faseTxt = bloqueado
+        ? (p.faseAtual ? `Estava em: ${esc(etapaDoMilestone(p.faseAtual))} — ${esc(p.faseAtual)}` : "Sem fase registrada")
+        : "";
+      const rotuloFarol = FAROL_ROTULO_CURTO[f.cor] || f.label;
+      return `
+      <div class="kanban-card" style="border-left-color:${f.cor==='cinza'?'#AAB2BE':FAROL_HEX[f.cor]}${bloqueado?';opacity:.85':''}" data-act="abrir-ficha" data-pid="${p.id}">
+        <div class="kc-nome"${bloqueado?' style="text-decoration:line-through"':''}>${esc(p.nome)}</div>
+        ${faseTxt?`<div style="font-size:9.5px;color:var(--gray);margin-bottom:3px">${faseTxt}</div>`:""}
+        <span style="display:inline-flex;align-items:center;gap:4px;font-size:9.5px;font-weight:700;color:${f.cor==='cinza'?'var(--gray)':FAROL_HEX[f.cor]};margin-bottom:3px">
+          <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${f.cor==='cinza'?'#AAB2BE':FAROL_HEX[f.cor]}"></span>${esc(rotuloFarol)}
+        </span>
+        ${rodape}
+        <div style="font-size:9.5px;color:var(--gray);margin-top:4px">🗓 ${prazoTxt}</div>
+        <div style="font-size:9.5px;color:${corAtual};font-weight:700;margin-top:2px">🕘 ${esc(atual.texto)}</div>
+      </div>`;
+    }).join("");
     const colUltima = col==="🛑 Bloqueados";
     return `<div class="kanban-col"${colUltima?' style="background:#EAEAEC"':""}>
       ${kanbanColHeaderHTML(col, itens.length, colUltima)}
@@ -3039,7 +3153,7 @@ function renderEsteiraOnePage(){
     // pílula preta "🛑 Bloqueado" + "Motivo:", em vez das últimas atualizações do Histórico
     // troca o emoji "🟡" (que só existe pro amarelo) por uma bolinha colorida de verdade,
     // igual em todos os farois — fica consistente pra Verde, Atrasado, Vermelho, Concluído, Sem fase
-    const FAROL_ROTULO_CURTO = {amarelo:"Impedimento", laranja:"Atrasado", vermelho:"Atrasado", verde:"Em andamento", azul:"Concluído", cinza:"Sem fase"};
+    // (FAROL_ROTULO_CURTO agora é global, definido perto do FAROL_HEX — reaproveitado pelo Kanban)
     // status manual do card (independente do farol automático usado no resto do app): se a pessoa
     // escolheu um dos 5 fixos, mostra ele; senão, mostra o automático de sempre
     const statusManual = p.statusManualEsteira ? STATUS_MANUAL_ESTEIRA[p.statusManualEsteira] : null;
@@ -3443,6 +3557,17 @@ function sairModoApresentacao(){
 }
 $("btnModoApresentacao").onclick = ativarModoApresentacao;
 $("btnSairApresentacao").onclick = sairModoApresentacao;
+
+$("btnToggleModoEdicao").onclick = ()=>{
+  if(MODO_EDICAO){ definirModoEdicao(false); return; }
+  const senha = prompt('Digite a senha pra habilitar o modo edição:');
+  if(senha===null) return; // cancelou
+  if(senha===SENHA_MODO_EDICAO){ definirModoEdicao(true); }
+  else alert("Senha incorreta.");
+};
+atualizarBotaoModoEdicao();
+aplicarModoLeitura();
+setInterval(aplicarModoLeitura, 400); // pega telas/modais que não passam pelo render principal
 // se a pessoa sair da tela cheia apertando Esc (em vez de clicar em "Sair"), o cabeçalho volta sozinho
 document.addEventListener("fullscreenchange", ()=>{
   if(!document.fullscreenElement) document.body.classList.remove("modo-apresentacao");
@@ -3494,6 +3619,7 @@ $("btnEscolherLocalBackup").onclick = ()=>{ backupFileHandle = null; alert("Ok �
 $("btnImportarBackup").onclick = ()=> $("fileBackup").click();
 $("fileBackup").onchange = async e=>{
   const f = e.target.files[0]; if(!f) return;
+  if(!exigirEdicao()){ e.target.value=""; return; }
   try{
     const backup = JSON.parse(await f.text());
     if(!backup || backup.tipo!=="portfolio_app_backup"){ alert("Esse arquivo não parece ser um backup válido."); return; }
@@ -3516,6 +3642,7 @@ $("fileBackup").onchange = async e=>{
 /* ================= INICIALIZAÇÃO ================= */
 function renderTudo(){
   renderPortfolio(); renderOnePage(); renderFicha(); renderHistorico(); renderEsteiraOnePage(); renderMilestonesRef();
+  aplicarModoLeitura();
 }
 // diz se a pessoa está com o cursor num campo de texto agora — usado pra sincronização em segundo
 // plano (busca automática, envio automático) NÃO redesenhar a tela no meio de alguém digitando
