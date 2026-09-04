@@ -182,7 +182,6 @@
       <div class="header-actions">
       <span id="ghSyncStatus" style="font-size:11px;color:#B9C7DC;white-space:nowrap;align-self:center"></span>
       <button class="btn btn-soft btn-sm" id="btnAtualizarAgora" title="Busca agora mesmo o que outras pessoas já gravaram">🔄 Atualizar dados</button>
-      <button class="btn btn-soft btn-sm" id="btnToggleModoEdicao" title="Por padrão a ferramenta abre em modo leitura, pra evitar alteração sem querer. Clique e digite a senha pra habilitar edição.">🔒 Somente leitura</button>
       <button class="btn btn-soft btn-sm" id="btnGhConfig" title="Configurar sincronização com o GitHub, pra mais de uma pessoa usar">🔗 GitHub</button>
       <button class="btn btn-soft btn-sm" id="btnExportarBackup">💾 Salvar backup</button>
       <button class="btn btn-ghost btn-sm" id="btnEscolherLocalBackup" title="Escolher outro arquivo/pasta pro backup" style="color:#B9C7DC">📁 Trocar local</button>
@@ -599,70 +598,6 @@
 
 <script>
 const $=id=>document.getElementById(id);
-
-/* ================= MODO SOMENTE LEITURA / EDIÇÃO ================= */
-// Por padrão a ferramenta abre travada (só leitura), pra evitar que alguém mude algo sem querer
-// numa apresentação ou numa versão mandada pra diretoria. Uma senha libera o modo edição.
-// Isso NÃO é segurança de verdade (é tudo client-side, dá pra burlar inspecionando o código) —
-// é só uma trava prática contra edição acidental. Pra trocar a senha, edite a linha abaixo.
-const SENHA_MODO_EDICAO = "myralis2026";
-const LS_MODO_EDICAO = "portfolioApp_modoEdicao_v1";
-let MODO_EDICAO = localStorage.getItem(LS_MODO_EDICAO) === "1";
-
-// ids que continuam liberados mesmo em modo leitura — ações de navegação/visualização/exportação,
-// que não alteram nenhum dado do portfólio
-const IDS_LIBERADOS_LEITURA = new Set([
-  "btnAtualizarAgora","btnToggleModoEdicao","btnGhConfig","btnExportarBackup","btnEscolherLocalBackup",
-  "btnModoApresentacao","btnSairApresentacao",
-  "btnImprimirOnePage","btnExportarStatusCSV","btnExportarVisaoGeralCSV","btnExportarAtrasadosCSV",
-  "btnFichaAnterior","btnFichaProximo","btnImprimirFicha",
-  "btnEsteiraAnteriorTopo","btnEsteiraProximaTopo","btnImprimirEsteira","btnEnviarEmailEsteira",
-  "mpCancelar","tfeCancelar","emCancelar","ceCancelar","mrCancelar","ghCancelar","ghCopiarResumo",
-  "filtroHistProjeto","esteiraSelect","fichaProjeto","esteiraTimelineFiltro","cronoDataInicio",
-]);
-// data-act que só navegam/filtram/exibem — não alteram dado nenhum
-const ACOES_LIBERADAS_LEITURA = new Set(["abrir-ficha","ficha","hist","ver-anot","filtrar-por-projeto"]);
-
-// varre botões/campos e trava (disabled) tudo que não estiver na lista acima, sempre que
-// MODO_EDICAO estiver desligado — roda de novo a cada render e também de tempos em tempos,
-// pra pegar modais e telas que não passam pelo render principal
-function aplicarModoLeitura(){
-  document.querySelectorAll("main button, .modal button, main select, .modal select, main input, .modal input, main textarea, .modal textarea")
-    .forEach(el=>{
-      if(el.classList.contains("leitura-ok")) return;
-      if(el.dataset && ACOES_LIBERADAS_LEITURA.has(el.dataset.act)) return;
-      if(IDS_LIBERADOS_LEITURA.has(el.id)) return;
-      if(el.type==="file") return; // input de restaurar backup — o próprio import já é bloqueado pelo guard dentro da função
-      el.disabled = !MODO_EDICAO;
-    });
-}
-
-function atualizarBotaoModoEdicao(){
-  const btn = $("btnToggleModoEdicao");
-  if(!btn) return;
-  if(MODO_EDICAO){
-    btn.textContent = "🔓 Modo edição";
-    btn.title = "Clique pra voltar ao modo somente leitura";
-  } else {
-    btn.textContent = "🔒 Somente leitura";
-    btn.title = "Por padrão a ferramenta abre em modo leitura, pra evitar alteração sem querer. Clique e digite a senha pra habilitar edição.";
-  }
-}
-
-function definirModoEdicao(v){
-  MODO_EDICAO = v;
-  try{ localStorage.setItem(LS_MODO_EDICAO, v?"1":"0"); }catch(e){}
-  atualizarBotaoModoEdicao();
-  aplicarModoLeitura();
-}
-
-// guard central — qualquer ação que grave algo pode chamar isso antes de mexer no dado
-function exigirEdicao(){
-  if(MODO_EDICAO) return true;
-  alert('Você está em modo somente leitura. Clique em "🔒 Somente leitura", no topo, e digite a senha pra habilitar edição.');
-  return false;
-}
-
 const LS_PROJ="portfolioApp_projetos_v1", LS_HIST="portfolioApp_historico_v1", LS_TAR="portfolioApp_tarefas_v1", LS_PLANOS="portfolioApp_planos_v1", LS_ESTEIRAS="portfolioApp_esteiras_v1";
 const hojeISO = ()=> new Date().toISOString().slice(0,10);
 const brDate = iso => { if(!iso) return "—"; const [y,m,d]=iso.split("-"); return `${d}/${m}/${y}`; };
@@ -3557,17 +3492,6 @@ function sairModoApresentacao(){
 }
 $("btnModoApresentacao").onclick = ativarModoApresentacao;
 $("btnSairApresentacao").onclick = sairModoApresentacao;
-
-$("btnToggleModoEdicao").onclick = ()=>{
-  if(MODO_EDICAO){ definirModoEdicao(false); return; }
-  const senha = prompt('Digite a senha pra habilitar o modo edição:');
-  if(senha===null) return; // cancelou
-  if(senha===SENHA_MODO_EDICAO){ definirModoEdicao(true); }
-  else alert("Senha incorreta.");
-};
-atualizarBotaoModoEdicao();
-aplicarModoLeitura();
-setInterval(aplicarModoLeitura, 400); // pega telas/modais que não passam pelo render principal
 // se a pessoa sair da tela cheia apertando Esc (em vez de clicar em "Sair"), o cabeçalho volta sozinho
 document.addEventListener("fullscreenchange", ()=>{
   if(!document.fullscreenElement) document.body.classList.remove("modo-apresentacao");
@@ -3619,7 +3543,6 @@ $("btnEscolherLocalBackup").onclick = ()=>{ backupFileHandle = null; alert("Ok �
 $("btnImportarBackup").onclick = ()=> $("fileBackup").click();
 $("fileBackup").onchange = async e=>{
   const f = e.target.files[0]; if(!f) return;
-  if(!exigirEdicao()){ e.target.value=""; return; }
   try{
     const backup = JSON.parse(await f.text());
     if(!backup || backup.tipo!=="portfolio_app_backup"){ alert("Esse arquivo não parece ser um backup válido."); return; }
@@ -3642,7 +3565,6 @@ $("fileBackup").onchange = async e=>{
 /* ================= INICIALIZAÇÃO ================= */
 function renderTudo(){
   renderPortfolio(); renderOnePage(); renderFicha(); renderHistorico(); renderEsteiraOnePage(); renderMilestonesRef();
-  aplicarModoLeitura();
 }
 // diz se a pessoa está com o cursor num campo de texto agora — usado pra sincronização em segundo
 // plano (busca automática, envio automático) NÃO redesenhar a tela no meio de alguém digitando
