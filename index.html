@@ -100,6 +100,18 @@
   .ri-meta{display:flex;flex-wrap:wrap;gap:12px;font-size:11.5px;color:var(--gray)}
   .ri-meta b{color:var(--ink)}
   .ri-actions{display:flex;gap:8px;margin-top:8px}
+  /* ---- cards de Compromissos na Ficha do projeto (estilo "kanban da daily") ---- */
+  .cp-top-left{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .cp-steps{display:flex;gap:4px;align-items:center}
+  .cp-dot{width:7px;height:7px;border-radius:50%;background:var(--line)}
+  .cp-dot.on{background:var(--blue)}
+  .row-item.cp-cobrado .cp-dot.on{background:var(--amber)}
+  .row-item.cp-resolvido .cp-dot.on{background:var(--green)}
+  .cp-cobranca{font-size:11.5px;color:var(--amber);font-weight:700;margin-bottom:8px}
+  /* grade lado a lado só pra esses cards (o Histórico geral continua empilhado em lista, como
+     sempre foi) — cada card com largura mínima de 300px, tantas colunas quanto couberem */
+  #fichaCompromissos{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:10px;align-items:start}
+  #fichaCompromissos .row-item{margin-bottom:0}
   /* ---- grade de Gantt diária (igual à aba Gantt do Excel) ---- */
   /* overflow:auto nos dois eixos (em vez de só overflow-x) transforma esse wrap num "painel
      congelado" de verdade, com scroll interno — igual congelar painéis no Excel: cabeçalho de
@@ -756,6 +768,12 @@ const LS_TOMBSTONES = "portfolioApp_tombstones_v1";
 // sobreviva à sincronização (senão, mesclar com o remoto ressuscitaria o item apagado)
 let TOMBSTONES = JSON.parse(localStorage.getItem(LS_TOMBSTONES) || '{"projetos":{},"tarefas":{},"historico":{},"esteiraItens":{}}');
 TOMBSTONES.esteiraItens = TOMBSTONES.esteiraItens || {}; // cobre quem já tinha TOMBSTONES salvo sem essa chave
+
+// e-mail de cada responsável (pra cobrança individual de compromisso) — guardado só neste
+// navegador, igual ao token do GitHub: {"nome em minúsculo": "email@empresa.com"}. Pergunta uma
+// vez por nome e reaproveita nas próximas cobranças, mesmo em compromissos/projetos diferentes.
+const LS_EMAILS_RESP = "portfolioApp_emailsResp_v1";
+let EMAILS_RESP = JSON.parse(localStorage.getItem(LS_EMAILS_RESP) || "{}");
 
 const LS_GH_TOKEN="portfolioApp_gh_token", LS_GH_OWNER="portfolioApp_gh_owner", LS_GH_REPO="portfolioApp_gh_repo",
       LS_GH_PATH="portfolioApp_gh_path", LS_GH_SHA="portfolioApp_gh_sha", LS_GH_BRANCH="portfolioApp_gh_branch";
@@ -2191,6 +2209,47 @@ function linhaHistoricoHTML(h, mostrarProjeto){
     </div>
   </div>`;
 }
+/* card de Compromisso específico da Ficha do projeto — selo de status + barrinha de progresso
+   (Registrado → Cobrado → Resolvido) + contador de cobrança, no estilo do kanban usado na daily */
+function fichaCompromissoHTML(h){
+  const vencido = !h.compromissoResolvido && h.prazoCompromisso && h.prazoCompromisso < hojeISO();
+  const cobranca = h.cobranca || 0;
+  // o selo acompanha só o ciclo de vida Aberto → Cobrado → Resolvido; "vencido" não disputa selo
+  // com "cobrado" — vira um aviso discreto ⚠ junto do próprio Prazo, dentro da linha de meta
+  let badgeBg, badgeFg, badgeTxt, estadoClasse;
+  if(h.compromissoResolvido){ badgeBg="var(--green-soft)"; badgeFg="var(--green)"; badgeTxt="Resolvido"; estadoClasse="cp-resolvido"; }
+  else if(cobranca>0){ badgeBg="var(--amber-soft)"; badgeFg="var(--amber)"; badgeTxt="Cobrado"; estadoClasse="cp-cobrado"; }
+  else { badgeBg="#EDEFF3"; badgeFg="var(--gray)"; badgeTxt="Aberto"; estadoClasse=""; }
+  const dot2on = (cobranca>0 || h.compromissoResolvido) ? " on" : "";
+  const dot3on = h.compromissoResolvido ? " on" : "";
+  const prazoHTML = h.prazoCompromisso
+    ? `<span><b>Prazo:</b> ${vencido?`<span style="color:var(--red);font-weight:700">${brDate(h.prazoCompromisso)} ⚠</span>`:brDate(h.prazoCompromisso)}</span>`
+    : "";
+  const txtCobrar = cobranca>0 ? "✉ Cobrar de novo" : "✉ Cobrar";
+  return `<div class="row-item ${estadoClasse}">
+    <div class="ri-top">
+      <div class="cp-top-left">
+        <span class="pill" style="background:${badgeBg};color:${badgeFg}">${badgeTxt}</span>
+        <span class="cp-steps" title="Registrado → Cobrado → Resolvido">
+          <span class="cp-dot on"></span><span class="cp-dot${dot2on}"></span><span class="cp-dot${dot3on}"></span>
+        </span>
+      </div>
+      <span style="font-size:11.5px;color:var(--gray)">${brDate(h.data)}</span>
+    </div>
+    ${h.nota?`<div class="ri-nota">${esc(h.nota)}</div>`:""}
+    <div class="ri-meta">
+      ${h.resp?`<span><b>Nome:</b> ${esc(h.resp)}</span>`:""}
+      ${prazoHTML}
+    </div>
+    ${cobranca>0?`<div class="cp-cobranca">✉ Cobrado: ${cobranca}x${h.ultimaCobranca?" (última em "+brDate(h.ultimaCobranca)+")":""}</div>`:""}
+    <div class="ri-actions">
+      ${!h.compromissoResolvido?`<button class="btn btn-soft btn-sm" style="background:var(--amber-soft);color:var(--amber)" data-act="cobrar-cp" data-id="${h.id}">${txtCobrar}</button>`:""}
+      <button class="btn btn-sm" data-act="${h.compromissoResolvido?"reabrir-cp":"resolver-cp"}" data-id="${h.id}">${h.compromissoResolvido?"↺ reabrir":"Marcar resolvido"}</button>
+      <button class="btn btn-ghost btn-sm" data-act="edit-h" data-id="${h.id}">✎ editar</button>
+      <button class="btn btn-ghost btn-sm" data-act="del-h" data-id="${h.id}" style="color:var(--red)">excluir</button>
+    </div>
+  </div>`;
+}
 function wireLinhasHistorico(containerId, rerender){
   const container = $(containerId);
   container.querySelectorAll('[data-act="del-h"]').forEach(btn=>{
@@ -2205,6 +2264,66 @@ function wireLinhasHistorico(containerId, rerender){
       if(h){ h.compromissoResolvido = !h.compromissoResolvido; salvar(); rerender(); }
     };
   });
+}
+// igual a wireLinhasHistorico, mas também liga o botão novo "Cobrar de novo" — só usado na Ficha
+function wireFichaCompromissos(containerId, rerender){
+  wireLinhasHistorico(containerId, rerender);
+  $(containerId).querySelectorAll('[data-act="cobrar-cp"]').forEach(btn=>{
+    btn.onclick = ()=> dispararCobranca(btn.dataset.id, rerender);
+  });
+}
+// Acha o e-mail do responsável pelo nome (cadastrado em compromissos anteriores). Se é a
+// primeira vez que esse nome aparece, pergunta uma vez (prompt) e guarda pra nunca mais
+// perguntar de novo pra esse mesmo nome — em qualquer projeto. Cancelar o prompt desiste da
+// cobrança (retorna null) sem gravar nada.
+function obterEmailResponsavel(nome){
+  const chave = nome.trim().toLowerCase();
+  let email = (EMAILS_RESP[chave] || "").trim();
+  if(email) return email;
+  const digitado = prompt(`Qual o e-mail de ${nome}?\n\n(só pergunta essa vez — da próxima vez que "${nome}" aparecer em qualquer compromisso, já usa esse e-mail direto)`);
+  if(digitado === null) return null; // cancelou
+  email = digitado.trim();
+  if(!email) return null;
+  EMAILS_RESP[chave] = email;
+  localStorage.setItem(LS_EMAILS_RESP, JSON.stringify(EMAILS_RESP));
+  return email;
+}
+// "Cobrar" / "Cobrar de novo": abre um e-mail de cobrança já preenchido pro responsável DAQUELE
+// compromisso especificamente (não pra lista de e-mails do projeto todo — cobrança é individual).
+// Mesmo padrão de mailto usado no Status Report por e-mail (";" entre destinatários, link de
+// verdade anexado ao DOM). Junto, registra a cobrança (contador + data).
+function dispararCobranca(hId, rerender){
+  const h = HISTORICO.find(x=>x.id===hId);
+  if(!h) return;
+  const p = PROJETOS.find(x=>x.id===h.projetoId);
+  const nomeCompleto = p ? p.nome : "";
+  const nomeResp = (h.resp||"").trim();
+  if(!nomeResp){ alert(`Esse compromisso não tem um responsável definido.\n\nAbra "✎ editar", preencha o campo "Nome" e tente cobrar de novo.`); return; }
+
+  const emailResp = obterEmailResponsavel(nomeResp);
+  if(!emailResp) return; // cancelou o prompt do e-mail — não registra cobrança
+
+  const ccLista = (p&&p.emailsCC||"").split(",").map(e=>e.trim()).filter(Boolean).join(";");
+  const assunto = `Cobrança de pendência — ${nomeCompleto}`;
+  const corpo = `Olá, ${nomeResp},\n\nCobrança referente ao compromisso registrado em ${brDate(h.data)} no projeto ${nomeCompleto}:\n\n"${h.nota||""}"\n\n${h.prazoCompromisso?"Prazo combinado: "+brDate(h.prazoCompromisso)+"\n\n":""}Favor retornar com um status assim que possível.\n\nObrigado,\n\nTECNOLOGIA DIGITAL\nSAP - Programa Ecdise - Fase Crisálida`;
+  let mailtoUrl = `mailto:${emailResp}?subject=${encodeURIComponent(assunto)}&body=${encodeURIComponent(corpo)}`;
+  if(ccLista) mailtoUrl += `&cc=${encodeURIComponent(ccLista)}`;
+  // igual ao botão de Status Report por e-mail: se já existem mudanças não sincronizadas
+  // (temMudancasSemBackup), clicar num link que "sai da página" dispara o aviso nativo do
+  // navegador ("Sair do site?") ANTES do mailto: chegar a abrir o cliente de e-mail — desliga esse
+  // aviso temporariamente enquanto aciona o link, senão o clique pode parecer que "não faz nada".
+  suprimirAvisoSair = true;
+  const linkEmail = document.createElement("a");
+  linkEmail.href = mailtoUrl;
+  document.body.appendChild(linkEmail); linkEmail.click(); document.body.removeChild(linkEmail);
+  setTimeout(()=>{ suprimirAvisoSair = false; }, 2000);
+
+  h.cobranca = (h.cobranca||0)+1; h.ultimaCobranca = hojeISO(); salvar(); rerender();
+
+  // igual ao botão de Status Report por e-mail: não tem como o código saber se o cliente de
+  // e-mail realmente abriu (ou abriu vazio) — por isso SEMPRE mostra o texto pronto pra copiar
+  // na mão, logo em seguida. Se abriu certinho, é só ignorar; se não abriu nada, copia daqui.
+  alert(`Cobrança registrada.\n\nSe o e-mail não abriu sozinho, copie manualmente:\n\nPara: ${emailResp}${ccLista?`\nCc: ${ccLista}`:""}\nAssunto: ${assunto}\n\n${corpo}`);
 }
 $("filtroHistProjeto").onchange = renderHistorico;
 
@@ -2241,7 +2360,7 @@ $("mrSalvar").onclick = ()=>{
   // compromissoResolvido não entra em `dados` de propósito: editar outra coisa nesse registro não
   // pode reabrir sozinho um compromisso já marcado como resolvido — só o botão dedicado faz isso
   if(registroModalAlvo){ Object.assign(registroModalAlvo, dados); }
-  else { HISTORICO.unshift({id:novoId(), criadoEm:Date.now(), compromissoResolvido:false, ...dados}); }
+  else { HISTORICO.unshift({id:novoId(), criadoEm:Date.now(), compromissoResolvido:false, cobranca:0, ultimaCobranca:null, ...dados}); }
   salvar();
   $("modalRegistro").classList.add("hide");
   renderTudo();
@@ -2649,9 +2768,9 @@ function renderCompromissosFicha(pid){
   const abertos = HISTORICO.filter(h=>h.projetoId===pid && h.prazoCompromisso && !h.compromissoResolvido)
     .sort((a,b)=> a.prazoCompromisso.localeCompare(b.prazoCompromisso));
   $("fichaCompromissos").innerHTML = abertos.length
-    ? abertos.map(h=> linhaHistoricoHTML(h, false)).join("")
+    ? abertos.map(h=> fichaCompromissoHTML(h)).join("")
     : `<div class="empty">Nenhum compromisso em aberto pra este projeto.</div>`;
-  wireLinhasHistorico("fichaCompromissos", ()=>{ renderFicha(); renderHistorico(); });
+  wireFichaCompromissos("fichaCompromissos", ()=>{ renderFicha(); renderHistorico(); });
 }
 $("btnAddCompromisso").onclick = ()=>{
   const pid = $("fichaProjeto").value;
@@ -2661,7 +2780,7 @@ $("btnAddCompromisso").onclick = ()=>{
   if(!nota){ alert("Escreva o que ficou combinado."); return; }
   HISTORICO.unshift({id:novoId(), criadoEm:Date.now(), projetoId:pid, data:hojeISO(), fase:p?p.faseAtual||"":"",
     nota, bloqueio:"", proximaAcao:"", resp:$("cpResp").value.trim(), precisaDecisao:false, marcoImportante:false,
-    prazoCompromisso:$("cpPrazo").value||null, compromissoResolvido:false});
+    prazoCompromisso:$("cpPrazo").value||null, compromissoResolvido:false, cobranca:0, ultimaCobranca:null});
   salvar();
   $("cpNota").value=""; $("cpResp").value=""; $("cpPrazo").value="";
   renderFicha(); renderHistorico();
