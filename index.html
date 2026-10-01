@@ -1098,11 +1098,15 @@ function mesclarRemoto(remoto, opcoes={}){
       ["timeline","dependencias","riscos","proximosPassos"].forEach(campo=>{
         lE[campo] = mesclarItensEsteira(lE[campo], rE[campo]);
       });
-      // campos de texto solto (subtítulo, status geral): só aceita o remoto se ainda estiver vazio
-      // aqui — evita perder o que já foi escrito, mesmo sem comparar datas
-      ["subtitulo","statusCor","statusTexto"].forEach(campo=>{
-        if(vazio(lE[campo]) && !vazio(rE[campo])) lE[campo] = rE[campo];
-      });
+      // campos de texto solto (subtítulo, status geral): agora compara DATA de verdade, igual já
+      // se faz pro overridesCard logo abaixo. ANTES só aceitava o remoto quando o campo local
+      // estava vazio — o que impedia apagar esses campos pra sempre: apagar deixava vazio por um
+      // instante, e a sincronização seguinte (local vazio + remoto ainda com o texto antigo) achava
+      // que precisava "preencher o vazio" e trazia o texto antigo de volta sozinho, mesmo sem
+      // ninguém ter escrito nada de novo — exatamente o "apago e volta" relatado.
+      if(vence(rE.atualizadoEm, lE.atualizadoEm)){
+        ["subtitulo","statusCor","statusTexto"].forEach(campo=>{ lE[campo] = rE[campo]; });
+      }
       // overridesCard (texto manual por sub-projeto): agora compara DATA de verdade, não só "tá
       // vazio, preenche" — isso que fazia "voltar ao automático" trazer o texto antigo de volta
       // sozinho na sincronização seguinte, porque campo vazio "parecia" precisar ser preenchido
@@ -3366,7 +3370,9 @@ function renderEsteiraOnePage(){
   if($("navEsteiraFimAnterior")) $("navEsteiraFimAnterior").onclick = ()=> esteiraIrPara(idxEst-1);
   if($("navEsteiraFimProxima")) $("navEsteiraFimProxima").onclick = ()=> esteiraIrPara(idxEst+1);
 
-  const salvarCampoEsteira = (campo, valor)=>{ ESTEIRAS[sel][campo] = valor; salvar(); };
+  // carimba a hora toda vez que um desses 3 campos muda, pra sincronização saber comparar
+  // "quem é mais novo" em vez de só olhar se está vazio (ver comentário em mesclarRemoto)
+  const salvarCampoEsteira = (campo, valor)=>{ ESTEIRAS[sel][campo] = valor; ESTEIRAS[sel].atualizadoEm = Date.now(); salvar(); };
   $("esteiraSubtitulo").onchange = e=> salvarCampoEsteira("subtitulo", e.target.value.trim());
   $("esteiraStatusCor").onchange = e=>{ salvarCampoEsteira("statusCor", e.target.value); renderEsteiraOnePage(); };
   $("esteiraStatusTexto").onchange = e=> salvarCampoEsteira("statusTexto", e.target.value.trim());
