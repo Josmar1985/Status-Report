@@ -399,7 +399,10 @@
         <button class="btn" id="btnAddTarefa">+ Adicionar tarefa</button>
       </div>
       <div class="card">
-        <h2>Cronograma</h2>
+        <div class="toolbar" style="justify-content:space-between">
+          <h2 style="margin:0">Cronograma</h2>
+          <button class="btn btn-soft btn-sm no-print" id="btnExportCronogramaPDF">⬇ Exportar Cronograma (PDF)</button>
+        </div>
         <div id="fichaCronograma"></div>
       </div>
     </div>
@@ -2766,6 +2769,54 @@ function renderFicha(){
     $("fichaCronograma").innerHTML = gradeGanttHTML(tarefas, inicioBase, true);
     wireGradeGanttHandlers("fichaCronograma", ()=>renderFicha());
   }
+
+  // "Exportar Cronograma (PDF)" — só a grade de Gantt desse projeto, em paisagem (ela é larga),
+  // reaproveitando o mesmo html2canvas+jsPDF já usado no Status Report por e-mail da Esteira.
+  $("btnExportCronogramaPDF").onclick = async ()=>{
+    if(!tarefas.length){ alert("Esse projeto ainda não tem tarefas lançadas no Cronograma — não há o que exportar."); return; }
+    const btn = $("btnExportCronogramaPDF");
+    const textoOriginal = btn.textContent;
+    btn.textContent = "⏳ Gerando PDF..."; btn.disabled = true;
+    try{
+      const alvo = $("fichaCronograma");
+      const canvas = await html2canvas(alvo, {
+        scale:2, backgroundColor:"#ffffff", windowWidth:alvo.scrollWidth,
+        // esconde os controles de edição (data-act edit-t-grid/del-t-grid, selects de fase etc.)
+        // que só fazem sentido na tela — o PDF é só a grade, igual a impressão
+        onclone: doc=> doc.querySelectorAll(".no-print").forEach(el=> el.style.display="none"),
+      });
+      const { jsPDF } = window.jspdf;
+      const pdf = new jsPDF({orientation:"l", unit:"pt", format:"a4"}); // paisagem: a grade é larga, não alta
+      const pageW = pdf.internal.pageSize.getWidth(), pageH = pdf.internal.pageSize.getHeight();
+      const margem = 20, topoConteudo = 55; // espaço reservado pro título, igual em toda página
+      pdf.setFontSize(14); pdf.setFont(undefined, "bold");
+      pdf.text(`Cronograma — ${p.nome}`, margem, 30);
+      pdf.setFontSize(9); pdf.setFont(undefined, "normal"); pdf.setTextColor(120);
+      pdf.text(`Gerado em ${brDate(hojeISO())}`, margem, 44);
+      pdf.setTextColor(0);
+      const imgW = pageW - margem*2, imgH = imgW * canvas.height / canvas.width;
+      const imgData = canvas.toDataURL("image/jpeg", 0.95);
+      let yRestante = imgH, yOffset = 0, primeira = true;
+      while(yRestante > 0){
+        if(!primeira) pdf.addPage();
+        pdf.addImage(imgData, "JPEG", margem, topoConteudo - yOffset, imgW, imgH);
+        yRestante -= (pageH - topoConteudo - margem);
+        yOffset += (pageH - topoConteudo - margem);
+        primeira = false;
+      }
+      pdf.save(`Cronograma_${p.nome.replace(/[^\w.-]+/g,"_")}_${hojeISO()}.pdf`);
+    }catch(err){
+      if(typeof html2canvas==="undefined" || !window.jspdf){
+        console.error("Erro ao gerar PDF do Cronograma:", err);
+        alert("Não consegui gerar o PDF porque as bibliotecas necessárias não carregaram (elas vêm de um endereço externo — cdnjs.cloudflare.com). Se este computador está numa rede corporativa que bloqueia esse endereço, ou está sem internet no momento, esse é o motivo. Peça pro TI liberar cdnjs.cloudflare.com, ou tente em outra rede.");
+      } else {
+        console.error("Erro ao gerar PDF do Cronograma:", err);
+        alert("Não consegui gerar o PDF do Cronograma dessa vez. Detalhe técnico no console do navegador (F12), se quiser me passar pra eu investigar.");
+      }
+    }finally{
+      btn.textContent = textoOriginal; btn.disabled = false;
+    }
+  };
 }
 /* ---------- Compromissos (nota + responsável + prazo) — vira registro no Histórico ---------- */
 function renderCompromissosFicha(pid){
