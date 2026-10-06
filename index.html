@@ -2797,8 +2797,18 @@ function renderFicha(){
     stickyCols.forEach(el=> el.style.position="static");
     try{
       const alvo = $("fichaCronograma");
+      // mede DEPOIS de liberar a rolagem acima — só passar windowWidth não bastou (ainda cortava):
+      // o html2canvas também precisa de width/height explícitos (o tamanho real do "retrato"),
+      // de windowHeight (senão a janela virtual interna fica baixa demais pra grade toda) e de
+      // scrollX/scrollY zerados (senão ele soma a posição de rolagem atual da página e desloca/corta
+      // o recorte) — é a combinação que resolve captura de elemento mais largo que a tela.
+      const largura = alvo.scrollWidth, altura = alvo.scrollHeight;
       const canvas = await html2canvas(alvo, {
-        scale:2, backgroundColor:"#ffffff", windowWidth:alvo.scrollWidth,
+        scale:2, backgroundColor:"#ffffff",
+        width: largura, height: altura,
+        windowWidth: largura, windowHeight: altura,
+        scrollX: 0, scrollY: 0,
+        x: 0, y: 0,
         onclone: doc=> doc.querySelectorAll(".no-print").forEach(el=> el.style.display="none"),
       });
       const { jsPDF } = window.jspdf;
