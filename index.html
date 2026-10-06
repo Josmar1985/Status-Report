@@ -2784,41 +2784,41 @@ function renderFicha(){
     const btn = $("btnExportCronogramaPDF");
     const textoOriginal = btn.textContent;
     btn.textContent = "⏳ Gerando PDF..."; btn.disabled = true;
+    // a grade de Gantt vive dentro de um .gantt-wrap com overflow:auto + max-height (rolagem
+    // própria na tela). Mexer nisso só na CÓPIA do html2canvas (onclone) não bastava — a
+    // biblioteca mede o tamanho ANTES do onclone rodar, então a cópia nascia do mesmo tamanho
+    // cortado. Por isso agora desliga a rolagem no elemento DE VERDADE por um instante (ninguém
+    // nota, é rápido), tira a foto, e devolve do jeito que estava.
+    const wraps = Array.from($("fichaCronograma").querySelectorAll(".gantt-wrap"));
+    const stickyCols = Array.from($("fichaCronograma").querySelectorAll(".gantt-label-col, .gantt-sub-col"));
+    const estiloOriginal = wraps.map(el=>({overflow:el.style.overflow, maxHeight:el.style.maxHeight}));
+    const posOriginal = stickyCols.map(el=> el.style.position);
+    wraps.forEach(el=>{ el.style.overflow="visible"; el.style.maxHeight="none"; });
+    stickyCols.forEach(el=> el.style.position="static");
     try{
       const alvo = $("fichaCronograma");
-      // a grade de Gantt vive dentro de um .gantt-wrap com overflow:auto + max-height (rolagem
-      // própria na tela) — sem desligar isso no clone, o html2canvas só "fotografa" o pedaço
-      // visível no momento (é exatamente o que cortava o PDF). As mesmas 3 regras que já existem
-      // pra @media print (overflow:visible, sem limite de altura, colunas sticky viram estáticas)
-      // resolvem aqui também — só que aplicadas na cópia renderizada, já que html2canvas não lê
-      // CSS de @media print sozinho.
       const canvas = await html2canvas(alvo, {
         scale:2, backgroundColor:"#ffffff", windowWidth:alvo.scrollWidth,
-        onclone: doc=>{
-          doc.querySelectorAll(".no-print").forEach(el=> el.style.display="none");
-          doc.querySelectorAll(".gantt-wrap").forEach(el=>{ el.style.overflow="visible"; el.style.maxHeight="none"; });
-          doc.querySelectorAll(".gantt-label-col, .gantt-sub-col").forEach(el=> el.style.position="static");
-        },
+        onclone: doc=> doc.querySelectorAll(".no-print").forEach(el=> el.style.display="none"),
       });
       const { jsPDF } = window.jspdf;
-      const pdf = new jsPDF({orientation:"l", unit:"pt", format:"a4"}); // paisagem: a grade é larga, não alta
+      // A3 paisagem, não A4: com o Cronograma agora podendo passar de 12 semanas, tudo numa página
+      // só em A4 ficaria pequeno demais pra ler — A3 dá o dobro de área mantendo tudo numa página.
+      const pdf = new jsPDF({orientation:"l", unit:"pt", format:"a3"});
       const pageW = pdf.internal.pageSize.getWidth(), pageH = pdf.internal.pageSize.getHeight();
-      const margem = 20, topoConteudo = 55; // espaço reservado pro título, igual em toda página
-      pdf.setFontSize(14); pdf.setFont(undefined, "bold");
+      const margem = 20, topoConteudo = 55; // espaço reservado pro título
+      pdf.setFontSize(16); pdf.setFont(undefined, "bold");
       pdf.text(`Cronograma — ${p.nome}`, margem, 30);
-      pdf.setFontSize(9); pdf.setFont(undefined, "normal"); pdf.setTextColor(120);
-      pdf.text(`Gerado em ${brDate(hojeISO())}`, margem, 44);
+      pdf.setFontSize(10); pdf.setFont(undefined, "normal"); pdf.setTextColor(120);
+      pdf.text(`Gerado em ${brDate(hojeISO())}`, margem, 46);
       pdf.setTextColor(0);
-      const imgW = pageW - margem*2, imgH = imgW * canvas.height / canvas.width;
+      // tudo numa página só: encolhe a imagem (mantendo a proporção) até caber na área disponível,
+      // em vez de cortar ou espalhar por várias páginas
+      const areaW = pageW - margem*2, areaH = pageH - topoConteudo - margem;
+      const fatorAjuste = Math.min(areaW/canvas.width, areaH/canvas.height);
+      const imgW = canvas.width*fatorAjuste, imgH = canvas.height*fatorAjuste;
       const imgData = canvas.toDataURL("image/jpeg", 0.95);
-      let yRestante = imgH, yOffset = 0, primeira = true;
-      while(yRestante > 0){
-        if(!primeira) pdf.addPage();
-        pdf.addImage(imgData, "JPEG", margem, topoConteudo - yOffset, imgW, imgH);
-        yRestante -= (pageH - topoConteudo - margem);
-        yOffset += (pageH - topoConteudo - margem);
-        primeira = false;
-      }
+      pdf.addImage(imgData, "JPEG", margem, topoConteudo, imgW, imgH);
       pdf.save(`Cronograma_${p.nome.replace(/[^\w.-]+/g,"_")}_${hojeISO()}.pdf`);
     }catch(err){
       if(typeof html2canvas==="undefined" || !window.jspdf){
@@ -2829,6 +2829,8 @@ function renderFicha(){
         alert("Não consegui gerar o PDF do Cronograma dessa vez. Detalhe técnico no console do navegador (F12), se quiser me passar pra eu investigar.");
       }
     }finally{
+      wraps.forEach((el,i)=>{ el.style.overflow=estiloOriginal[i].overflow; el.style.maxHeight=estiloOriginal[i].maxHeight; });
+      stickyCols.forEach((el,i)=> el.style.position=posOriginal[i]);
       btn.textContent = textoOriginal; btn.disabled = false;
     }
   };
