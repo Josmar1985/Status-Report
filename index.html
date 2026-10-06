@@ -136,8 +136,7 @@
   .only-print{display:none}
   .gantt-etapa-head td{background:#1B6FA8;color:#fff;font-weight:800;font-size:12px;padding:4px 10px !important;text-align:left !important}
   .gantt-etapa-head.sem-fase td{background:#8A94A3}
-  .gantt-day-cell.fds::after{content:"";position:absolute;inset:0;pointer-events:none;
-    background:repeating-linear-gradient(45deg, rgba(0,0,0,.22) 0 3px, transparent 3px 6px)}
+  .gantt-day-cell.fds{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8'%3E%3Cpath d='M0 8L8 0ZM-1 1L1 -1ZM7 9L9 7Z' stroke-width='3' stroke='rgba(0,0,0,.22)'/%3E%3C/svg%3E");background-repeat:repeat}
   .gantt-day-head.fds{filter:brightness(.8)}
   .gantt-day-cell.hoje{box-shadow:inset 0 0 0 2px var(--red)}
   .gc-nao_iniciado{background:#E6E0F5}
