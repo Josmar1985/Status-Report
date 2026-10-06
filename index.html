@@ -2393,8 +2393,12 @@ function compararTarefas(a, b){
 }
 /* ---------- grade de Gantt diária, igual à aba Gantt do Excel: semana/dia-da-semana/dia, células coloridas ---------- */
 const LETRA_DIA = ["D","S","T","Q","Q","S","S"]; // índice = Date.getDay() (0=domingo)
-function gradeGanttHTML(tarefas, inicioBase, editavel){
-  const N_DIAS = 84; // 12 semanas, igual ao template do Excel
+function gradeGanttHTML(tarefas, inicioBase, editavel, nDias){
+  // 84 dias (12 semanas) é o tamanho padrão, igual ao template do Excel — mas um projeto com
+  // tarefas mais longas precisa de mais colunas que isso, senão qualquer data além da semana 12
+  // simplesmente não tem onde desenhar a barra (a tarefa "sumia" a partir dali). Quem chama passa
+  // o tamanho necessário (ver janelaTarefas); sem isso, cai no padrão de sempre.
+  const N_DIAS = nDias || 84;
   const base = new Date(inicioBase+"T00:00:00");
   const dias = Array.from({length:N_DIAS}, (_,i)=>{ const d=new Date(base); d.setDate(d.getDate()+i); return d.toISOString().slice(0,10); });
   const hojeStr = hojeISO();
@@ -2765,8 +2769,11 @@ function renderFicha(){
   if(!tarefas.length){
     $("fichaCronograma").innerHTML = `<div class="empty">Nenhuma tarefa lançada ainda.</div>`;
   } else {
-    const {inicioBase} = janelaTarefas(tarefas, p.cronogramaInicio);
-    $("fichaCronograma").innerHTML = gradeGanttHTML(tarefas, inicioBase, true);
+    const {inicioBase, janela} = janelaTarefas(tarefas, p.cronogramaInicio);
+    // a grade sempre mostra pelo menos as 12 semanas padrão, mas cresce (em semanas fechadas)
+    // quando alguma tarefa vai além disso — sem isso, datas depois da semana 12 ficavam sem coluna
+    const nDias = Math.max(84, Math.ceil(janela/7)*7);
+    $("fichaCronograma").innerHTML = gradeGanttHTML(tarefas, inicioBase, true, nDias);
     wireGradeGanttHandlers("fichaCronograma", ()=>renderFicha());
   }
 
@@ -2779,11 +2786,19 @@ function renderFicha(){
     btn.textContent = "⏳ Gerando PDF..."; btn.disabled = true;
     try{
       const alvo = $("fichaCronograma");
+      // a grade de Gantt vive dentro de um .gantt-wrap com overflow:auto + max-height (rolagem
+      // própria na tela) — sem desligar isso no clone, o html2canvas só "fotografa" o pedaço
+      // visível no momento (é exatamente o que cortava o PDF). As mesmas 3 regras que já existem
+      // pra @media print (overflow:visible, sem limite de altura, colunas sticky viram estáticas)
+      // resolvem aqui também — só que aplicadas na cópia renderizada, já que html2canvas não lê
+      // CSS de @media print sozinho.
       const canvas = await html2canvas(alvo, {
         scale:2, backgroundColor:"#ffffff", windowWidth:alvo.scrollWidth,
-        // esconde os controles de edição (data-act edit-t-grid/del-t-grid, selects de fase etc.)
-        // que só fazem sentido na tela — o PDF é só a grade, igual a impressão
-        onclone: doc=> doc.querySelectorAll(".no-print").forEach(el=> el.style.display="none"),
+        onclone: doc=>{
+          doc.querySelectorAll(".no-print").forEach(el=> el.style.display="none");
+          doc.querySelectorAll(".gantt-wrap").forEach(el=>{ el.style.overflow="visible"; el.style.maxHeight="none"; });
+          doc.querySelectorAll(".gantt-label-col, .gantt-sub-col").forEach(el=> el.style.position="static");
+        },
       });
       const { jsPDF } = window.jspdf;
       const pdf = new jsPDF({orientation:"l", unit:"pt", format:"a4"}); // paisagem: a grade é larga, não alta
