@@ -116,7 +116,10 @@
   /* overflow:auto nos dois eixos (em vez de só overflow-x) transforma esse wrap num "painel
      congelado" de verdade, com scroll interno — igual congelar painéis no Excel: cabeçalho de
      semana e colunas da esquerda ficam fixos, só o miolo da grade rola */
-  .gantt-wrap{overflow:auto;max-height:65vh;border:1px solid var(--line);border-radius:8px}
+  .gantt-wrap{overflow:auto;max-height:80vh;border:1px solid var(--line);border-radius:8px}
+  /* Cronograma: "escapa" do max-width:1600px do <main> pra usar a largura inteira da tela —
+     cabem mais colunas de dia sem precisar rolar na horizontal, em telas largas */
+  #cardCronograma{max-width:none;width:calc(100vw - 48px);margin-left:calc(50% - 50vw + 24px);margin-right:calc(50% - 50vw + 24px)}
   table.gantt-grade{border-collapse:collapse;font-size:10px;white-space:nowrap}
   table.gantt-grade th, table.gantt-grade td{border:1px solid #D8DEE8;padding:0;text-align:center}
   table.gantt-grade thead th{position:sticky;top:0;z-index:4}
@@ -397,7 +400,7 @@
         </div>
         <button class="btn" id="btnAddTarefa">+ Adicionar tarefa</button>
       </div>
-      <div class="card">
+      <div class="card" id="cardCronograma">
         <div class="toolbar" style="justify-content:space-between">
           <h2 style="margin:0">Cronograma</h2>
           <button class="btn btn-soft btn-sm no-print" id="btnExportCronogramaPDF">⬇ Exportar Cronograma (PDF)</button>
