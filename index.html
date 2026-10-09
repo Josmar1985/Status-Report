@@ -117,9 +117,9 @@
      congelado" de verdade, com scroll interno — igual congelar painéis no Excel: cabeçalho de
      semana e colunas da esquerda ficam fixos, só o miolo da grade rola */
   .gantt-wrap{overflow:auto;max-height:80vh;border:1px solid var(--line);border-radius:8px}
-  /* Cronograma: "escapa" do max-width:1600px do <main> pra usar a largura inteira da tela —
-     cabem mais colunas de dia sem precisar rolar na horizontal, em telas largas */
-  #cardCronograma{max-width:none;width:calc(100vw - 48px);margin-left:calc(50% - 50vw + 24px);margin-right:calc(50% - 50vw + 24px)}
+  /* Cronograma e Roadmap "escapam" do max-width:1600px do <main> pra usar a largura inteira da
+     tela — cabem mais colunas sem precisar rolar na horizontal, em telas largas. Regra de verdade
+     fica mais abaixo, junto do resto do CSS do Roadmap, pra não ficar espalhada em dois lugares. */
   table.gantt-grade{border-collapse:collapse;font-size:10px;white-space:nowrap}
   table.gantt-grade th, table.gantt-grade td{border:1px solid #D8DEE8;padding:0;text-align:center}
   table.gantt-grade thead th{position:sticky;top:0;z-index:4}
@@ -146,11 +146,69 @@
   .gc-em_andamento{background:#A996DE}
   .gc-concluido{background:#5B3FA0}
   .gc-atrasado{background:#C0392B}
+  .gc-golive{background:#27AE60}
   .gc-pop{background:#3B4499}
   .gc-pop-concluido{background:#2A3170}
   .gc-pop-atrasado{background:#C0392B}
   .gantt-legenda{display:flex;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--gray);margin-top:10px;align-items:center}
   .gantt-legenda .sw{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:5px;vertical-align:middle}
+
+  /* ---- Roadmap por Esteira (apresentação pro chefe): linha do tempo mensal, barras livres
+     (não em grade de dias/semanas igual o Cronograma) — cada barra é posicionada por %/px dentro
+     de uma faixa contínua, dando o visual de "roadmap executivo" em vez de planilha detalhada ---- */
+  #cardCronograma, #cardRoadmap{max-width:none;width:calc(100vw - 48px);margin-left:calc(50% - 50vw + 24px);margin-right:calc(50% - 50vw + 24px)}
+  .roadmap-wrap{overflow-x:auto;overflow-y:hidden;border:1px solid var(--line);border-radius:8px}
+  .roadmap-row{display:flex;align-items:stretch;border-bottom:1px solid #EEF1F5}
+  .roadmap-row:last-child{border-bottom:none}
+  .roadmap-label-col{position:sticky;left:0;background:#fff;z-index:2;min-width:280px;max-width:280px;
+    padding:5px 12px;box-sizing:border-box;border-right:2px solid var(--navy);display:flex;align-items:center;
+    font-size:12px}
+  .roadmap-head .roadmap-label-col{background:var(--navy);border-right-color:var(--navy)}
+  .roadmap-timeline{position:relative;flex-shrink:0}
+  .roadmap-head-years, .roadmap-head-months{display:flex}
+  .roadmap-head-years div, .roadmap-head-months div{flex-shrink:0;box-sizing:border-box;color:#fff;
+    font-weight:800;text-align:center;display:flex;align-items:center;justify-content:center;
+    border-left:1px solid rgba(255,255,255,.18)}
+  .roadmap-head-years div{background:var(--navy);font-size:12.5px;height:26px}
+  .roadmap-head-years div.b{background:#24405F}
+  .roadmap-head-months div{background:#1B3A5C;font-size:10px;height:22px}
+  .roadmap-head-months div.b{background:#24405F}
+  .roadmap-esteira-banda .roadmap-label-col{background:#1B6FA8;color:#fff;font-weight:800;font-size:13px;border-right-color:#1B6FA8}
+  .roadmap-esteira-banda .roadmap-timeline{background:#1B6FA8}
+  .roadmap-proj-row .roadmap-label-col{font-weight:800;color:var(--navy);font-size:12.5px;line-height:1.3}
+  .roadmap-proj-row .roadmap-label-col .rp-resp{font-weight:600;color:var(--gray);font-size:11px;margin-left:5px}
+  .rp-pct{font-weight:700;font-size:11px;margin-left:6px;padding:1px 6px;border-radius:9px;background:#EEF1F6;color:#4B5563}
+  .rp-pct-geral{font-weight:800;font-size:14px;padding:5px 14px;border-radius:14px;background:#DCEAFB;color:#1B4F8C;white-space:nowrap}
+  .roadmap-proj-row .roadmap-label-col .rp-pct{background:#DCEAFB;color:#1B4F8C}
+  .roadmap-pct-label{position:absolute;top:6px;height:18px;line-height:18px;font-size:11px;font-weight:700;white-space:nowrap;pointer-events:none}
+  .roadmap-pct-label.dentro{text-align:left;padding-left:7px;box-sizing:border-box;overflow:hidden;text-overflow:clip}
+  .roadmap-pct-label.dentro.escuro{color:#fff}
+  .roadmap-pct-label.dentro.claro{color:#4B3B7A}
+  .roadmap-pct-label.fora{padding-left:6px;color:#4B5563}
+  .roadmap-task-row .roadmap-label-col{padding-left:26px;color:var(--ink);font-size:11.5px}
+  .roadmap-task-row .roadmap-timeline{height:30px}
+  .roadmap-proj-row .roadmap-timeline{height:22px}
+  .roadmap-overview-row .roadmap-timeline{height:30px}
+  .roadmap-bar{position:absolute;top:6px;height:18px;border-radius:9px;min-width:8px;
+    box-shadow:0 1px 2px rgba(16,24,38,.18)}
+  .roadmap-diamond{position:absolute;top:5px;width:16px;height:16px;transform:translateX(-50%) rotate(45deg);
+    border-radius:3px;box-shadow:0 1px 2px rgba(16,24,38,.25)}
+  .roadmap-diamond.gc-golive{border:2px solid #fff;box-shadow:0 1px 3px rgba(16,24,38,.45)}
+  .roadmap-today-line{position:absolute;top:0;bottom:0;border-left:2px dashed var(--red);z-index:3;pointer-events:none}
+  .roadmap-golive-line{position:absolute;top:0;bottom:0;border-left:2px dashed #1E8449;z-index:2;pointer-events:none}
+  .roadmap-golive-data{position:absolute;top:-20px;transform:translateX(-50%);font-size:10px;font-weight:700;
+    color:#fff;background:#1E8449;border-radius:3px;padding:1px 6px;white-space:nowrap;z-index:4;pointer-events:none}
+  .roadmap-golive-data-perto{position:absolute;top:24px;transform:translateX(-50%);font-size:10px;font-weight:700;
+    color:#fff;background:#1E8449;border-radius:3px;padding:1px 6px;white-space:nowrap;z-index:4;pointer-events:none}
+  .roadmap-overview-bar{position:absolute;top:4px;left:0;width:100%;height:22px;border-radius:11px;
+    background:linear-gradient(180deg,#3FA9E0,#1B6FA8);
+    background-image:linear-gradient(180deg,#3FA9E0,#1B6FA8),
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8'%3E%3Cpath d='M0 8L8 0ZM-1 1L1 -1ZM7 9L9 7Z' stroke-width='3' stroke='rgba(255,255,255,.35)'/%3E%3C/svg%3E");
+    background-blend-mode:normal;background-repeat:no-repeat,repeat}
+  .roadmap-today-triangle{position:absolute;top:-10px;width:0;height:0;border-left:7px solid transparent;
+    border-right:7px solid transparent;border-top:10px solid var(--ink);transform:translateX(-50%);z-index:4}
+  .roadmap-legenda{display:flex;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--gray);margin-top:10px;align-items:center}
+  .roadmap-legenda .sw{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:5px;vertical-align:middle}
 
   /* ---- kanban do pipeline (one-page) ---- */
   .kanban-wrap{overflow-x:auto;padding-bottom:6px}
@@ -186,6 +244,8 @@
     .timeline-h-wrap{ overflow:visible !important; }
     .gantt-label-col, .gantt-sub-col{ position:static !important; }
     table.gantt-grade{ font-size:9px !important; }
+    .roadmap-wrap{ overflow:visible !important; }
+    .roadmap-label-col{ position:static !important; }
   }
 </style>
 </head>
@@ -220,6 +280,7 @@
   <button data-tab="ficha">Ficha do Projeto</button>
   <button data-tab="historico">Histórico</button>
   <button data-tab="esteira">One-Page Esteira</button>
+  <button data-tab="roadmap">Roadmap</button>
   <button data-tab="milestones">Milestones</button>
 </nav>
 
@@ -444,6 +505,20 @@
     <div id="esteiraConteudo" class="hide"></div>
   </section>
 
+  <!-- ===== ROADMAP (apresentação por esteira, linha do tempo mensal) ===== -->
+  <section id="tab-roadmap" class="hide">
+    <div class="card no-print">
+      <div class="toolbar" style="justify-content:space-between">
+        <div style="display:flex;align-items:center;gap:8px">
+          <select id="roadmapEsteiraSelect" style="max-width:280px"><option value="">— selecione a esteira —</option></select>
+        </div>
+        <button class="btn btn-soft btn-sm" id="btnImprimirRoadmap">⬇ Exportar Roadmap (PDF)</button>
+      </div>
+    </div>
+    <div class="card" id="roadmapSemSelecao"><div class="empty">Selecione uma esteira acima, ou a Visão Geral pra ver todos os projetos juntos. Pra uma tarefa aparecer aqui, marque-a com 🚩 no Cronograma da Ficha do Projeto — o nome e as datas são puxados de lá direto, sem duplicar nada.</div></div>
+    <div id="roadmapConteudo" class="hide"></div>
+  </section>
+
   <!-- ===== MILESTONES (REFERÊNCIA) ===== -->
   <section id="tab-milestones" class="hide">
     <div class="card">
@@ -537,6 +612,10 @@
     <div class="grid2">
       <div class="field"><label>Início Previsto</label><input type="date" id="tfeInicio"></div>
       <div class="field"><label>Término Previsto</label><input type="date" id="tfeFim"></div>
+    </div>
+    <div class="field">
+      <label>Início Real <span style="font-weight:400;color:var(--gray)">(opcional — só preencha se começou numa data diferente da prevista)</span></label>
+      <input type="date" id="tfeInicioReal">
     </div>
     <div class="field"><label>Status</label>
       <select id="tfeStatus"><option>Não iniciado</option><option>Em andamento</option><option>Concluído</option><option>Atrasado</option></select>
@@ -1555,6 +1634,12 @@ function montarSelects(){
   $("esteiraSelect").innerHTML = '<option value="">— selecione a esteira —</option>' +
     esteiras.map(e=>`<option value="${e}">Esteira ${e}</option>`).join("");
   $("esteiraSelect").value = esteiraAtual;
+
+  const roadmapEsteiraAtual = $("roadmapEsteiraSelect").value;
+  $("roadmapEsteiraSelect").innerHTML = '<option value="">— selecione a esteira —</option>' +
+    '<option value="__geral__">📊 Visão Geral (todos os projetos)</option>' +
+    esteiras.map(e=>`<option value="${e}">Esteira ${e}</option>`).join("");
+  $("roadmapEsteiraSelect").value = roadmapEsteiraAtual;
 }
 function esteiraDoProjeto(nome){ const m = (nome||"").match(/^(\d+)\./); return m ? m[1] : null; }
 function listaEsteiras(){
@@ -2442,13 +2527,27 @@ function gradeGanttHTML(tarefas, inicioBase, editavel, nDias){
     const info = tipoKey ? TIPO_INFO[tipoKey] : null;
     const nomeAtual = t.isMarco ? (t.milestone||t.nome) : t.nome;
     const emoji = especial ? info.emoji+" " : "";
-    const colStatus = (editavel && !travado)
+    // Exceção ao travamento acima: o STATUS de VSC/BPx pode ser editado direto na grade (pedido do
+    // usuário) — diferente de nome/data, que continuam travados (aqueles sim causavam o bug do POP).
+    // Fica com um modo "— Automático (por data) —" (o cálculo de sempre, por Início/Fim/Real) e,
+    // se a pessoa escolher um status fixo, isso vira um override manual (t.statusManual=true) que
+    // sincronizarBarraCronograma passa a respeitar e não pisa mais toda vez que uma data muda na
+    // Ficha. Marco continua travado sem exceção — é o baseline oficial do Plano de Marcos.
+    const statusEspecialEditavel = tipoKey==="vsc" || tipoKey==="bpx";
+    const valorStatusSel = statusEspecialEditavel ? (t.statusManual ? t.status : "") : t.status;
+    const colStatus = (editavel && (!travado || statusEspecialEditavel))
       ? `<select class="tk-status-grid" data-tid="${t.id}" style="width:100%">
-          ${["Não iniciado","Em andamento","Concluído","Atrasado"].map(s=>`<option ${s===t.status?"selected":""}>${s}</option>`).join("")}
+          ${statusEspecialEditavel ? `<option value="" ${valorStatusSel===""?"selected":""}>— Automático (por data) —</option>` : ""}
+          ${["Não iniciado","Em andamento","Concluído","Atrasado"].map(s=>`<option value="${s}" ${valorStatusSel===s?"selected":""}>${s}</option>`).join("")}
         </select>`
       : `<span class="pill" style="font-size:10px;background:${especial?info.bg:"#EDEFF3"};color:${especial?info.fg:"var(--gray)"}">${esc(t.status||"—")}</span>`;
     const delBtn = editavel ? `<button class="icon-btn" data-act="del-t-grid" data-tid="${t.id}" title="Excluir">✕</button>` : "";
     const editBtn = (editavel && !travado) ? `<button class="icon-btn" data-act="edit-t-grid" data-tid="${t.id}" title="Editar datas, responsável ou milestone">✎</button>` : "";
+    // marca essa tarefa pra aparecer no Roadmap (apresentação por esteira, aba separada) — não
+    // mexe em nome/data/status, só um flag; funciona em qualquer tarefa, inclusive Marco/VSC/BPx.
+    // Caixinha de marcar em vez do ícone de bandeira — fica mais fácil de ver de cara quais tarefas
+    // já estão marcadas numa lista grande, sem precisar reparar na cor do ícone.
+    const roadmapBtn = editavel ? `<input type="checkbox" class="roadmap-check-grid" data-act="toggle-roadmap-grid" data-tid="${t.id}" title="Marcar pro Roadmap (aba de apresentação por esteira)" ${t.mostrarRoadmap?"checked":""} style="width:14px;height:14px;cursor:pointer;accent-color:var(--blue);margin:2px 6px">` : "";
     // pra Marco/VSC/BPx/Fase Atual (travados nos outros campos), deixa reatribuir só a fase —
     // isso não mexe em data/status/nome (os campos que causavam o bug de sincronização), só
     // decide em qual faixa colorida essa linha aparece agrupada
@@ -2467,7 +2566,7 @@ function gradeGanttHTML(tarefas, inicioBase, editavel, nDias){
     return `<tr data-tid="${t.id}">
       <td class="gantt-label-col">
         <div style="display:flex;align-items:center;gap:4px">
-          <div style="display:flex;flex-direction:column;gap:1px">${editBtn}${delBtn}</div>
+          <div style="display:flex;flex-direction:column;gap:1px">${editBtn}${delBtn}${roadmapBtn}</div>
           <span style="min-width:34px">${codigoCampo}</span>
           <span style="flex:1;min-width:70px">${nomeCampo}</span>
         </div>
@@ -2528,20 +2627,469 @@ function janelaTarefas(tarefas, cronogramaInicio){
   const janela = Math.max(diasEntreDatas(inicioBase, fimBase) + 7, 14);
   return {inicioBase, janela};
 }
+
+/* ================= ROADMAP POR ESTEIRA (apresentação pro chefe) =================
+   Diferente do Cronograma (grade de DIAS, detalhado, um projeto por vez): aqui é uma linha do
+   tempo MENSAL, com todos os sub-projetos de uma esteira juntos, só com as tarefas que a pessoa
+   marcou com 🚩 no Cronograma — pensado pra reunião de apresentação, não pra gestão do dia a dia.
+   Barras soltas (posicionadas por px dentro de uma faixa contínua), não células de grade — fica
+   com cara de roadmap executivo, igual ao modelo que o usuário mostrou. */
+const MESES_ABREV_ROADMAP = ["JAN","FEV","MAR","ABR","MAI","JUN","JUL","AGO","SET","OUT","NOV","DEZ"];
+const ROADMAP_PX_POR_DIA = 5; // controla o "zoom" horizontal do roadmap — maior = mais espalhado
+function roadmapPrimeiroDiaMes(iso){ const d=new Date(iso+"T00:00:00"); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-01`; }
+function roadmapUltimoDiaMes(iso){ const d=new Date(iso+"T00:00:00"); const u=new Date(d.getFullYear(), d.getMonth()+1, 0); return u.toISOString().slice(0,10); }
+// uma tarefa marcada com 🚩 mas com data vazia/mal formada (ex.: editada e depois apagada, ou dado
+// legado) NÃO pode derrubar o Roadmap inteiro daquela esteira — antes travava com "Invalid time
+// value" e a tela ficava com cara de travada. Agora essa tarefa é simplesmente ignorada no Roadmap
+// (continua existindo e aparecendo normalmente no Cronograma, só não entra aqui sem data válida).
+function dataValidaISO(iso){ if(!iso) return false; const d = new Date(iso+"T00:00:00"); return !isNaN(d.getTime()); }
+
+// todas as tarefas marcadas pro Roadmap (🚩), com data válida, de uma lista de projetos — usado
+// pra alimentar o badge de "Progresso geral" no topo (tanto da Esteira quanto da Visão Geral).
+function tarefasRoadmapDeProjetos(projetos){
+  return projetos.flatMap(p=> TAREFAS.filter(t=>t.projetoId===p.id && t.mostrarRoadmap && dataValidaISO(t.inicio) && dataValidaISO(t.fim)));
+}
+// % geral de um conjunto de tarefas — mesmo critério do progresso por projeto (não iniciado=0,
+// concluído=100, resto por dias decorridos desde o Início Real/Previsto sobre a duração total),
+// só que ponderado sobre TODAS as tarefas do conjunto de uma vez, não por projeto.
+function progressoConjuntoTarefas(tarefas){
+  const hojeStr = hojeISO();
+  let somaDecorrido=0, somaDuracao=0;
+  tarefas.forEach(t=>{
+    if(!t.inicio || !t.fim || t.inicio===t.fim) return;
+    const duracao = diasEntreDatas(t.inicio, t.fim) + 1;
+    let decorrido;
+    if(t.status==="Não iniciado") decorrido = 0;
+    else if(t.status==="Concluído") decorrido = duracao;
+    else { const ancora = t.inicioReal || t.inicio; decorrido = Math.max(0, Math.min(diasEntreDatas(ancora, hojeStr)+1, duracao)); }
+    somaDecorrido += decorrido; somaDuracao += duracao;
+  });
+  return somaDuracao ? Math.round(somaDecorrido/somaDuracao*100) : null;
+}
+
+function gradeRoadmapHTML(sel, subprojetos){
+  const porProjeto = subprojetos.map(p=>({
+    projeto: p,
+    tarefas: TAREFAS.filter(t=>t.projetoId===p.id && t.mostrarRoadmap && dataValidaISO(t.inicio) && dataValidaISO(t.fim)).sort(compararTarefas),
+  }));
+  const todasTarefas = porProjeto.flatMap(x=>x.tarefas);
+  if(!todasTarefas.length){
+    return `<div class="empty">Nenhuma tarefa marcada pro Roadmap ainda nesta esteira. Vá na Ficha de cada projeto, no Cronograma, e clique no 🚩 das tarefas que devem aparecer aqui (o nome e as datas vêm de lá direto).</div>`;
+  }
+  const hojeStr = hojeISO();
+  const todasDatas = [...todasTarefas.flatMap(t=>[t.inicio,t.fim]), hojeStr].sort();
+  const rangeInicio = roadmapPrimeiroDiaMes(todasDatas[0]);
+  const rangeFim = roadmapUltimoDiaMes(todasDatas[todasDatas.length-1]);
+  const totalDias = diasEntreDatas(rangeInicio, rangeFim) + 1;
+  const larguraTotal = totalDias * ROADMAP_PX_POR_DIA;
+  const leftPx = iso => diasEntreDatas(rangeInicio, iso) * ROADMAP_PX_POR_DIA;
+
+  const meses = [];
+  { let cursor = new Date(rangeInicio+"T00:00:00");
+    const fimD = new Date(rangeFim+"T00:00:00");
+    while(cursor<=fimD){
+      const ano=cursor.getFullYear(), mes=cursor.getMonth();
+      meses.push({ano, mes, dias:new Date(ano, mes+1, 0).getDate()});
+      cursor = new Date(ano, mes+1, 1);
+    }
+  }
+  let headAnos = "", idxAno=0;
+  for(let i=0;i<meses.length;){
+    const ano = meses[i].ano;
+    let dias=0;
+    while(i<meses.length && meses[i].ano===ano){ dias+=meses[i].dias; i++; }
+    headAnos += `<div class="${idxAno%2?"b":""}" style="width:${dias*ROADMAP_PX_POR_DIA}px">${ano}</div>`;
+    idxAno++;
+  }
+  const headMeses = meses.map((m,i)=> `<div class="${i%2?"b":""}" style="width:${m.dias*ROADMAP_PX_POR_DIA}px">${MESES_ABREV_ROADMAP[m.mes]}</div>`).join("");
+
+  const hojeDentro = hojeStr>=rangeInicio && hojeStr<=rangeFim;
+  const hojeLeft = leftPx(hojeStr);
+  const marcasHoje = hojeDentro ? `<div class="roadmap-today-line" style="left:${hojeLeft}px"></div>` : "";
+  const trianguloHoje = hojeDentro ? `<div class="roadmap-today-triangle" style="left:${hojeLeft}px"></div>` : "";
+
+  // Go-live sempre em losango VERDE, independente do status da tarefa — pedido explícito do
+  // usuário (igual à imagem de referência): a data planejada do go-live precisa se destacar das
+  // demais tarefas, que seguem a cor por status. Detecta tanto o Marco formal (sincronizado do
+  // Plano de Marcos, milestone "Go-live em execução") quanto uma tarefa livre do Cronograma cujo
+  // nome contenha "go live"/"go-live" (sem acento, sem diferenciar maiúsculas) — é assim que o
+  // usuário vem nomeando essa tarefa na prática.
+  const ehGoLive = t=>{
+    if(t.isMarco && t.milestone==="Go-live em execução") return true;
+    const n = (t.nome||"").normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase();
+    return /go.?live/.test(n);
+  };
+  // Linha vertical PERMANENTE no go-live — pedido do usuário pra destacar mais a data, igual ao
+  // tratamento que a linha do "hoje" já tem (linha tracejada atravessando todas as linhas + marcador
+  // lá em cima). Uma por go-live encontrado nessa esteira (pode haver mais de um — um por projeto).
+  const golivesParaLinha = todasTarefas.filter(ehGoLive).map(t=> t.fim || t.inicio).filter(Boolean);
+  const linhasGolive = golivesParaLinha.map(d=> `<div class="roadmap-golive-line" style="left:${leftPx(d)+ROADMAP_PX_POR_DIA/2}px"></div>`).join("");
+  const datasGolive = golivesParaLinha.map(d=> `<div class="roadmap-golive-data" style="left:${leftPx(d)+ROADMAP_PX_POR_DIA/2}px">${brDate(d)}</div>`).join("");
+
+  // % de avanço de uma tarefa — não é "quanto foi de fato produzido" (isso só quem está fazendo
+  // sabe), é "quanto do prazo planejado já foi consumido", medido a partir de quando ela
+  // REALMENTE começou. Pedido do usuário: "Não iniciado" é sempre 0% (não interessa o que a conta
+  // por data diria); "Concluído" é sempre 100%; nos outros status, conta os dias decorridos desde
+  // o Início Real (se preenchido — tarefa que começou atrasada/adiantada em relação ao previsto) ou
+  // desde o Início Previsto (se não preenchido, assume que começou no prazo), sobre a duração total
+  // prevista (início→fim). Marcos de data única (ex.: Go Live, início===fim) ficam de fora — são
+  // eventos binários (aconteceu ou não), não têm "duração" pra medir avanço.
+  const diasTarefa = t => diasEntreDatas(t.inicio, t.fim) + 1;
+  const progressoTarefa = t=>{
+    if(!t.inicio || !t.fim || t.inicio===t.fim) return null;
+    if(t.status==="Não iniciado") return 0;
+    if(t.status==="Concluído") return 100;
+    const duracao = diasTarefa(t);
+    const ancora = t.inicioReal || t.inicio;
+    const decorrido = Math.max(0, Math.min(diasEntreDatas(ancora, hojeStr) + 1, duracao));
+    return Math.round(decorrido / duracao * 100);
+  };
+  // % do projeto = média ponderada pela duração de cada tarefa (uma tarefa de 60 dias pesa mais
+  // que uma de 3 dias), sobre as mesmas tarefas com duração que entram no cálculo individual acima.
+  const progressoProjeto = tarefasProjeto=>{
+    let somaDecorrido=0, somaDuracao=0;
+    tarefasProjeto.forEach(t=>{
+      if(!t.inicio || !t.fim || t.inicio===t.fim) return;
+      const duracao = diasTarefa(t);
+      let decorrido;
+      if(t.status==="Não iniciado") decorrido = 0;
+      else if(t.status==="Concluído") decorrido = duracao;
+      else { const ancora = t.inicioReal || t.inicio; decorrido = Math.max(0, Math.min(diasEntreDatas(ancora, hojeStr)+1, duracao)); }
+      somaDecorrido += decorrido; somaDuracao += duracao;
+    });
+    return somaDuracao ? Math.round(somaDecorrido/somaDuracao*100) : null;
+  };
+  const badgePct = pct => pct===null ? "" : `<span class="rp-pct">${pct}%</span>`;
+  const barraOuDiamante = t=>{
+    const golive = ehGoLive(t);
+    const cor = golive ? "gc-golive" : "gc-"+statusSlug(t.status);
+    const tituloBase = `${esc(t.nome)} — ${golive ? "Go-live" : (t.status||"—")}`;
+    if(golive || t.inicio===t.fim){
+      // go-live é sempre um marco de data única: ancora no fim (data planejada), mesmo que a
+      // tarefa tenha sido lançada com início e fim diferentes
+      const dataAncora = golive ? (t.fim||t.inicio) : t.inicio;
+      return `<div class="roadmap-diamond ${cor}" style="left:${leftPx(dataAncora)+ROADMAP_PX_POR_DIA/2}px" title="${tituloBase} (${brDate(dataAncora)})"></div>`;
+    }
+    const l = leftPx(t.inicio);
+    const w = Math.max((diasEntreDatas(t.inicio,t.fim)+1)*ROADMAP_PX_POR_DIA, 8);
+    const pct = progressoTarefa(t);
+    // % DENTRO da barra, colada à esquerda — igual à imagem de referência. "Não iniciado" usa fundo
+    // claro (#E6E0F5), então o texto precisa ser escuro pra não sumir; os demais status têm fundo
+    // escuro/saturado o bastante pra texto branco. Exceção: quando a barra é curta demais pro texto
+    // caber dentro (tarefa de poucos dias), o texto sai de dentro e cola do lado de fora, à direita
+    // do fim da barra — senão ficaria cortado/ilegível espremido numa barra de 8-20px.
+    const MIN_LARGURA_DENTRO = 30;
+    const fundoClaro = statusSlug(t.status)==="nao_iniciado";
+    const pctLabel = pct===null ? "" : (w>=MIN_LARGURA_DENTRO
+      ? `<span class="roadmap-pct-label dentro ${fundoClaro?"claro":"escuro"}" style="left:${l}px;width:${w}px">${pct}%</span>`
+      : `<span class="roadmap-pct-label fora" style="left:${l+w}px">${pct}%</span>`);
+    // a barra vem ANTES no HTML e a % depois, pra % pintar por cima (senão a barra cobria o texto)
+    return `<div class="roadmap-bar ${cor}" style="left:${l}px;width:${w}px" title="${tituloBase} (${brDate(t.inicio)} a ${brDate(t.fim)})"></div>${pctLabel}`;
+  };
+
+  let linhas = `<div class="roadmap-row roadmap-esteira-banda">
+    <div class="roadmap-label-col">ESTEIRA ${esc(sel)}</div>
+    <div class="roadmap-timeline" style="width:${larguraTotal}px"></div>
+  </div>
+  <div class="roadmap-row roadmap-overview-row">
+    <div class="roadmap-label-col"></div>
+    <div class="roadmap-timeline" style="width:${larguraTotal}px">
+      <div class="roadmap-overview-bar"></div>${marcasHoje}${trianguloHoje}${linhasGolive}${datasGolive}
+    </div>
+  </div>`;
+
+  porProjeto.forEach(({projeto, tarefas})=>{
+    const {codigo, resto} = nomeCurtoProjeto(projeto.nome);
+    const pctProjeto = progressoProjeto(tarefas);
+    linhas += `<div class="roadmap-row roadmap-proj-row">
+      <div class="roadmap-label-col">${esc(codigo)}- ${esc(resto)}${projeto.responsavel?`<span class="rp-resp">(${esc(projeto.responsavel)})</span>`:""}${badgePct(pctProjeto)}</div>
+      <div class="roadmap-timeline" style="width:${larguraTotal}px">${marcasHoje}${linhasGolive}</div>
+    </div>`;
+    if(!tarefas.length){
+      linhas += `<div class="roadmap-row roadmap-task-row">
+        <div class="roadmap-label-col" style="color:#AAB2BE;font-style:italic">nenhuma tarefa marcada ainda</div>
+        <div class="roadmap-timeline" style="width:${larguraTotal}px">${marcasHoje}${linhasGolive}</div>
+      </div>`;
+    } else {
+      tarefas.forEach(t=>{
+        linhas += `<div class="roadmap-row roadmap-task-row">
+          <div class="roadmap-label-col">${esc(t.nome)}</div>
+          <div class="roadmap-timeline" style="width:${larguraTotal}px">${marcasHoje}${linhasGolive}${barraOuDiamante(t)}</div>
+        </div>`;
+      });
+    }
+  });
+
+  return `<div class="roadmap-wrap">
+    <div class="roadmap-row roadmap-head">
+      <div class="roadmap-label-col"></div>
+      <div class="roadmap-timeline" style="width:${larguraTotal}px">
+        <div class="roadmap-head-years">${headAnos}</div>
+        <div class="roadmap-head-months">${headMeses}</div>
+      </div>
+    </div>
+    ${linhas}
+  </div>
+  <div class="roadmap-legenda">
+    <span><span class="sw" style="background:#E6E0F5"></span>Não iniciado</span>
+    <span><span class="sw" style="background:#A996DE"></span>Em andamento</span>
+    <span><span class="sw" style="background:#5B3FA0"></span>Concluído</span>
+    <span><span class="sw" style="background:#C0392B"></span>Atrasado</span>
+    <span><span class="sw" style="background:#27AE60"></span>Go-live (data planejada)</span>
+  </div>`;
+}
+
+/* ================= ROADMAP GERAL (todos os projetos, fora de esteira) =================
+   Mesmo espírito do Roadmap por esteira, mas uma linha CONTÍNUA por projeto (início ao fim das
+   tarefas marcadas com 🚩), não uma linha por tarefa — pensado pra uma visão executiva do
+   portfólio inteiro numa tela só. Os projetos continuam agrupados por esteira (faixa divisória
+   azul entre blocos), só não é mais preciso escolher uma esteira de cada vez. */
+function gradeRoadmapGeralHTML(todosProjetos, larguraDisponivelPx){
+  const porProjeto = todosProjetos.map(p=>({
+    projeto: p,
+    tarefas: TAREFAS.filter(t=>t.projetoId===p.id && t.mostrarRoadmap && dataValidaISO(t.inicio) && dataValidaISO(t.fim)).sort(compararTarefas),
+  })).filter(x=>x.tarefas.length)
+    .sort((a,b)=> a.projeto.nome.localeCompare(b.projeto.nome, "pt", {numeric:true}));
+  if(!porProjeto.length){
+    return `<div class="empty">Nenhum projeto com tarefas marcadas pro Roadmap ainda. Vá na Ficha de cada projeto, no Cronograma, e clique no 🚩 das tarefas que devem aparecer aqui (o nome e as datas vêm de lá direto).</div>`;
+  }
+  const todasTarefas = porProjeto.flatMap(x=>x.tarefas);
+  const hojeStr = hojeISO();
+  const todasDatas = [...todasTarefas.flatMap(t=>[t.inicio,t.fim]), hojeStr].sort();
+  const rangeInicio = roadmapPrimeiroDiaMes(todasDatas[0]);
+  const rangeFim = roadmapUltimoDiaMes(todasDatas[todasDatas.length-1]);
+  const totalDias = diasEntreDatas(rangeInicio, rangeFim) + 1;
+  // Na Visão Geral o período costuma ser bem mais longo que uma esteira só (vários projetos
+  // somados, comumente indo até março do ano seguinte ou mais) — usar o mesmo zoom fixo do
+  // Roadmap por esteira (5px/dia) deixava a tela rolando na horizontal sem parar. Aqui o zoom se
+  // ajusta pra caber a largura disponível da tela (medida pelo chamador) numa página só, SEMPRE —
+  // sem piso mínimo de px/dia, porque o pedido explícito é caber tudo sem rolar, mesmo que o
+  // período seja longo e as colunas fiquem bem finas; só não passa do "esticado" de 5px/dia padrão
+  // (pra período curto não ficar exagerado).
+  const pxPorDia = larguraDisponivelPx ? Math.min(ROADMAP_PX_POR_DIA, larguraDisponivelPx / totalDias) : ROADMAP_PX_POR_DIA;
+  const larguraTotal = totalDias * pxPorDia;
+  const leftPx = iso => diasEntreDatas(rangeInicio, iso) * pxPorDia;
+
+  const meses = [];
+  { let cursor = new Date(rangeInicio+"T00:00:00");
+    const fimD = new Date(rangeFim+"T00:00:00");
+    while(cursor<=fimD){
+      const ano=cursor.getFullYear(), mes=cursor.getMonth();
+      meses.push({ano, mes, dias:new Date(ano, mes+1, 0).getDate()});
+      cursor = new Date(ano, mes+1, 1);
+    }
+  }
+  let headAnos = "", idxAno=0;
+  for(let i=0;i<meses.length;){
+    const ano = meses[i].ano;
+    let dias=0;
+    while(i<meses.length && meses[i].ano===ano){ dias+=meses[i].dias; i++; }
+    headAnos += `<div class="${idxAno%2?"b":""}" style="width:${dias*pxPorDia}px">${ano}</div>`;
+    idxAno++;
+  }
+  const headMeses = meses.map((m,i)=> `<div class="${i%2?"b":""}" style="width:${m.dias*pxPorDia}px">${MESES_ABREV_ROADMAP[m.mes]}</div>`).join("");
+
+  const hojeDentro = hojeStr>=rangeInicio && hojeStr<=rangeFim;
+  const hojeLeft = leftPx(hojeStr);
+  const marcasHoje = hojeDentro ? `<div class="roadmap-today-line" style="left:${hojeLeft}px"></div>` : "";
+  const trianguloHoje = hojeDentro ? `<div class="roadmap-today-triangle" style="left:${hojeLeft}px"></div>` : "";
+
+  const ehGoLive = t=>{
+    if(t.isMarco && t.milestone==="Go-live em execução") return true;
+    const n = (t.nome||"").normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase();
+    return /go.?live/.test(n);
+  };
+  const diasTarefa = t => diasEntreDatas(t.inicio, t.fim) + 1;
+  const progressoProjeto = tarefasProjeto=>{
+    let somaDecorrido=0, somaDuracao=0;
+    tarefasProjeto.forEach(t=>{
+      if(!t.inicio || !t.fim || t.inicio===t.fim) return;
+      const duracao = diasTarefa(t);
+      let decorrido;
+      if(t.status==="Não iniciado") decorrido = 0;
+      else if(t.status==="Concluído") decorrido = duracao;
+      else { const ancora = t.inicioReal || t.inicio; decorrido = Math.max(0, Math.min(diasEntreDatas(ancora, hojeStr)+1, duracao)); }
+      somaDecorrido += decorrido; somaDuracao += duracao;
+    });
+    return somaDuracao ? Math.round(somaDecorrido/somaDuracao*100) : null;
+  };
+  const badgePct = pct => pct===null ? "" : `<span class="rp-pct">${pct}%</span>`;
+
+  // Lista única dos projetos, em ordem sequencial (1.1, 1.2, 2.1, 2.2...) — sem faixa de esteira
+  // separando em blocos; pedido do usuário pra ficar mais compacto e direto ao ponto.
+  let linhas = `<div class="roadmap-row roadmap-overview-row">
+    <div class="roadmap-label-col"></div>
+    <div class="roadmap-timeline" style="width:${larguraTotal}px">${marcasHoje}${trianguloHoje}</div>
+  </div>`;
+
+  porProjeto.forEach(({projeto, tarefas})=>{
+    const {codigo, resto} = nomeCurtoProjeto(projeto.nome);
+    const pctProjeto = progressoProjeto(tarefas);
+    const datasProjeto = tarefas.flatMap(t=>[t.inicio,t.fim]).sort();
+    const inicioProjeto = datasProjeto[0];
+    const fimProjeto = datasProjeto[datasProjeto.length-1];
+    const l = leftPx(inicioProjeto);
+    const w = Math.max((diasEntreDatas(inicioProjeto, fimProjeto)+1)*pxPorDia, 8);
+    const MIN_LARGURA_DENTRO = 30;
+    const pctLabel = pctProjeto===null ? "" : (w>=MIN_LARGURA_DENTRO
+      ? `<span class="roadmap-pct-label dentro escuro" style="left:${l}px;width:${w}px">${pctProjeto}%</span>`
+      : `<span class="roadmap-pct-label fora" style="left:${l+w}px">${pctProjeto}%</span>`);
+    // Na Visão Geral tem um go-live por projeto, cada um numa data diferente — não dá pra
+    // "travar" uma linha vertical permanente por go-live como no Roadmap por esteira (lá é só
+    // a esteira inteira, uma referência só; aqui seriam dezenas cruzando a tela toda sem
+    // relação entre si). Em vez da linha, marca com o mesmo losango verde do Roadmap por
+    // tarefa, com a data colada bem ao lado dele.
+    const golivesProjeto = tarefas.filter(ehGoLive).map(t=> t.fim || t.inicio).filter(Boolean);
+    const marcasGolive = golivesProjeto.map(d=>{
+      const x = leftPx(d)+pxPorDia/2;
+      return `<div class="roadmap-diamond gc-golive" style="left:${x}px" title="Go-live (${brDate(d)})"></div>`
+           + `<span class="roadmap-golive-data-perto" style="left:${x}px">${brDate(d)}</span>`;
+    }).join("");
+    linhas += `<div class="roadmap-row roadmap-overview-row">
+      <div class="roadmap-label-col">${esc(codigo)}- ${esc(resto)}${projeto.responsavel?`<span class="rp-resp">(${esc(projeto.responsavel)})</span>`:""}${badgePct(pctProjeto)}</div>
+      <div class="roadmap-timeline" style="width:${larguraTotal}px">
+        <div class="roadmap-overview-bar" style="left:${l}px;width:${w}px" title="${esc(projeto.nome)} (${brDate(inicioProjeto)} a ${brDate(fimProjeto)})"></div>${marcasHoje}${pctLabel}${marcasGolive}
+      </div>
+    </div>`;
+  });
+
+  return `<div class="roadmap-wrap">
+    <div class="roadmap-row roadmap-head">
+      <div class="roadmap-label-col"></div>
+      <div class="roadmap-timeline" style="width:${larguraTotal}px">
+        <div class="roadmap-head-years">${headAnos}</div>
+        <div class="roadmap-head-months">${headMeses}</div>
+      </div>
+    </div>
+    ${linhas}
+  </div>
+  <div class="roadmap-legenda">
+    <span><span class="sw" style="background:#1B6FA8"></span>Duração planejada (início ao fim das tarefas marcadas)</span>
+    <span><span class="sw" style="background:#27AE60"></span>Go-live (data planejada)</span>
+  </div>`;
+}
+
+function renderRoadmapEsteira(){
+  if(!$("roadmapEsteiraSelect")) return;
+  const sel = $("roadmapEsteiraSelect").value;
+  $("roadmapSemSelecao").classList.toggle("hide", !!sel);
+  $("roadmapConteudo").classList.toggle("hide", !sel);
+  if(!sel) return;
+  const badgeGeral = pct => pct===null ? "" : `<span class="rp-pct-geral" title="Progresso médio, ponderado pela duração de cada tarefa marcada pro Roadmap (🚩)">📊 Progresso geral: ${pct}%</span>`;
+  if(sel==="__geral__"){
+    const todosProjetos = PROJETOS.slice().sort((a,b)=> a.nome.localeCompare(b.nome, "pt", {numeric:true}));
+    const pctGeral = progressoConjuntoTarefas(tarefasRoadmapDeProjetos(todosProjetos));
+    // Mede a largura de verdade disponível na tela (a Visão Geral costuma cobrir um período bem
+    // mais longo que uma esteira só, e ficava rolando na horizontal sem parar) — desconta o padding
+    // do card e a coluna de rótulo fixa, pra calcular um zoom que cabe tudo numa página só.
+    const larguraCardPx = $("roadmapConteudo").clientWidth || document.querySelector("main")?.clientWidth || 1200;
+    const larguraDisponivelGeral = Math.max(500, larguraCardPx - 40 - 282);
+    $("roadmapConteudo").innerHTML = `<div class="card" id="cardRoadmap">
+      <div class="toolbar" style="justify-content:space-between">
+        <h2 style="margin:0">Roadmap — Visão Geral (todos os projetos)</h2>
+        ${badgeGeral(pctGeral)}
+      </div>
+      ${gradeRoadmapGeralHTML(todosProjetos, larguraDisponivelGeral)}
+    </div>`;
+    return;
+  }
+  const subprojetos = PROJETOS.filter(p=> esteiraDoProjeto(p.nome)===sel)
+    .sort((a,b)=> a.nome.localeCompare(b.nome, "pt", {numeric:true}));
+  const pctGeral = progressoConjuntoTarefas(tarefasRoadmapDeProjetos(subprojetos));
+  $("roadmapConteudo").innerHTML = `<div class="card" id="cardRoadmap">
+    <div class="toolbar" style="justify-content:space-between">
+      <h2 style="margin:0">Roadmap — Esteira ${esc(sel)}</h2>
+      ${badgeGeral(pctGeral)}
+    </div>
+    ${gradeRoadmapHTML(sel, subprojetos)}
+  </div>`;
+}
+$("roadmapEsteiraSelect").onchange = renderRoadmapEsteira;
+// Exportar PDF do Roadmap — mesma técnica já usada no Cronograma (html2canvas+jsPDF, A3 paisagem,
+// tudo numa página só). window.print() sozinho cortava a timeline: ela é larga (muitos meses),
+// e o diálogo de impressão do navegador usa o tamanho de papel padrão (A4/Carta), então o fim do
+// roadmap saía cortado a menos que o usuário escolhesse paisagem + "ajustar à página" manualmente.
+$("btnImprimirRoadmap").onclick = async ()=>{
+  const sel = $("roadmapEsteiraSelect").value;
+  if(!sel){ alert("Selecione uma esteira primeiro."); return; }
+  const btn = $("btnImprimirRoadmap");
+  const textoOriginal = btn.textContent;
+  btn.textContent = "⏳ Gerando PDF..."; btn.disabled = true;
+  const alvo = $("cardRoadmap");
+  const wraps = Array.from(alvo.querySelectorAll(".roadmap-wrap"));
+  const stickyCols = Array.from(alvo.querySelectorAll(".roadmap-label-col"));
+  const estiloOriginal = wraps.map(el=>({overflow:el.style.overflow, maxHeight:el.style.maxHeight}));
+  const posOriginal = stickyCols.map(el=> el.style.position);
+  wraps.forEach(el=>{ el.style.overflow="visible"; el.style.maxHeight="none"; });
+  stickyCols.forEach(el=> el.style.position="static");
+  try{
+    const largura = alvo.scrollWidth, altura = alvo.scrollHeight;
+    const canvas = await html2canvas(alvo, {
+      scale:2, backgroundColor:"#ffffff",
+      width: largura, height: altura,
+      windowWidth: largura, windowHeight: altura,
+      scrollX: 0, scrollY: 0,
+      x: 0, y: 0,
+      onclone: doc=> doc.querySelectorAll(".no-print").forEach(el=> el.style.display="none"),
+    });
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF({orientation:"l", unit:"pt", format:"a3"});
+    const pageW = pdf.internal.pageSize.getWidth(), pageH = pdf.internal.pageSize.getHeight();
+    const margem = 20, topoConteudo = 55;
+    pdf.setFontSize(16); pdf.setFont(undefined, "bold");
+    pdf.text(`Roadmap — Esteira ${sel}`, margem, 30);
+    pdf.setFontSize(10); pdf.setFont(undefined, "normal"); pdf.setTextColor(120);
+    pdf.text(`Gerado em ${brDate(hojeISO())}`, margem, 46);
+    pdf.setTextColor(0);
+    const areaW = pageW - margem*2, areaH = pageH - topoConteudo - margem;
+    const fatorAjuste = Math.min(areaW/canvas.width, areaH/canvas.height);
+    const imgW = canvas.width*fatorAjuste, imgH = canvas.height*fatorAjuste;
+    const imgData = canvas.toDataURL("image/jpeg", 0.95);
+    pdf.addImage(imgData, "JPEG", margem, topoConteudo, imgW, imgH);
+    pdf.save(`Roadmap_${sel==="__geral__"?"Geral":"Esteira"+sel}_${hojeISO()}.pdf`);
+  }catch(err){
+    if(typeof html2canvas==="undefined" || !window.jspdf){
+      console.error("Erro ao gerar PDF do Roadmap:", err);
+      alert("Não consegui gerar o PDF porque as bibliotecas necessárias não carregaram (elas vêm de um endereço externo — cdnjs.cloudflare.com). Se este computador está numa rede corporativa que bloqueia esse endereço, ou está sem internet no momento, esse é o motivo. Peça pro TI liberar cdnjs.cloudflare.com, ou tente em outra rede.");
+    } else {
+      console.error("Erro ao gerar PDF do Roadmap:", err);
+      alert("Não consegui gerar o PDF do Roadmap dessa vez. Detalhe técnico no console do navegador (F12), se quiser me passar pra eu investigar.");
+    }
+  }finally{
+    wraps.forEach((el,i)=>{ el.style.overflow=estiloOriginal[i].overflow; el.style.maxHeight=estiloOriginal[i].maxHeight; });
+    stickyCols.forEach((el,i)=> el.style.position=posOriginal[i]);
+    btn.textContent = textoOriginal; btn.disabled = false;
+  }
+};
+
 /* ---------- sincroniza o Plano de Marcos (Início/Fim/Real) com uma barra no Cronograma ---------- */
+// status calculado por data — usado como padrão pelas sincronizações (Marco/VSC/BPx) e também pra
+// "voltar ao automático" quando a pessoa desfaz um override manual direto na grade do Cronograma.
+function statusAutomaticoPorData(inicio, fim, real){
+  if(real) return "Concluído";
+  if(fim && fim<hojeISO()) return "Atrasado";
+  if(inicio && inicio<=hojeISO()) return "Em andamento";
+  return "Não iniciado";
+}
 function sincronizarMarcoCronograma(pid, milestone, inicio, fim, real){
-  const existente = TAREFAS.find(t=>t.projetoId===pid && t.isMarco && t.milestone===milestone);
+  let existente = TAREFAS.find(t=>t.projetoId===pid && t.isMarco && t.milestone===milestone);
+  // não achou pelo vínculo isMarco+milestone — antes de criar OUTRA tarefa, tenta adotar uma já
+  // existente com o MESMO nome que o marco geraria, ainda sem nenhum vínculo de sincronização
+  // automática. Isso evita duplicata quando esse vínculo se perde (ex.: numa mesclagem de
+  // sincronização entre dois dispositivos que não bateu certinho) — em vez de nascer uma tarefa
+  // nova "sem fase" toda vez, a tarefa antiga é reaproveitada e passa a receber as atualizações.
+  if(!existente){
+    const nomeEsperado = "🚩 "+milestone;
+    const candidata = TAREFAS.find(t=>t.projetoId===pid && t.nome===nomeEsperado && !t.isMarco && !t.isVSC && !t.isBPX && !t.chaveEspecial);
+    if(candidata){ candidata.isMarco = true; candidata.milestone = milestone; existente = candidata; }
+  }
   if(!inicio && !fim && !real){
     if(existente){ TOMBSTONES.tarefas[existente.id]=Date.now(); TAREFAS = TAREFAS.filter(t=>t!==existente); }
     return;
   }
   const dIni = inicio || real || fim;
   const dFim = fim || real || inicio;
-  let status;
-  if(real) status = "Concluído";
-  else if(fim && fim<hojeISO()) status = "Atrasado";
-  else if(inicio && inicio<=hojeISO()) status = "Em andamento";
-  else status = "Não iniciado";
+  const status = statusAutomaticoPorData(inicio, fim, real);
   if(existente){
     Object.assign(existente, {inicio:dIni, fim:dFim, real, status});
   } else {
@@ -2552,7 +3100,29 @@ function sincronizarMarcoCronograma(pid, milestone, inicio, fim, real){
 
 /* ---------- sincroniza uma barra (Início/Fim/Real) genérica no Cronograma — usada por VSC e BPx ---------- */
 function sincronizarBarraCronograma(pid, chave, nomeExibicao, inicio, fim, real, tipoFlag){
-  const existente = TAREFAS.find(t=>t.projetoId===pid && t[tipoFlag] && t.chaveEspecial===chave);
+  let existente = TAREFAS.find(t=>t.projetoId===pid && t[tipoFlag] && t.chaveEspecial===chave);
+  // Migração: versões antigas gravavam a chave do VSC como "pid_etapa", com o id do projeto
+  // embutido. Quando uma mesclagem entre dispositivos remapeia o id de um projeto (duas pontas
+  // criaram o "mesmo" projeto com ids diferentes antes de sincronizar), as tarefas acompanham o
+  // id novo, mas essa chave antiga ficava com o id velho gravado — nunca mais batia, e cada edição
+  // criava uma linha nova "sem fase" em vez de atualizar a existente. Qualquer chaveEspecial do
+  // mesmo projeto/tipo que termine em "_<chave>" é a mesma barra: adota (preferindo a que já tem
+  // mais dados — marco/código preenchidos) e corrige a chave pro formato novo, sem id embutido.
+  // Se sobrar mais de uma (duplicata já criada por esse mesmo bug), as demais são descartadas.
+  if(!existente){
+    const candidatas = TAREFAS.filter(t=>t.projetoId===pid && t[tipoFlag] && t.chaveEspecial && t.chaveEspecial!==chave && t.chaveEspecial.endsWith("_"+chave));
+    if(candidatas.length){
+      candidatas.sort((a,b)=> (b.milestone?1:0)-(a.milestone?1:0) || (b.codigo?1:0)-(a.codigo?1:0));
+      existente = candidatas[0];
+      candidatas.slice(1).forEach(dup=>{ TOMBSTONES.tarefas[dup.id]=Date.now(); TAREFAS = TAREFAS.filter(t=>t!==dup); });
+    }
+  }
+  // mesmo princípio: se o vínculo (chaveEspecial) se perdeu por completo, adota uma tarefa já
+  // existente com o nome exato que essa sincronização geraria, em vez de duplicar.
+  if(!existente){
+    const candidata = TAREFAS.find(t=>t.projetoId===pid && t.nome===nomeExibicao && !t.isMarco && !t.isVSC && !t.isBPX && !t.chaveEspecial);
+    if(candidata){ candidata[tipoFlag] = true; candidata.chaveEspecial = chave; existente = candidata; }
+  }
   if(!inicio && !fim && !real){
     if(existente){ TOMBSTONES.tarefas[existente.id]=Date.now(); TAREFAS = TAREFAS.filter(t=>t!==existente); }
     return;
@@ -2560,15 +3130,19 @@ function sincronizarBarraCronograma(pid, chave, nomeExibicao, inicio, fim, real,
   const dIni = inicio || real || fim;
   const dFim = fim || real || inicio;
   let status;
-  if(existente && existente.forcarNaoIniciado && !real){
+  if(existente && existente.statusManual){
+    // a pessoa sobrepôs o status manualmente direto na grade do Cronograma (select "— Automático —"
+    // vs um status fixo) — respeita essa escolha e NÃO recalcula por data, senão qualquer edição de
+    // data na Ficha (VSC/BPx) pisava silenciosamente no que foi escolhido na grade.
+    status = existente.status;
+  } else if(existente && existente.forcarNaoIniciado && !real){
     // marcado manualmente como "planejamos mas não conseguimos começar" — ignora a data até desmarcar
     status = "Não iniciado";
-  } else if(real) status = "Concluído";
-  else if(fim && fim<hojeISO()) status = "Atrasado";
-  else if(inicio && inicio<=hojeISO()) status = "Em andamento";
-  else status = "Não iniciado";
+  } else {
+    status = statusAutomaticoPorData(inicio, fim, real);
+  }
   if(existente){
-    Object.assign(existente, {inicio:dIni, fim:dFim, real, status, nome:nomeExibicao});
+    Object.assign(existente, {inicio:dIni, fim:dFim, real, status, nome:nomeExibicao, chaveEspecial:chave});
   } else {
     const novo = {id:novoId(), projetoId:pid, nome:nomeExibicao, resp:"", inicio:dIni, fim:dFim, real, chaveEspecial:chave, status};
     novo[tipoFlag] = true;
@@ -2586,6 +3160,12 @@ function wireGradeGanttHandlers(containerId, rerender){
   });
   container.querySelectorAll('[data-act="edit-t-grid"]').forEach(btn=>{
     btn.onclick = ()=> abrirModalTarefa(btn.dataset.tid, rerender);
+  });
+  container.querySelectorAll('[data-act="toggle-roadmap-grid"]').forEach(chk=>{
+    chk.onchange = ()=>{
+      const t = TAREFAS.find(x=>x.id===chk.dataset.tid);
+      if(t){ t.mostrarRoadmap = chk.checked; salvar(); rerender(); }
+    };
   });
   container.querySelectorAll(".tk-nome-grid").forEach(inp=>{
     const ajustarAltura = ()=>{ inp.style.height="auto"; inp.style.height=(inp.scrollHeight+2)+"px"; };
@@ -2613,11 +3193,17 @@ function wireGradeGanttHandlers(containerId, rerender){
   container.querySelectorAll(".tk-status-grid").forEach(sel=>{
     sel.onchange = e=>{
       const t = TAREFAS.find(x=>x.id===e.target.dataset.tid);
-      if(t){
+      if(!t) return;
+      const sincronizada = t.isVSC || t.isBPX; // só essas duas têm a opção de voltar ao automático
+      if(sincronizada && e.target.value===""){
+        t.statusManual = false;
+        t.status = statusAutomaticoPorData(t.inicio, t.fim, t.real);
+      } else {
         t.status = e.target.value;
+        if(sincronizada) t.statusManual = true;
         if(t.status==="Concluído" && !t.real) t.real = hojeISO();
-        salvar(); rerender();
       }
+      salvar(); rerender();
     };
   });
 }
@@ -2632,6 +3218,7 @@ function abrirModalTarefa(tid){
   $("tfeResp").value = t.resp || "";
   $("tfeInicio").value = t.inicio || "";
   $("tfeFim").value = t.fim || "";
+  $("tfeInicioReal").value = t.inicioReal || "";
   $("tfeStatus").value = t.status || "Não iniciado";
   $("modalTarefa").classList.remove("hide");
 }
@@ -2646,6 +3233,7 @@ $("tfeSalvar").onclick = ()=>{
   t.resp = $("tfeResp").value.trim();
   t.inicio = $("tfeInicio").value || null;
   t.fim = $("tfeFim").value || null;
+  t.inicioReal = $("tfeInicioReal").value || null;
   t.milestone = $("tfeMilestone").value || "";
   t.status = $("tfeStatus").value || "Não iniciado";
   salvar();
@@ -2846,6 +3434,14 @@ function renderFicha(){
       btn.textContent = textoOriginal; btn.disabled = false;
     }
   };
+  // qualquer edição dentro da Ficha (Cronograma, Plano de Marcos, VSC, Compliance/BPx, etc.) chama
+  // renderFicha() pra se redesenhar — mas NENHUMA dessas chamava o Roadmap junto, então quem
+  // editasse uma data ali e ficasse olhando a aba Roadmap aberta (sem clicar em outra aba e voltar)
+  // via uma tela desatualizada até alguma outra ação disparar um renderTudo(). Atualizando aqui
+  // também, o Roadmap acompanha em tempo real qualquer edição feita na Ficha, não só na troca de aba.
+  // Em try/catch de propósito: um problema ao redesenhar o Roadmap (ex.: dado antigo/inconsistente
+  // numa tarefa) NUNCA pode impedir a própria Ficha de terminar de se redesenhar normalmente.
+  try{ renderRoadmapEsteira(); }catch(err){ console.error("Falha ao atualizar o Roadmap junto com a Ficha:", err); }
 }
 /* ---------- Compromissos (nota + responsável + prazo) — vira registro no Histórico ---------- */
 function renderCompromissosFicha(pid){
@@ -2982,7 +3578,7 @@ function renderVSC(pid){
   const atualizarEtapa = (ekey)=>{
     const it = p.vscEtapas[ekey];
     const eLabel = VSC_ETAPAS.find(e=>e.key===ekey).label;
-    sincronizarBarraCronograma(pid, `${pid}_${ekey}`, `VSC — ${eLabel}`, it.inicio, it.fim, it.real, "isVSC");
+    sincronizarBarraCronograma(pid, ekey, `VSC — ${eLabel}`, it.inicio, it.fim, it.real, "isVSC");
     salvar(); renderVSC(pid); renderFicha();
   };
   $("fichaVscConteudo").querySelectorAll(".vsc-inicio").forEach(inp=>{
@@ -3776,7 +4372,7 @@ $("fileBackup").onchange = async e=>{
 
 /* ================= INICIALIZAÇÃO ================= */
 function renderTudo(){
-  renderPortfolio(); renderOnePage(); renderFicha(); renderHistorico(); renderEsteiraOnePage(); renderMilestonesRef();
+  renderPortfolio(); renderOnePage(); renderFicha(); renderHistorico(); renderEsteiraOnePage(); renderRoadmapEsteira(); renderMilestonesRef();
 }
 // diz se a pessoa está com o cursor num campo de texto agora — usado pra sincronização em segundo
 // plano (busca automática, envio automático) NÃO redesenhar a tela no meio de alguém digitando
