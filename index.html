@@ -2667,7 +2667,7 @@ function progressoConjuntoTarefas(tarefas){
   return somaDuracao ? Math.round(somaDecorrido/somaDuracao*100) : null;
 }
 
-function gradeRoadmapHTML(sel, subprojetos){
+function gradeRoadmapHTML(sel, subprojetos, larguraDisponivelPx){
   const porProjeto = subprojetos.map(p=>({
     projeto: p,
     tarefas: TAREFAS.filter(t=>t.projetoId===p.id && t.mostrarRoadmap && dataValidaISO(t.inicio) && dataValidaISO(t.fim)).sort(compararTarefas),
@@ -2681,8 +2681,14 @@ function gradeRoadmapHTML(sel, subprojetos){
   const rangeInicio = roadmapPrimeiroDiaMes(todasDatas[0]);
   const rangeFim = roadmapUltimoDiaMes(todasDatas[todasDatas.length-1]);
   const totalDias = diasEntreDatas(rangeInicio, rangeFim) + 1;
-  const larguraTotal = totalDias * ROADMAP_PX_POR_DIA;
-  const leftPx = iso => diasEntreDatas(rangeInicio, iso) * ROADMAP_PX_POR_DIA;
+  // Uma esteira sozinha costuma cobrir um período bem mais curto que a Visão Geral — com o zoom
+  // fixo de 5px/dia, isso sobrava um monte de espaço em branco à direita na tela. Aqui o zoom
+  // "estica" pra preencher a largura disponível (medida pelo chamador) quando o período é curto;
+  // nunca encolhe abaixo do padrão de 5px/dia (se o período já for mais longo que a tela, continua
+  // rolando como sempre), e tem um teto de 24px/dia pra não virar barra gigante num período de dias.
+  const pxPorDia = larguraDisponivelPx ? Math.max(ROADMAP_PX_POR_DIA, Math.min(24, larguraDisponivelPx / totalDias)) : ROADMAP_PX_POR_DIA;
+  const larguraTotal = totalDias * pxPorDia;
+  const leftPx = iso => diasEntreDatas(rangeInicio, iso) * pxPorDia;
 
   const meses = [];
   { let cursor = new Date(rangeInicio+"T00:00:00");
@@ -2698,10 +2704,10 @@ function gradeRoadmapHTML(sel, subprojetos){
     const ano = meses[i].ano;
     let dias=0;
     while(i<meses.length && meses[i].ano===ano){ dias+=meses[i].dias; i++; }
-    headAnos += `<div class="${idxAno%2?"b":""}" style="width:${dias*ROADMAP_PX_POR_DIA}px">${ano}</div>`;
+    headAnos += `<div class="${idxAno%2?"b":""}" style="width:${dias*pxPorDia}px">${ano}</div>`;
     idxAno++;
   }
-  const headMeses = meses.map((m,i)=> `<div class="${i%2?"b":""}" style="width:${m.dias*ROADMAP_PX_POR_DIA}px">${MESES_ABREV_ROADMAP[m.mes]}</div>`).join("");
+  const headMeses = meses.map((m,i)=> `<div class="${i%2?"b":""}" style="width:${m.dias*pxPorDia}px">${MESES_ABREV_ROADMAP[m.mes]}</div>`).join("");
 
   const hojeDentro = hojeStr>=rangeInicio && hojeStr<=rangeFim;
   const hojeLeft = leftPx(hojeStr);
@@ -2723,8 +2729,8 @@ function gradeRoadmapHTML(sel, subprojetos){
   // tratamento que a linha do "hoje" já tem (linha tracejada atravessando todas as linhas + marcador
   // lá em cima). Uma por go-live encontrado nessa esteira (pode haver mais de um — um por projeto).
   const golivesParaLinha = todasTarefas.filter(ehGoLive).map(t=> t.fim || t.inicio).filter(Boolean);
-  const linhasGolive = golivesParaLinha.map(d=> `<div class="roadmap-golive-line" style="left:${leftPx(d)+ROADMAP_PX_POR_DIA/2}px"></div>`).join("");
-  const datasGolive = golivesParaLinha.map(d=> `<div class="roadmap-golive-data" style="left:${leftPx(d)+ROADMAP_PX_POR_DIA/2}px">${brDate(d)}</div>`).join("");
+  const linhasGolive = golivesParaLinha.map(d=> `<div class="roadmap-golive-line" style="left:${leftPx(d)+pxPorDia/2}px"></div>`).join("");
+  const datasGolive = golivesParaLinha.map(d=> `<div class="roadmap-golive-data" style="left:${leftPx(d)+pxPorDia/2}px">${brDate(d)}</div>`).join("");
 
   // % de avanço de uma tarefa — não é "quanto foi de fato produzido" (isso só quem está fazendo
   // sabe), é "quanto do prazo planejado já foi consumido", medido a partir de quando ela
@@ -2768,10 +2774,10 @@ function gradeRoadmapHTML(sel, subprojetos){
       // go-live é sempre um marco de data única: ancora no fim (data planejada), mesmo que a
       // tarefa tenha sido lançada com início e fim diferentes
       const dataAncora = golive ? (t.fim||t.inicio) : t.inicio;
-      return `<div class="roadmap-diamond ${cor}" style="left:${leftPx(dataAncora)+ROADMAP_PX_POR_DIA/2}px" title="${tituloBase} (${brDate(dataAncora)})"></div>`;
+      return `<div class="roadmap-diamond ${cor}" style="left:${leftPx(dataAncora)+pxPorDia/2}px" title="${tituloBase} (${brDate(dataAncora)})"></div>`;
     }
     const l = leftPx(t.inicio);
-    const w = Math.max((diasEntreDatas(t.inicio,t.fim)+1)*ROADMAP_PX_POR_DIA, 8);
+    const w = Math.max((diasEntreDatas(t.inicio,t.fim)+1)*pxPorDia, 8);
     const pct = progressoTarefa(t);
     // % DENTRO da barra, colada à esquerda — igual à imagem de referência. "Não iniciado" usa fundo
     // claro (#E6E0F5), então o texto precisa ser escuro pra não sumir; os demais status têm fundo
@@ -2976,20 +2982,21 @@ function renderRoadmapEsteira(){
   $("roadmapConteudo").classList.toggle("hide", !sel);
   if(!sel) return;
   const badgeGeral = pct => pct===null ? "" : `<span class="rp-pct-geral" title="Progresso médio, ponderado pela duração de cada tarefa marcada pro Roadmap (🚩)">📊 Progresso geral: ${pct}%</span>`;
+  // Mede a largura de verdade disponível na tela (desconta o padding do card e a coluna de rótulo
+  // fixa) — tanto a Visão Geral quanto uma esteira isolada usam isso pra calcular um zoom que
+  // aproveita a tela toda: a Geral pra NUNCA passar da largura (período costuma ser longo), a
+  // esteira pra NUNCA sobrar espaço em branco à direita (período costuma ser curto).
+  const larguraCardPx = $("roadmapConteudo").clientWidth || document.querySelector("main")?.clientWidth || 1200;
+  const larguraDisponivel = Math.max(500, larguraCardPx - 40 - 282);
   if(sel==="__geral__"){
     const todosProjetos = PROJETOS.slice().sort((a,b)=> a.nome.localeCompare(b.nome, "pt", {numeric:true}));
     const pctGeral = progressoConjuntoTarefas(tarefasRoadmapDeProjetos(todosProjetos));
-    // Mede a largura de verdade disponível na tela (a Visão Geral costuma cobrir um período bem
-    // mais longo que uma esteira só, e ficava rolando na horizontal sem parar) — desconta o padding
-    // do card e a coluna de rótulo fixa, pra calcular um zoom que cabe tudo numa página só.
-    const larguraCardPx = $("roadmapConteudo").clientWidth || document.querySelector("main")?.clientWidth || 1200;
-    const larguraDisponivelGeral = Math.max(500, larguraCardPx - 40 - 282);
     $("roadmapConteudo").innerHTML = `<div class="card" id="cardRoadmap">
       <div class="toolbar" style="justify-content:space-between">
         <h2 style="margin:0">Roadmap — Visão Geral (todos os projetos)</h2>
         ${badgeGeral(pctGeral)}
       </div>
-      ${gradeRoadmapGeralHTML(todosProjetos, larguraDisponivelGeral)}
+      ${gradeRoadmapGeralHTML(todosProjetos, larguraDisponivel)}
     </div>`;
     return;
   }
@@ -3001,7 +3008,7 @@ function renderRoadmapEsteira(){
       <h2 style="margin:0">Roadmap — Esteira ${esc(sel)}</h2>
       ${badgeGeral(pctGeral)}
     </div>
-    ${gradeRoadmapHTML(sel, subprojetos)}
+    ${gradeRoadmapHTML(sel, subprojetos, larguraDisponivel)}
   </div>`;
 }
 $("roadmapEsteiraSelect").onchange = renderRoadmapEsteira;
