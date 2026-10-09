@@ -2681,12 +2681,11 @@ function gradeRoadmapHTML(sel, subprojetos, larguraDisponivelPx){
   const rangeInicio = roadmapPrimeiroDiaMes(todasDatas[0]);
   const rangeFim = roadmapUltimoDiaMes(todasDatas[todasDatas.length-1]);
   const totalDias = diasEntreDatas(rangeInicio, rangeFim) + 1;
-  // Uma esteira sozinha costuma cobrir um período bem mais curto que a Visão Geral — com o zoom
-  // fixo de 5px/dia, isso sobrava um monte de espaço em branco à direita na tela. Aqui o zoom
-  // "estica" pra preencher a largura disponível (medida pelo chamador) quando o período é curto;
-  // nunca encolhe abaixo do padrão de 5px/dia (se o período já for mais longo que a tela, continua
-  // rolando como sempre), e tem um teto de 24px/dia pra não virar barra gigante num período de dias.
-  const pxPorDia = larguraDisponivelPx ? Math.max(ROADMAP_PX_POR_DIA, Math.min(24, larguraDisponivelPx / totalDias)) : ROADMAP_PX_POR_DIA;
+  // O zoom sempre se ajusta pra preencher exatamente a largura disponível (medida pelo chamador):
+  // período curto estica as colunas (sem sobrar espaço em branco à direita), período longo encolhe
+  // (sem rolar na horizontal). Só não deixa passar de 40px/dia — período de poucos dias virando
+  // barra gigante — caso em que sobra um pouco de espaço mesmo, preferível a ficar exagerado.
+  const pxPorDia = larguraDisponivelPx ? Math.min(40, larguraDisponivelPx / totalDias) : ROADMAP_PX_POR_DIA;
   const larguraTotal = totalDias * pxPorDia;
   const leftPx = iso => diasEntreDatas(rangeInicio, iso) * pxPorDia;
 
@@ -2865,14 +2864,12 @@ function gradeRoadmapGeralHTML(todosProjetos, larguraDisponivelPx){
   const rangeInicio = roadmapPrimeiroDiaMes(todasDatas[0]);
   const rangeFim = roadmapUltimoDiaMes(todasDatas[todasDatas.length-1]);
   const totalDias = diasEntreDatas(rangeInicio, rangeFim) + 1;
-  // Na Visão Geral o período costuma ser bem mais longo que uma esteira só (vários projetos
-  // somados, comumente indo até março do ano seguinte ou mais) — usar o mesmo zoom fixo do
-  // Roadmap por esteira (5px/dia) deixava a tela rolando na horizontal sem parar. Aqui o zoom se
-  // ajusta pra caber a largura disponível da tela (medida pelo chamador) numa página só, SEMPRE —
-  // sem piso mínimo de px/dia, porque o pedido explícito é caber tudo sem rolar, mesmo que o
-  // período seja longo e as colunas fiquem bem finas; só não passa do "esticado" de 5px/dia padrão
-  // (pra período curto não ficar exagerado).
-  const pxPorDia = larguraDisponivelPx ? Math.min(ROADMAP_PX_POR_DIA, larguraDisponivelPx / totalDias) : ROADMAP_PX_POR_DIA;
+  // O zoom sempre se ajusta pra preencher exatamente a largura disponível (medida pelo chamador):
+  // poucos projetos/período curto estica as colunas (sem sobrar espaço em branco à direita — era
+  // exatamente esse o problema antes, quando o zoom tinha um teto de 5px/dia); muitos projetos
+  // somados/período longo encolhe, sem piso mínimo, pra nunca rolar na horizontal. Só não passa de
+  // 40px/dia (período de poucos dias virando barra gigante).
+  const pxPorDia = larguraDisponivelPx ? Math.min(40, larguraDisponivelPx / totalDias) : ROADMAP_PX_POR_DIA;
   const larguraTotal = totalDias * pxPorDia;
   const leftPx = iso => diasEntreDatas(rangeInicio, iso) * pxPorDia;
 
