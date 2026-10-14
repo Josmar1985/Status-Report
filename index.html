@@ -6,6 +6,7 @@
 <title>Portfólio de Projetos — Acompanhamento Semanal</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
   :root{
     --ink:#101826; --navy:#0F2A4A; --blue:#2758A8; --blue-soft:#E8EFFA;
@@ -435,11 +436,15 @@
         <div id="fichaPlanoMarcos"></div>
       </div>
       <div class="card no-print">
-        <div class="toolbar" style="justify-content:space-between">
+        <div class="toolbar" style="justify-content:space-between;flex-wrap:wrap;gap:8px">
           <h2 style="margin:0">Nova tarefa</h2>
-          <label style="margin:0;text-transform:none;font-weight:600;color:var(--ink);display:flex;align-items:center;gap:6px">
-            Início do cronograma: <input type="date" id="cronoDataInicio" style="width:auto">
-          </label>
+          <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+            <button class="btn btn-soft btn-sm" id="btnImportarCronograma">📥 Importar cronograma (Excel)</button>
+            <input type="file" id="fileCronograma" accept=".xlsx,.xls,.csv" hidden>
+            <label style="margin:0;text-transform:none;font-weight:600;color:var(--ink);display:flex;align-items:center;gap:6px">
+              Início do cronograma: <input type="date" id="cronoDataInicio" style="width:auto">
+            </label>
+          </div>
         </div>
         <div class="grid2">
           <div class="field"><label>Código (ex.: 5.6.1)</label><input type="text" id="tfCodigo" placeholder="opcional"></div>
@@ -623,6 +628,35 @@
     <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:6px">
       <button class="btn btn-soft btn-sm" id="tfeCancelar">Cancelar</button>
       <button class="btn btn-sm" id="tfeSalvar">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MODAL: IMPORTAR CRONOGRAMA DE EXCEL ===== -->
+<div class="modal-bg hide" id="modalImportCrono">
+  <div class="modal" style="max-width:960px">
+    <h3>Importar cronograma de uma planilha Excel</h3>
+    <div class="field">
+      <label>Aba da planilha</label>
+      <select id="importCronoAba"></select>
+    </div>
+    <div id="importCronoPreviewWrap" class="hide">
+      <div class="toolbar" style="justify-content:space-between;flex-wrap:wrap;gap:8px">
+        <div class="desc" style="margin:0" id="importCronoResumo"></div>
+        <div id="importCronoDatasToggle"></div>
+      </div>
+      <div style="max-height:50vh;overflow:auto;border:1px solid var(--line);border-radius:8px">
+        <table style="width:100%">
+          <thead><tr>
+            <th style="width:30px"></th><th>Código</th><th>Tarefa</th><th>Responsável</th><th>Status</th><th>Início</th><th>Fim</th><th>Milestone sugerido</th>
+          </tr></thead>
+          <tbody id="importCronoTbody"></tbody>
+        </table>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px">
+      <button class="btn btn-soft btn-sm" id="importCronoCancelar">Cancelar</button>
+      <button class="btn btn-sm hide" id="importCronoConfirmar">Importar selecionadas</button>
     </div>
   </div>
 </div>
@@ -2656,7 +2690,7 @@ function progressoConjuntoTarefas(tarefas){
   const hojeStr = hojeISO();
   let somaDecorrido=0, somaDuracao=0;
   tarefas.forEach(t=>{
-    if(!t.inicio || !t.fim || t.inicio===t.fim) return;
+    if(!t.inicio || !t.fim || t.fim<=t.inicio) return; // fim antes (ou igual) do início: duração negativa/zero inflava a % do conjunto
     const duracao = diasEntreDatas(t.inicio, t.fim) + 1;
     let decorrido;
     if(t.status==="Não iniciado") decorrido = 0;
@@ -2741,7 +2775,7 @@ function gradeRoadmapHTML(sel, subprojetos, larguraDisponivelPx){
   // eventos binários (aconteceu ou não), não têm "duração" pra medir avanço.
   const diasTarefa = t => diasEntreDatas(t.inicio, t.fim) + 1;
   const progressoTarefa = t=>{
-    if(!t.inicio || !t.fim || t.inicio===t.fim) return null;
+    if(!t.inicio || !t.fim || t.fim<=t.inicio) return null; // fim antes (ou igual) do início: data trocada/inválida, não "conta" progresso
     if(t.status==="Não iniciado") return 0;
     if(t.status==="Concluído") return 100;
     const duracao = diasTarefa(t);
@@ -2754,7 +2788,7 @@ function gradeRoadmapHTML(sel, subprojetos, larguraDisponivelPx){
   const progressoProjeto = tarefasProjeto=>{
     let somaDecorrido=0, somaDuracao=0;
     tarefasProjeto.forEach(t=>{
-      if(!t.inicio || !t.fim || t.inicio===t.fim) return;
+      if(!t.inicio || !t.fim || t.fim<=t.inicio) return; // fim antes (ou igual) do início: duração negativa/zero inflava a % do conjunto
       const duracao = diasTarefa(t);
       let decorrido;
       if(t.status==="Não iniciado") decorrido = 0;
@@ -2906,7 +2940,7 @@ function gradeRoadmapGeralHTML(todosProjetos, larguraDisponivelPx){
   const progressoProjeto = tarefasProjeto=>{
     let somaDecorrido=0, somaDuracao=0;
     tarefasProjeto.forEach(t=>{
-      if(!t.inicio || !t.fim || t.inicio===t.fim) return;
+      if(!t.inicio || !t.fim || t.fim<=t.inicio) return; // fim antes (ou igual) do início: duração negativa/zero inflava a % do conjunto
       const duracao = diasTarefa(t);
       let decorrido;
       if(t.status==="Não iniciado") decorrido = 0;
@@ -4372,6 +4406,258 @@ $("fileBackup").onchange = async e=>{
     alert("Backup importado e mesclado com sucesso.");
   }catch(err){ alert("Não consegui ler esse arquivo: "+err.message); }
   e.target.value = "";
+};
+
+/* ================= IMPORTAR CRONOGRAMA DE EXCEL =================
+   Lê um .xlsx/.xls/.csv (ex.: export de um controle existente, uma aba por projeto) e cria/atualiza
+   tarefas do projeto selecionado na Ficha. Não assume posição fixa de coluna nem de linha de
+   cabeçalho — cada aba de planilha real tem um número diferente de linhas de título antes da
+   tabela — em vez disso reconhece o cabeçalho pelo TEXTO (ID / Descrição / Status / datas /
+   Responsável) e sempre mostra uma prévia conferível antes de gravar qualquer coisa, porque uma
+   planilha de controle como essa varia bastante de aba pra aba (algumas têm só um par de datas,
+   outras têm "Planejado" e "Repactuado" lado a lado; algumas linhas são cabeçalho de fase/seção,
+   não tarefa de verdade) e não dá pra confiar cegamente no formato. */
+let IMPORT_CRONO_WB = null;
+let IMPORT_CRONO_LINHAS = [];
+let IMPORT_CRONO_MODO_DATA = "repactuado"; // ou "planejado" — só importa quando a aba tem os dois pares de data
+
+function normalizarTxt(s){
+  return String(s||"").normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase().replace(/[^a-z0-9]+/g," ").trim();
+}
+function excelSerialParaISO(n){
+  // fallback pra quando a data veio como número de série do Excel em vez de já ser um objeto Date
+  // (acontece quando a célula não está formatada como data, mas o valor por baixo é um serial)
+  if(typeof n!=="number" || n<20000 || n>60000) return null;
+  const d = new Date(Date.UTC(1899,11,30) + Math.round(n)*86400000);
+  return isNaN(d) ? null : d.toISOString().slice(0,10);
+}
+function celulaParaISO(v){
+  // aceita objeto Date (caso normal, lido com cellDates:true), número de série do Excel, ou texto
+  // em formato dd/mm/aaaa — inclusive com um dia da semana na frente ("Mon 16/03/26", comum em
+  // export do MS Project). Datas fora de uma faixa plausível (ex.: o clássico bug do Excel de
+  // "01/01/1900" quando a célula ficou vazia/mal preenchida) são tratadas como inválidas.
+  if(v==null || v==="") return null;
+  if(v instanceof Date){ if(isNaN(v)) return null; const y=v.getFullYear(); if(y<2015||y>2035) return null; return v.toISOString().slice(0,10); }
+  if(typeof v==="number"){ const iso = excelSerialParaISO(v); if(!iso) return null; const y=+iso.slice(0,4); if(y<2015||y>2035) return null; return iso; }
+  const s = String(v).trim();
+  const m = s.match(/(\d{1,2})\/(\d{1,2})\/(\d{2,4})\s*$/);
+  if(m){
+    let d=+m[1], mo=+m[2], a=+m[3]; if(a<100) a += 2000;
+    if(a<2015||a>2035) return null;
+    const dt = new Date(Date.UTC(a, mo-1, d));
+    return isNaN(dt) ? null : dt.toISOString().slice(0,10);
+  }
+  return null;
+}
+const STATUS_IMPORT_MAP = [
+  [/final|conclu/i, "Concluído"],
+  [/andamento|progress/i, "Em andamento"],
+  [/atras/i, "Atrasado"],
+  [/pend|n[aã]o.?inic/i, "Não iniciado"],
+];
+function statusImportado(raw, inicio, fim){
+  const s = String(raw||"").trim();
+  for(const [re,val] of STATUS_IMPORT_MAP) if(re.test(s)) return val;
+  return statusAutomaticoPorData(inicio, fim, null);
+}
+function milestoneParaEtapa(etapaTxt){
+  // usa o ÚLTIMO milestone listado em MILESTONES_REF pra essa etapa — o "gate" de fechamento da
+  // fase — como representante único; uma etapa tem vários milestones possíveis, não dá pra saber
+  // qual exatamente bate com cada tarefa só pela posição na planilha, então essa é uma marcação
+  // de partida: continua editável tarefa a tarefa depois, no modal de edição de tarefa.
+  if(!etapaTxt) return "";
+  const alvo = normalizarTxt(etapaTxt);
+  const candidatos = MILESTONES_REF.filter(([et]) => normalizarTxt(et)===alvo);
+  return candidatos.length ? candidatos[candidatos.length-1][1] : "";
+}
+function detectarCabecalhoCronograma(linhasBrutas){
+  // procura nas primeiras linhas a que parece ser o cabeçalho real da tabela — a que tem mais
+  // colunas reconhecíveis (ID, Descrição, Status, datas, Responsável) — em vez de assumir uma
+  // linha fixa, já que cada aba tem um número diferente de linhas de título antes dela
+  let melhor = null;
+  for(let r=0; r<Math.min(12, linhasBrutas.length); r++){
+    const linha = linhasBrutas[r] || [];
+    const mapa = {};
+    linha.forEach((cel,c)=>{
+      const n = normalizarTxt(cel);
+      if(!n) return;
+      if(mapa.id===undefined && n==="id") mapa.id = c;
+      else if(mapa.nome===undefined && (n.includes("descri") || n.includes("tarefa"))) mapa.nome = c;
+      else if(mapa.status===undefined && n.includes("status")) mapa.status = c;
+      else if(mapa.duracao===undefined && n.includes("dura")) mapa.duracao = c;
+      else if(n.includes("inic")) { if(mapa.inicio===undefined) mapa.inicio=c; else if(mapa.inicio2===undefined) mapa.inicio2=c; }
+      else if(n.includes("term") || n==="fim" || n.includes("conclus")) { if(mapa.fim===undefined) mapa.fim=c; else if(mapa.fim2===undefined) mapa.fim2=c; }
+      else if(mapa.resp===undefined && n.includes("respons")) mapa.resp = c;
+      else if(mapa.notas===undefined && (n.includes("nota") || n.includes("observ"))) mapa.notas = c;
+    });
+    const pontos = Object.keys(mapa).length;
+    if(mapa.id!==undefined && mapa.nome!==undefined && (mapa.inicio!==undefined || mapa.fim!==undefined)){
+      if(!melhor || pontos>melhor.pontos) melhor = {linha:r, mapa, pontos};
+    }
+  }
+  return melhor;
+}
+function construirLinhasImportacao(linhasBrutas, cab){
+  const mapa = cab.mapa;
+  const linhas = [];
+  let achouTarefa = false;
+  let faseAtual = "";
+  let brancasSeguidas = 0;
+  for(let r=cab.linha+1; r<linhasBrutas.length; r++){
+    const linha = linhasBrutas[r] || [];
+    const idRaw = linha[mapa.id];
+    const idTxt = (idRaw==null) ? "" : String(idRaw).trim();
+    const nomeRaw = mapa.nome!==undefined ? linha[mapa.nome] : "";
+    const nomeTxt = (nomeRaw==null) ? "" : String(nomeRaw).trim();
+    if(/hist[oó]rico/i.test(idTxt) || /hist[oó]rico/i.test(nomeTxt)) break; // ex.: "Histórico das Evoluções" no rodapé
+    if(!idTxt && !nomeTxt){
+      brancasSeguidas++;
+      // só considera que chegou no fim de verdade da tabela depois de VÁRIAS linhas em branco
+      // seguidas (é como o fim de tabela realmente aparece nessas planilhas — dezenas de linhas
+      // vazias antes do rodapé). Uma linha em branco isolada no meio (espaçador entre seções,
+      // bem comum) não pode cortar a importação no meio do caminho — foi exatamente isso que
+      // aconteceu numa aba real do usuário, onde a tabela ia até "7.3" mas a importação parava em "1.10"
+      // por causa de uma única linha vazia logo antes do cabeçalho da fase seguinte.
+      if(achouTarefa && brancasSeguidas>=3) break;
+      continue;
+    }
+    brancasSeguidas = 0;
+    const ehSubtarefa = /^\d+\.\d+/.test(idTxt);
+    if(!ehSubtarefa && nomeTxt){
+      // linha de cabeçalho de fase/seção (ex.: "1 — Captação:", "2 — Discovery:") — o ID é só um
+      // número inteiro, sem subdivisão. Não vira uma linha no Cronograma (não é uma tarefa
+      // executável, nem tem data própria), mas define a fase "vigente" pras tarefas seguintes, até
+      // a próxima linha desse tipo — usada pra sugerir o Milestone Associado de cada uma.
+      faseAtual = nomeTxt.replace(/:\s*$/, "").trim();
+    }
+    const statusRaw = mapa.status!==undefined ? linha[mapa.status] : "";
+    const inicioPlan = mapa.inicio!==undefined ? celulaParaISO(linha[mapa.inicio]) : null;
+    const fimPlan = mapa.fim!==undefined ? celulaParaISO(linha[mapa.fim]) : null;
+    const inicioRepac = mapa.inicio2!==undefined ? celulaParaISO(linha[mapa.inicio2]) : null;
+    const fimRepac = mapa.fim2!==undefined ? celulaParaISO(linha[mapa.fim2]) : null;
+    const resp = mapa.resp!==undefined ? String(linha[mapa.resp]||"").trim() : "";
+    linhas.push({
+      codigo: idTxt, nome: nomeTxt, resp, statusRaw,
+      inicioPlan, fimPlan, inicioRepac, fimRepac,
+      fase: faseAtual, milestoneSugerido: ehSubtarefa ? milestoneParaEtapa(faseAtual) : "",
+      ehTarefa: ehSubtarefa && !!nomeTxt,
+      motivoExcluido: !ehSubtarefa ? "cabeçalho de fase/seção — não é uma tarefa" : (!nomeTxt ? "sem descrição" : ""),
+    });
+    if(ehSubtarefa && nomeTxt) achouTarefa = true;
+  }
+  return linhas;
+}
+function datasEscolhidasImport(l){
+  const prefRepac = IMPORT_CRONO_MODO_DATA==="repactuado";
+  return {
+    inicio: prefRepac ? (l.inicioRepac || l.inicioPlan) : (l.inicioPlan || l.inicioRepac),
+    fim: prefRepac ? (l.fimRepac || l.fimPlan) : (l.fimPlan || l.fimRepac),
+  };
+}
+function renderImportCronoPreview(){
+  const temDuasDatas = IMPORT_CRONO_LINHAS.some(l=> l.inicioRepac!==null || l.fimRepac!==null);
+  $("importCronoDatasToggle").innerHTML = !temDuasDatas ? "" : `
+    <label style="margin:0;text-transform:none;font-weight:600;font-size:12px;display:flex;gap:6px;align-items:center">
+      Datas a usar:
+      <select id="importCronoModoData" style="width:auto">
+        <option value="repactuado" ${IMPORT_CRONO_MODO_DATA==="repactuado"?"selected":""}>Repactuado (mais recente)</option>
+        <option value="planejado" ${IMPORT_CRONO_MODO_DATA==="planejado"?"selected":""}>Planejado (original)</option>
+      </select>
+    </label>`;
+  if(temDuasDatas){ $("importCronoModoData").onchange = e=>{ IMPORT_CRONO_MODO_DATA = e.target.value; renderImportCronoPreview(); }; }
+  const totalTarefas = IMPORT_CRONO_LINHAS.filter(l=>l.ehTarefa).length;
+  $("importCronoResumo").textContent = `${IMPORT_CRONO_LINHAS.length} linha(s) lida(s) — ${totalTarefas} parecem ser tarefas. As linhas de fase/seção (ex.: Captação, Discovery) não viram tarefa, mas já sugerem o Milestone Associado de quem vem depois delas. Desmarque o que não quiser importar.`;
+  $("importCronoTbody").innerHTML = IMPORT_CRONO_LINHAS.map((l,i)=>{
+    const {inicio, fim} = datasEscolhidasImport(l);
+    const statusFinal = statusImportado(l.statusRaw, inicio, fim);
+    const desabilitada = !l.ehTarefa;
+    return `<tr style="${desabilitada?"opacity:.5":""}">
+      <td><input type="checkbox" class="import-crono-chk" data-i="${i}" ${(l.incluir!==false && !desabilitada)?"checked":""} ${desabilitada?"disabled":""}></td>
+      <td>${esc(l.codigo)}</td>
+      <td>${esc(l.nome)}${desabilitada?` <span style="color:var(--gray);font-size:10.5px">(${esc(l.motivoExcluido)})</span>`:""}</td>
+      <td>${esc(l.resp)}</td>
+      <td>${esc(statusFinal)}</td>
+      <td>${brDate(inicio)}</td>
+      <td>${brDate(fim)}</td>
+      <td style="font-size:11px;color:var(--gray)">${esc(l.milestoneSugerido||"—")}</td>
+    </tr>`;
+  }).join("") || `<tr><td colspan="8" class="empty">Nenhuma linha reconhecida nessa aba.</td></tr>`;
+  document.querySelectorAll(".import-crono-chk").forEach(chk=>{
+    chk.onchange = ()=>{ IMPORT_CRONO_LINHAS[+chk.dataset.i].incluir = chk.checked; };
+  });
+  $("importCronoPreviewWrap").classList.remove("hide");
+  $("importCronoConfirmar").classList.remove("hide");
+}
+function carregarAbaImportCrono(){
+  const nomeAba = $("importCronoAba").value;
+  const ws = IMPORT_CRONO_WB.Sheets[nomeAba];
+  const linhasBrutas = XLSX.utils.sheet_to_json(ws, {header:1, defval:null, raw:true});
+  const cab = detectarCabecalhoCronograma(linhasBrutas);
+  if(!cab){
+    IMPORT_CRONO_LINHAS = [];
+    $("importCronoDatasToggle").innerHTML = "";
+    $("importCronoResumo").textContent = "";
+    $("importCronoTbody").innerHTML = `<tr><td colspan="8" class="empty">Não consegui reconhecer as colunas dessa aba (preciso pelo menos de ID, Descrição e alguma data de início/fim). Confira se é a aba certa.</td></tr>`;
+    $("importCronoPreviewWrap").classList.remove("hide");
+    $("importCronoConfirmar").classList.add("hide");
+    return;
+  }
+  IMPORT_CRONO_LINHAS = construirLinhasImportacao(linhasBrutas, cab);
+  IMPORT_CRONO_MODO_DATA = "repactuado";
+  renderImportCronoPreview();
+}
+$("btnImportarCronograma").onclick = ()=>{
+  if(!$("fichaProjeto").value){ alert("Selecione um projeto primeiro."); return; }
+  if(typeof XLSX==="undefined"){ alert("Não consegui carregar a biblioteca de leitura de Excel (ela vem de um endereço externo — cdnjs.cloudflare.com). Se este computador está numa rede corporativa que bloqueia esse endereço, ou está sem internet no momento, esse é o motivo. Peça pro TI liberar cdnjs.cloudflare.com, ou tente em outra rede."); return; }
+  $("fileCronograma").click();
+};
+$("fileCronograma").onchange = async e=>{
+  const f = e.target.files[0]; if(!f) return;
+  try{
+    const buf = await f.arrayBuffer();
+    IMPORT_CRONO_WB = XLSX.read(buf, {type:"array", cellDates:true});
+    const nomes = IMPORT_CRONO_WB.SheetNames;
+    const p = PROJETOS.find(x=>x.id===$("fichaProjeto").value);
+    const codigoProjeto = p ? nomeCurtoProjeto(p.nome).codigo : "";
+    const sugerida = nomes.find(n=> codigoProjeto && normalizarTxt(n).startsWith(normalizarTxt(codigoProjeto)));
+    $("importCronoAba").innerHTML = nomes.map(n=>`<option value="${esc(n)}" ${n===sugerida?"selected":""}>${esc(n)}</option>`).join("");
+    $("modalImportCrono").classList.remove("hide");
+    carregarAbaImportCrono();
+  }catch(err){ alert("Não consegui ler esse arquivo: "+err.message); }
+  e.target.value = "";
+};
+$("importCronoAba").onchange = carregarAbaImportCrono;
+$("importCronoCancelar").onclick = ()=> $("modalImportCrono").classList.add("hide");
+$("importCronoConfirmar").onclick = ()=>{
+  const pid = $("fichaProjeto").value;
+  if(!pid) return;
+  const selecionadas = IMPORT_CRONO_LINHAS.filter(l=> l.ehTarefa && l.incluir!==false);
+  if(!selecionadas.length){ alert("Nenhuma linha selecionada."); return; }
+  let novas=0, atualizadas=0;
+  selecionadas.forEach(l=>{
+    const {inicio, fim} = datasEscolhidasImport(l);
+    const status = statusImportado(l.statusRaw, inicio, fim);
+    let t = l.codigo ? TAREFAS.find(x=>x.projetoId===pid && x.codigo===l.codigo) : null;
+    // numa ATUALIZAÇÃO (tarefa já existia, casada pelo código), o mostrarRoadmap NÃO é mexido —
+    // respeita se o usuário já desmarcou manualmente. O Milestone Associado só é PREENCHIDO se
+    // estiver vazio (ex.: tarefa importada antes de essa sugestão existir, ou importada antes da
+    // linha de fase ser corretamente detectada) — se já tem um milestone escolhido (pela sugestão
+    // automática ou por você manualmente), reimportar não troca; nome/responsável/datas/status
+    // sempre são resincronizados com a planilha
+    if(t){
+      Object.assign(t, {nome:l.nome, resp:l.resp, inicio, fim, status});
+      if(!t.milestone && l.milestoneSugerido) t.milestone = l.milestoneSugerido;
+      atualizadas++;
+    }
+    // tarefa NOVA já nasce com o Milestone Associado sugerido pela fase (Captação/Discovery/...)
+    // e marcada pro Roadmap (mostrarRoadmap:true) — senão o usuário precisaria marcar/classificar
+    // uma a uma depois de importar um cronograma inteiro, o que não faz sentido
+    else { TAREFAS.push({id:novoId(), projetoId:pid, codigo:l.codigo, nome:l.nome, resp:l.resp, inicio, fim, status, milestone:l.milestoneSugerido||"", mostrarRoadmap:true}); novas++; }
+  });
+  salvar();
+  $("modalImportCrono").classList.add("hide");
+  renderFicha();
+  alert(`Importação concluída: ${novas} tarefa(s) nova(s), ${atualizadas} atualizada(s).`);
 };
 
 /* ================= INICIALIZAÇÃO ================= */
