@@ -257,7 +257,7 @@
     <div>
       <h1>Portfólio de Projetos — Acompanhamento Semanal</h1>
       <div class="sub">Fase, farol, histórico e cronograma dos <span id="totalProjetosSub">0</span> projetos, num lugar só</div>
-      <div class="sub" style="margin-top:4px;font-style:italic">Uso com mais de uma pessoa: configure a sincronização com o GitHub (botão "🔗 GitHub" ao lado) — os dados passam a ficar num repositório compartilhado, e cada pessoa que abrir a ferramenta vê as atualizações das outras.</div>
+      <div class="sub" style="margin-top:4px;font-style:italic">Uso com mais de uma pessoa: configure a sincronização com o GitHub (botão "🔗 GitHub" ao lado) — os dados passam a ficar num repositório compartilhado, e cada pessoa que abrir a ferramenta vê as atualizações das outras. Se o token configurado só tiver permissão de leitura, a ferramenta detecta sozinha e trava a edição automaticamente (modo somente consulta).</div>
     </div>
     <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
       <span style="font-size:10.5px;color:#8098B8">Desenvolvido por Josmar Valentini</span>
@@ -274,6 +274,10 @@
     </div>
   </div>
 </header>
+
+<div class="hide" id="consultaBanner" style="background:#FFF4D6;border-bottom:1px solid #E8C468;color:#6B5212;padding:8px 20px;font-size:13px;font-weight:600;text-align:center">
+  👁️ Modo somente consulta — o token do GitHub configurado neste computador não tem permissão de escrita. Os dados continuam sendo atualizados automaticamente a partir do repositório compartilhado, mas a edição está travada aqui.
+</div>
 
 <nav>
   <button class="on" data-tab="portfolio">Portfólio</button>
@@ -562,7 +566,7 @@
 <div class="modal-bg hide" id="modalGhConfig">
   <div class="modal" style="max-width:520px">
     <h3>Sincronização com o GitHub</h3>
-    <div class="desc" style="margin-top:-8px">Os dados passam a ser gravados automaticamente num arquivo dentro de um repositório privado, e todo mundo que abrir esta ferramenta com a mesma configuração vê e edita a mesma base.</div>
+    <div class="desc" style="margin-top:-8px">Os dados passam a ser gravados automaticamente num arquivo dentro de um repositório privado, e todo mundo que abrir esta ferramenta com a mesma configuração vê e edita a mesma base. Se o token usado só tiver permissão de leitura (ex.: pra alguém que deve só consultar), a ferramenta detecta isso automaticamente ao salvar e trava a edição nesta tela — sem precisar fazer nada além de colar o token certo.</div>
     <div class="field">
       <label>Personal Access Token (com permissão de escrita nesse repositório)</label>
       <input type="password" id="ghToken" placeholder="github_pat_xxxxxxxxxxxxxxxxxxxx">
@@ -894,13 +898,19 @@ const LS_EMAILS_RESP = "portfolioApp_emailsResp_v1";
 let EMAILS_RESP = JSON.parse(localStorage.getItem(LS_EMAILS_RESP) || "{}");
 
 const LS_GH_TOKEN="portfolioApp_gh_token", LS_GH_OWNER="portfolioApp_gh_owner", LS_GH_REPO="portfolioApp_gh_repo",
-      LS_GH_PATH="portfolioApp_gh_path", LS_GH_SHA="portfolioApp_gh_sha", LS_GH_BRANCH="portfolioApp_gh_branch";
+      LS_GH_PATH="portfolioApp_gh_path", LS_GH_SHA="portfolioApp_gh_sha", LS_GH_BRANCH="portfolioApp_gh_branch",
+      LS_GH_READONLY="portfolioApp_gh_readonly";
 let GH_TOKEN = localStorage.getItem(LS_GH_TOKEN) || "";
 let GH_OWNER = localStorage.getItem(LS_GH_OWNER) || "";
 let GH_REPO  = localStorage.getItem(LS_GH_REPO)  || "";
 let GH_PATH  = localStorage.getItem(LS_GH_PATH)  || "";
 let GH_BRANCH = localStorage.getItem(LS_GH_BRANCH) || "";
 let GH_SHA   = localStorage.getItem(LS_GH_SHA)   || null;
+// true quando o token configurado NESTE navegador não tem permissão de escrita no repositório —
+// detectado automaticamente (nunca digitado pela pessoa) em ghSalvarConfig e, como rede de segurança,
+// também em qualquer tentativa real de envio que volte 403. Trava a edição na tela (ver
+// aplicarTravaSomenteConsulta), mas nunca impede continuar BUSCANDO atualizações dos outros.
+let GH_SOMENTE_LEITURA = localStorage.getItem(LS_GH_READONLY) === "1";
 let ghSyncEmAndamento = false;
 let ghSyncTimeout = null;
 
@@ -957,6 +967,53 @@ window.addEventListener("beforeunload", e=>{
    Exclusão vira "lápide" (TOMBSTONES) e é permanente, a não ser que o outro lado tenha uma edição
    comprovadamente posterior à exclusão (aí a edição desfaz a exclusão). */
 function ghConfigurado(){ return !!(GH_TOKEN && GH_OWNER && GH_REPO && GH_PATH); }
+
+/* ---------- modo somente consulta (travar edição quando o token só tem permissão de leitura) ----------
+   Não existe like "permissão" que se leia de antemão num PAT fine-grained sem tentar escrever —
+   então a única forma confiável de saber é tentar de verdade (ghEnviarAgora) e ver se volta 403.
+   Isso é feito automaticamente em ghSalvarConfig (ao configurar) e, como rede de segurança, de
+   novo em qualquer tentativa real de envio durante o uso normal (ghEnviarAgora). A pessoa nunca
+   precisa marcar nada manualmente — só cola o token que recebeu. */
+const CONSULTA_SEMPRE_LIBERADOS = new Set([
+  // navegação/visualização — nunca mudam dado, só o que está sendo exibido
+  "fichaProjeto","filtroHistProjeto","esteiraSelect","roadmapEsteiraSelect","esteiraTimelineFiltro","esteiraStatusCor",
+  "btnFichaAnterior","btnFichaProximo","btnEsteiraAnteriorTopo","btnEsteiraProximaTopo",
+  "btnModoApresentacao","btnSairApresentacao",
+  // exportação/impressão — geram um arquivo a partir do que já está carregado, não alteram nada
+  "btnExportarBackup","btnImprimirOnePage","btnImprimirFicha","btnImprimirEsteira","btnImprimirRoadmap",
+  "btnExportCronogramaPDF","btnExportarStatusCSV","btnExportarVisaoGeralCSV","btnExportarAtrasadosCSV",
+  // sincronização em si — precisa continuar acessível pra buscar atualizações e, se for o caso,
+  // trocar pra um token com permissão de escrita depois
+  "btnGhConfig","btnAtualizarAgora","ghToken","ghOwner","ghRepo","ghPath","ghBranch",
+  "ghTestar","ghSalvarConfig","ghCancelar","ghDesconectar","ghCopiarResumo",
+]);
+function aplicarTravaSomenteConsulta(){
+  const banner = $("consultaBanner");
+  if(banner) banner.classList.toggle("hide", !GH_SOMENTE_LEITURA);
+  if(!GH_SOMENTE_LEITURA) return;
+  document.querySelectorAll("input, select, textarea, button").forEach(el=>{
+    if(CONSULTA_SEMPRE_LIBERADOS.has(el.id)) return;
+    if(el.closest && el.closest("#modalGhConfig")) return; // a própria configuração do GitHub nunca trava
+    el.disabled = true;
+  });
+}
+// liga/desliga o modo e já aplica (ou desfaz) a trava na tela. Chamar sempre por aqui, nunca
+// atribuindo GH_SOMENTE_LEITURA direto, pra nunca esquecer de persistir ou de atualizar a tela.
+function ghDefinirSomenteLeitura(valor){
+  const voltouAEditar = GH_SOMENTE_LEITURA && !valor;
+  GH_SOMENTE_LEITURA = valor;
+  localStorage.setItem(LS_GH_READONLY, valor ? "1" : "0");
+  if(voltouAEditar){
+    // token passou a ter permissão de escrita (ex.: reconfigurado): desfaz a trava e deixa cada
+    // render normal (renderFicha, etc.) recolocar os poucos "disabled" que são legítimos por outro
+    // motivo (paginação na ponta, botão em uso no meio de um teste, ...)
+    document.querySelectorAll("input, select, textarea, button").forEach(el=>{ el.disabled = false; });
+    if($("consultaBanner")) $("consultaBanner").classList.add("hide");
+    renderTudoSemAtrapalhar();
+  }else{
+    aplicarTravaSomenteConsulta();
+  }
+}
 function ghUrl(){
   const caminho = GH_PATH.split("/").filter(Boolean).map(encodeURIComponent).join("/");
   let url = `https://api.github.com/repos/${encodeURIComponent(GH_OWNER)}/${encodeURIComponent(GH_REPO)}/contents/${caminho}`;
@@ -1309,6 +1366,10 @@ async function ghEnviarAgora(){
     }catch(err){
       ultimaExcecao = err;
       if(err.status===409){ continue; }
+      // rede de segurança: se um envio de verdade voltar 403 (sem permissão de escrita), trava a
+      // edição na hora — cobre o caso de um token perder a permissão DEPOIS de configurado (ex.:
+      // revogado/trocado no GitHub), sem esperar a pessoa tentar editar de novo pra descobrir
+      if(err.status===403 && !GH_SOMENTE_LEITURA) ghDefinirSomenteLeitura(true);
       break;
     }
   }
@@ -1322,6 +1383,7 @@ async function ghEnviarAgora(){
 // salvar() só AGENDA um envio (debounce de 2,5s) — nunca envia durante o carregamento inicial.
 function ghAgendarPush(){
   if(!ghConfigurado()) return;
+  if(GH_SOMENTE_LEITURA) return; // modo consulta: nunca tenta escrever (a edição já está travada na tela)
   clearTimeout(ghSyncTimeout);
   ghSyncTimeout = setTimeout(()=>{
     if(ghSyncEmAndamento){
@@ -1385,9 +1447,29 @@ $("ghSalvarConfig").onclick = async ()=>{
   $("ghConfigMsg").style.color = "var(--gray)";
   try{
     await ghBuscarEMesclar();
-    $("ghConfigMsg").textContent = "Conectado! Dados atualizados com sucesso.";
-    $("ghConfigMsg").style.color = "#2C7A4B";
-    setTimeout(()=> $("modalGhConfig").classList.add("hide"), 1200);
+    // detecta sozinho se ESTE token tem permissão de escrita — tenta um envio de verdade (o mesmo
+    // caminho normal de salvar, não um teste separado) e decide pelo resultado. Nunca pede pra
+    // pessoa marcar "é só leitura" na mão: ela só cola o token que recebeu e a tela se ajusta.
+    let mensagem = "Conectado! Dados atualizados com sucesso.";
+    let cor = "#2C7A4B";
+    try{
+      await ghEnviarAgora();
+      ghDefinirSomenteLeitura(false);
+    }catch(errEscrita){
+      if(errEscrita.status===403){
+        ghDefinirSomenteLeitura(true);
+        mensagem = "Conectado em modo SOMENTE CONSULTA — este token não tem permissão de escrita nesse repositório, então a edição foi travada automaticamente nesta tela. Os dados continuam sendo atualizados a partir do GitHub.";
+        cor = "#B8860B";
+      }else{
+        // erro ambíguo (rede, etc.) — a leitura já confirmou que o token funciona; não decide
+        // nada sobre edição sozinho, deixa como já estava antes nesta tela
+        mensagem = "Conectado, mas não consegui confirmar se esse token tem permissão de escrita (" + errEscrita.message + "). A tela ficou como estava antes disso.";
+        cor = "#B8860B";
+      }
+    }
+    $("ghConfigMsg").textContent = mensagem;
+    $("ghConfigMsg").style.color = cor;
+    setTimeout(()=> $("modalGhConfig").classList.add("hide"), GH_SOMENTE_LEITURA ? 2600 : 1200);
   }catch(err){
     $("ghConfigMsg").textContent = "Erro: "+err.message+" — confira token, organização, repositório, caminho e branch.";
     $("ghConfigMsg").style.color = "var(--red)";
@@ -4705,6 +4787,14 @@ function renderTudoSemAtrapalhar(){
 salvar();
 montarSelects();
 renderTudo();
+
+// modo somente consulta: aplica a trava já na primeira tela (se este navegador já tiver sido
+// detectado como só-leitura numa sessão anterior, não espera ninguém tentar editar pra travar) e
+// reaplica sozinho depois de qualquer re-renderização (toda tela aqui é refeita via innerHTML, o
+// que apagaria o "disabled" de novo a cada clique/atualização sem isso).
+aplicarTravaSomenteConsulta();
+new MutationObserver(()=>{ if(GH_SOMENTE_LEITURA) aplicarTravaSomenteConsulta(); })
+  .observe(document.body, {childList:true, subtree:true});
 
 if(ghConfigurado()){
   // ao abrir: só BUSCA e mescla — nunca grava automaticamente (evita empurrar um estado
