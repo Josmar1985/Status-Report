@@ -2700,6 +2700,20 @@ function progressoConjuntoTarefas(tarefas){
   });
   return somaDuracao ? Math.round(somaDecorrido/somaDuracao*100) : null;
 }
+// % geral que representa de verdade a LISTA INTEIRA de projetos (esteira ou portfólio todo), não só
+// os poucos que já têm cronograma carregado no Roadmap — progressoConjuntoTarefas() sozinho ignora
+// quem não tem tarefa nenhuma (nem soma 0 nem conta no total), o que fazia o badge mostrar algo tipo
+// "84%" quando só 2 de 35 projetos tinham dado, dando a falsa impressão de que era do portfólio todo.
+// Aqui cada PROJETO pesa igual (não dá pra ponderar por duração de tarefa quem não tem tarefa), e
+// projeto sem nenhuma tarefa marcada pro Roadmap entra como 0% (não iniciado) em vez de sumir da conta.
+function progressoPortfolioCompleto(projetos){
+  if(!projetos.length) return null;
+  const soma = projetos.reduce((acc,p)=>{
+    const pct = progressoConjuntoTarefas(tarefasRoadmapDeProjetos([p]));
+    return acc + (pct===null ? 0 : pct);
+  }, 0);
+  return Math.round(soma/projetos.length);
+}
 
 function gradeRoadmapHTML(sel, subprojetos, larguraDisponivelPx){
   const porProjeto = subprojetos.map(p=>({
@@ -3012,7 +3026,7 @@ function renderRoadmapEsteira(){
   $("roadmapSemSelecao").classList.toggle("hide", !!sel);
   $("roadmapConteudo").classList.toggle("hide", !sel);
   if(!sel) return;
-  const badgeGeral = pct => pct===null ? "" : `<span class="rp-pct-geral" title="Progresso médio, ponderado pela duração de cada tarefa marcada pro Roadmap (🚩)">📊 Progresso geral: ${pct}%</span>`;
+  const badgeGeral = pct => pct===null ? "" : `<span class="rp-pct-geral" title="Média entre TODOS os projetos da lista — não só os que já têm cronograma carregado no Roadmap. Projeto sem nenhuma tarefa marcada pro Roadmap (🚩) entra como 0% (não iniciado)">📊 Progresso geral: ${pct}%</span>`;
   // Mede a largura de verdade disponível na tela (desconta o padding do card e a coluna de rótulo
   // fixa) — tanto a Visão Geral quanto uma esteira isolada usam isso pra calcular um zoom que
   // aproveita a tela toda: a Geral pra NUNCA passar da largura (período costuma ser longo), a
@@ -3021,7 +3035,7 @@ function renderRoadmapEsteira(){
   const larguraDisponivel = Math.max(500, larguraCardPx - 40 - 282);
   if(sel==="__geral__"){
     const todosProjetos = PROJETOS.slice().sort((a,b)=> a.nome.localeCompare(b.nome, "pt", {numeric:true}));
-    const pctGeral = progressoConjuntoTarefas(tarefasRoadmapDeProjetos(todosProjetos));
+    const pctGeral = progressoPortfolioCompleto(todosProjetos);
     $("roadmapConteudo").innerHTML = `<div class="card" id="cardRoadmap">
       <div class="toolbar" style="justify-content:space-between">
         <h2 style="margin:0">Roadmap — Visão Geral (todos os projetos)</h2>
@@ -3033,7 +3047,7 @@ function renderRoadmapEsteira(){
   }
   const subprojetos = PROJETOS.filter(p=> esteiraDoProjeto(p.nome)===sel)
     .sort((a,b)=> a.nome.localeCompare(b.nome, "pt", {numeric:true}));
-  const pctGeral = progressoConjuntoTarefas(tarefasRoadmapDeProjetos(subprojetos));
+  const pctGeral = progressoPortfolioCompleto(subprojetos);
   $("roadmapConteudo").innerHTML = `<div class="card" id="cardRoadmap">
     <div class="toolbar" style="justify-content:space-between">
       <h2 style="margin:0">Roadmap — Esteira ${esc(sel)}</h2>
