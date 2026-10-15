@@ -1051,7 +1051,15 @@ async function ghPut(conteudo, sha){
   try{ res = await fetch(ghUrl().split("?")[0], {method:"PUT", headers:{...ghHeaders(), "Content-Type":"application/json"}, body: JSON.stringify(body)}); }
   catch(e){ const err = new Error("Falha de rede ao gravar no GitHub — confira sua internet."); err.status=0; throw err; }
   if(res.status===401){ const e = new Error("Token inválido ou expirado (401) — não consegue nem se autenticar."); e.status=401; throw e; }
-  if(res.status===403){ const e = new Error("Autenticado, mas SEM PERMISSÃO DE ESCRITA nesse repositório (403) — o token provavelmente só tem 'Read' e precisa de 'Read and write' em Contents."); e.status=403; throw e; }
+  if(res.status===403){ const e = new Error("Autenticado, mas SEM PERMISSÃO DE ESCRITA nesse repositório (403) — o token provavelmente só tem 'Read' e precisa de 'Read and write' em Contents."); e.status=403; e.semPermissaoEscrita=true; throw e; }
+  if(res.status===404){
+    // o GitHub costuma responder 404 (em vez de 403) quando o token não tem permissão de ESCREVER
+    // num repositório que ele CONSEGUE ler — é de propósito, pra não revelar se o repositório existe
+    // pra quem não tem acesso. Como chegamos aqui depois de um ghGet() bem-sucedido no mesmo
+    // owner/repo/path/branch, um 404 só no PUT é praticamente sempre isso, não repositório inexistente.
+    const e = new Error("Sem permissão de escrita nesse repositório (404) — o GitHub responde assim, em vez de 403, quando o token só tem leitura. Confira se o token tem 'Contents: Read and write'.");
+    e.status=404; e.semPermissaoEscrita=true; throw e;
+  }
   if(!res.ok){
     const err = await res.json().catch(()=>({}));
     const e = new Error(err.message || `GitHub respondeu ${res.status} ao gravar o arquivo.`);
@@ -1369,7 +1377,7 @@ async function ghEnviarAgora(){
       // rede de segurança: se um envio de verdade voltar 403 (sem permissão de escrita), trava a
       // edição na hora — cobre o caso de um token perder a permissão DEPOIS de configurado (ex.:
       // revogado/trocado no GitHub), sem esperar a pessoa tentar editar de novo pra descobrir
-      if(err.status===403 && !GH_SOMENTE_LEITURA) ghDefinirSomenteLeitura(true);
+      if(err.semPermissaoEscrita && !GH_SOMENTE_LEITURA) ghDefinirSomenteLeitura(true);
       break;
     }
   }
@@ -1456,7 +1464,7 @@ $("ghSalvarConfig").onclick = async ()=>{
       await ghEnviarAgora();
       ghDefinirSomenteLeitura(false);
     }catch(errEscrita){
-      if(errEscrita.status===403){
+      if(errEscrita.semPermissaoEscrita){
         ghDefinirSomenteLeitura(true);
         mensagem = "Conectado em modo SOMENTE CONSULTA — este token não tem permissão de escrita nesse repositório, então a edição foi travada automaticamente nesta tela. Os dados continuam sendo atualizados a partir do GitHub.";
         cor = "#B8860B";
