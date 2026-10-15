@@ -987,16 +987,42 @@ const CONSULTA_SEMPRE_LIBERADOS = new Set([
   "btnGhConfig","btnAtualizarAgora","ghToken","ghOwner","ghRepo","ghPath","ghBranch",
   "ghTestar","ghSalvarConfig","ghCancelar","ghDesconectar","ghCopiarResumo",
 ]);
+// várias linhas/cards (Portfólio, histórico, kanban) usam botões/links/divs identificados por
+// data-act em vez de id (gerados dinamicamente por projeto/registro). Destes, só os de
+// NAVEGAÇÃO (abrem uma aba/ficha ou filtram o que já está na tela) continuam liberados — todo o
+// resto (editar, excluir, renomear, marcar impedimento, unir, cobrar, ...) é mutação e fica de fora
+// por padrão, sem precisar listar cada um.
+const CONSULTA_DATA_ACT_LIBERADOS = new Set(["ficha","hist","abrir-ficha","ver-anot","filtrar-por-projeto"]);
 function aplicarTravaSomenteConsulta(){
   const banner = $("consultaBanner");
   if(banner) banner.classList.toggle("hide", !GH_SOMENTE_LEITURA);
   if(!GH_SOMENTE_LEITURA) return;
   document.querySelectorAll("input, select, textarea, button").forEach(el=>{
     if(CONSULTA_SEMPRE_LIBERADOS.has(el.id)) return;
+    // os botões das abas (Portfólio/Ficha/Histórico/...) não têm id, só data-tab — e são navegação
+    // pura (nunca mutam dado), então têm que continuar clicáveis em modo consulta
+    if(el.hasAttribute("data-tab")) return;
+    if(el.dataset && CONSULTA_DATA_ACT_LIBERADOS.has(el.dataset.act)) return;
     if(el.closest && el.closest("#modalGhConfig")) return; // a própria configuração do GitHub nunca trava
     el.disabled = true;
   });
 }
+// o atributo "disabled" só existe em input/select/textarea/button — os dois links de
+// editar/excluir anotação (únicas <a data-act> mutantes do app) não têm como ser desabilitados
+// assim, então ficam bloqueados aqui por delegação, na fase de CAPTURA (antes do próprio onclick
+// do elemento rodar). Registrado uma única vez no boot; a checagem de GH_SOMENTE_LEITURA é feita
+// a cada clique, então não precisa ser reaplicado depois de cada re-renderização como o disabled.
+document.addEventListener("click", function(e){
+  if(!GH_SOMENTE_LEITURA) return;
+  const alvo = e.target.closest && e.target.closest("[data-act]");
+  if(!alvo) return;
+  if(CONSULTA_DATA_ACT_LIBERADOS.has(alvo.dataset.act)) return;
+  const tag = alvo.tagName;
+  if(tag==="BUTTON" || tag==="INPUT" || tag==="SELECT" || tag==="TEXTAREA") return; // já travados via disabled
+  if(alvo.closest("#modalGhConfig")) return;
+  e.preventDefault();
+  e.stopImmediatePropagation();
+}, true);
 // liga/desliga o modo e já aplica (ou desfaz) a trava na tela. Chamar sempre por aqui, nunca
 // atribuindo GH_SOMENTE_LEITURA direto, pra nunca esquecer de persistir ou de atualizar a tela.
 function ghDefinirSomenteLeitura(valor){
