@@ -976,7 +976,9 @@ function ghConfigurado(){ return !!(GH_TOKEN && GH_OWNER && GH_REPO && GH_PATH);
    precisa marcar nada manualmente — só cola o token que recebeu. */
 const CONSULTA_SEMPRE_LIBERADOS = new Set([
   // navegação/visualização — nunca mudam dado, só o que está sendo exibido
-  "fichaProjeto","filtroHistProjeto","esteiraSelect","roadmapEsteiraSelect","esteiraTimelineFiltro","esteiraStatusCor",
+  "fichaProjeto","filtroHistProjeto","esteiraSelect","roadmapEsteiraSelect","esteiraTimelineFiltro",
+  // (esteiraStatusCor NÃO entra aqui — é o seletor "Status Geral" da esteira, que MUDA dado; tinha
+  // sido colocado aqui por engano, confundido com os filtros de exibição acima)
   "btnFichaAnterior","btnFichaProximo","btnEsteiraAnteriorTopo","btnEsteiraProximaTopo",
   "btnModoApresentacao","btnSairApresentacao",
   // exportação/impressão — geram um arquivo a partir do que já está carregado, não alteram nada
@@ -1077,7 +1079,19 @@ async function ghPut(conteudo, sha){
   try{ res = await fetch(ghUrl().split("?")[0], {method:"PUT", headers:{...ghHeaders(), "Content-Type":"application/json"}, body: JSON.stringify(body)}); }
   catch(e){ const err = new Error("Falha de rede ao gravar no GitHub — confira sua internet."); err.status=0; throw err; }
   if(res.status===401){ const e = new Error("Token inválido ou expirado (401) — não consegue nem se autenticar."); e.status=401; throw e; }
-  if(res.status===403){ const e = new Error("Autenticado, mas SEM PERMISSÃO DE ESCRITA nesse repositório (403) — o token provavelmente só tem 'Read' e precisa de 'Read and write' em Contents."); e.status=403; e.semPermissaoEscrita=true; throw e; }
+  if(res.status===403){
+    // 403 do GitHub não é só "sem permissão de escrita" — também aparece em limite de requisições
+    // (rate limit) e detecção de abuso, que não têm nada a ver com o token ser só-leitura. Só marca
+    // semPermissaoEscrita quando a mensagem não indica um desses outros motivos, senão um PC com
+    // token de escrita normal podia ser travado à toa por um 403 passageiro.
+    const corpo = await res.json().catch(()=>({}));
+    const msg = corpo.message || "";
+    const ehLimiteDeTaxa = /rate limit|abuse|secondary rate/i.test(msg);
+    const e = new Error(ehLimiteDeTaxa
+      ? `GitHub recusou temporariamente por limite de requisições (403): ${msg || "tente de novo em alguns minutos"}.`
+      : "Autenticado, mas SEM PERMISSÃO DE ESCRITA nesse repositório (403) — o token provavelmente só tem 'Read' e precisa de 'Read and write' em Contents.");
+    e.status=403; e.semPermissaoEscrita = !ehLimiteDeTaxa; throw e;
+  }
   if(res.status===404){
     // o GitHub costuma responder 404 (em vez de 403) quando o token não tem permissão de ESCREVER
     // num repositório que ele CONSEGUE ler — é de propósito, pra não revelar se o repositório existe
@@ -1400,10 +1414,16 @@ async function ghEnviarAgora(){
     }catch(err){
       ultimaExcecao = err;
       if(err.status===409){ continue; }
-      // rede de segurança: se um envio de verdade voltar 403 (sem permissão de escrita), trava a
-      // edição na hora — cobre o caso de um token perder a permissão DEPOIS de configurado (ex.:
-      // revogado/trocado no GitHub), sem esperar a pessoa tentar editar de novo pra descobrir
-      if(err.semPermissaoEscrita && !GH_SOMENTE_LEITURA) ghDefinirSomenteLeitura(true);
+      // rede de segurança: se um envio de verdade voltar sem permissão de escrita, trava a edição
+      // na hora — cobre o caso de um token perder a permissão DEPOIS de configurado (ex.:
+      // revogado/trocado no GitHub), sem esperar a pessoa tentar editar de novo pra descobrir.
+      // Mostra um alerta (não só muda a cor do status, que é fácil de não notar): isso acontece em
+      // qualquer sincronização automática, em segundo plano — a pessoa precisa saber na hora que
+      // suas próprias edições pararam de ir pro arquivo compartilhado, nunca descobrir dias depois.
+      if(err.semPermissaoEscrita && !GH_SOMENTE_LEITURA){
+        ghDefinirSomenteLeitura(true);
+        alert("⚠ Este computador perdeu a permissão de escrita no GitHub (token revogado, trocado ou sem o escopo certo). A edição foi travada automaticamente (modo somente consulta) pra nenhuma mudança ficar presa só aqui sem sincronizar. Avise quem administra o token, ou reconfigure com um token com permissão de escrita em \"🔗 GitHub\".");
+      }
       break;
     }
   }
@@ -1481,13 +1501,19 @@ $("ghSalvarConfig").onclick = async ()=>{
   $("ghConfigMsg").style.color = "var(--gray)";
   try{
     await ghBuscarEMesclar();
-    // detecta sozinho se ESTE token tem permissão de escrita — tenta um envio de verdade (o mesmo
-    // caminho normal de salvar, não um teste separado) e decide pelo resultado. Nunca pede pra
-    // pessoa marcar "é só leitura" na mão: ela só cola o token que recebeu e a tela se ajusta.
+    // detecta sozinho se ESTE token tem permissão de escrita, com um teste ISOLADO que nunca toca
+    // o estado local (PROJETOS/TAREFAS/HISTORICO/...): busca o conteúdo atual de novo e grava ELE
+    // MESMO de volta, sem mesclar nada — o mesmo teste seguro que o botão "🧪 Testar leitura/escrita"
+    // já faz há tempos. NUNCA usar ghEnviarAgora() aqui: esse caminho mescla com o estado local
+    // DESTA MÁQUINA (pacoteAtual()) e grava o resultado — ou seja, simplesmente reabrir essa tela
+    // (nem editar nada) já dispararia uma gravação de verdade no arquivo compartilhado, podendo
+    // sobrescrever dado mais completo de outra pessoa com um estado local desatualizado/incompleto
+    // aqui. Foi exatamente esse o bug corrigido depois de um relato de cronograma "sumido".
     let mensagem = "Conectado! Dados atualizados com sucesso.";
     let cor = "#2C7A4B";
     try{
-      await ghEnviarAgora();
+      const remotoTeste = await ghGet();
+      await ghPut(remotoTeste.content || {tipo:"portfolio_app_backup", versao:2, projetos:[], historico:[], tarefas:[], planos:{}, esteiras:[], tombstones:{projetos:{},tarefas:{},historico:{}}}, remotoTeste.sha);
       ghDefinirSomenteLeitura(false);
     }catch(errEscrita){
       if(errEscrita.semPermissaoEscrita){
@@ -3432,7 +3458,7 @@ function renderFicha(){
   $("fichaSemProjeto").classList.toggle("hide", !!pid);
   $("fichaConteudo").classList.toggle("hide", !pid);
 
-  const idx = PROJETOS.findIndex(x=>x.id===pid);
+  const idx = projetosEmOrdemDeExibicao().findIndex(x=>x.id===pid);
   $("fichaContagem").textContent = (idx>=0 && PROJETOS.length) ? `Projeto ${idx+1} de ${PROJETOS.length}` : "";
   $("btnFichaAnterior").disabled = idx<=0;
   $("btnFichaProximo").disabled = idx<0 || idx>=PROJETOS.length-1;
@@ -3440,6 +3466,17 @@ function renderFicha(){
   if(!pid) return;
   const p = PROJETOS.find(x=>x.id===pid);
   if(!p) return;
+
+  // guarda a posição de rolagem ANTES de redesenhar — tanto a da página (o cabeçalho da Ficha pode
+  // mudar de altura) quanto a rolagem PRÓPRIA do painel do Cronograma (.gantt-wrap é um "painel
+  // congelado" com scroll interno, igual congelar painéis no Excel). Sem isso, qualquer edição aqui
+  // dentro (nome, status, data, marcar roadmap...) chama renderFicha() de novo, que reconstrói a
+  // grade do zero via innerHTML — um elemento NOVO sempre nasce com scrollTop 0 — e quem tinha rolado
+  // pra baixo pra ver outra parte do cronograma é jogado de volta pro topo sem aviso. É exatamente o
+  // "rolando pra baixo, do nada ele sobe" relatado.
+  const scrollPaginaSalvo = window.scrollY;
+  const ganttWrapAntes = $("fichaCronograma").querySelector(".gantt-wrap");
+  const scrollGanttSalvo = ganttWrapAntes ? {top: ganttWrapAntes.scrollTop, left: ganttWrapAntes.scrollLeft} : null;
 
   const f = calcFarol(p);
   const optsFaseFicha = MILESTONES.map(m=>`<option ${m===p.faseAtual?"selected":""}>${esc(m)}</option>`).join("");
@@ -3534,6 +3571,11 @@ function renderFicha(){
     $("fichaCronograma").innerHTML = gradeGanttHTML(tarefas, inicioBase, true, nDias);
     wireGradeGanttHandlers("fichaCronograma", ()=>renderFicha());
   }
+  // devolve a rolagem interna do painel do Cronograma pra onde estava (ver comentário acima)
+  if(scrollGanttSalvo){
+    const ganttWrapDepois = $("fichaCronograma").querySelector(".gantt-wrap");
+    if(ganttWrapDepois){ ganttWrapDepois.scrollTop = scrollGanttSalvo.top; ganttWrapDepois.scrollLeft = scrollGanttSalvo.left; }
+  }
 
   // "Exportar Cronograma (PDF)" — só a grade de Gantt desse projeto, em paisagem (ela é larga),
   // reaproveitando o mesmo html2canvas+jsPDF já usado no Status Report por e-mail da Esteira.
@@ -3610,6 +3652,9 @@ function renderFicha(){
   // Em try/catch de propósito: um problema ao redesenhar o Roadmap (ex.: dado antigo/inconsistente
   // numa tarefa) NUNCA pode impedir a própria Ficha de terminar de se redesenhar normalmente.
   try{ renderRoadmapEsteira(); }catch(err){ console.error("Falha ao atualizar o Roadmap junto com a Ficha:", err); }
+  // devolve a rolagem da PÁGINA pra onde estava (ver comentário no início da função) — só corrige
+  // se de fato mudou, pra não interferir num scroll manual que a pessoa fizer bem no meio do redesenho
+  if(window.scrollY !== scrollPaginaSalvo) window.scrollTo(window.scrollX, scrollPaginaSalvo);
 }
 /* ---------- Compromissos (nota + responsável + prazo) — vira registro no Histórico ---------- */
 function renderCompromissosFicha(pid){
@@ -3834,11 +3879,19 @@ function renderPlanoMarcos(pid){
 }
 
 /* ---------- modo apresentação: navegar projeto a projeto ---------- */
-function fichaIndexAtual(){ return PROJETOS.findIndex(p=>p.id===$("fichaProjeto").value); }
+// mesma ordenação (por código/nome) usada no <select> de projetos logo ao lado — sem isso,
+// Anterior/Próximo e "Projeto X de Y" navegavam na ordem BRUTA de PROJETOS (ordem de
+// inserção/merge, que muda com sincronização e importação), nada a ver com a ordem 1.1, 1.2, 2.1...
+// que a pessoa vê no seletor — foi exatamente esse o bug relatado ("deveria ser 1.1 primeiro").
+function projetosEmOrdemDeExibicao(){
+  return [...PROJETOS].sort((a,b)=> (a.nome||"").localeCompare(b.nome||"", "pt", {numeric:true}));
+}
+function fichaIndexAtual(){ return projetosEmOrdemDeExibicao().findIndex(p=>p.id===$("fichaProjeto").value); }
 function fichaIrPara(i){
-  if(!PROJETOS.length) return;
-  const idx = Math.max(0, Math.min(PROJETOS.length-1, i));
-  $("fichaProjeto").value = PROJETOS[idx].id;
+  const ordenados = projetosEmOrdemDeExibicao();
+  if(!ordenados.length) return;
+  const idx = Math.max(0, Math.min(ordenados.length-1, i));
+  $("fichaProjeto").value = ordenados[idx].id;
   renderFicha();
 }
 $("btnFichaAnterior").onclick = ()=>{ const i = fichaIndexAtual(); fichaIrPara(i<0 ? 0 : i-1); };
