@@ -1579,12 +1579,23 @@ $("ghDesconectar").onclick = ()=>{
   $("modalGhConfig").classList.add("hide");
 };
 
-// carga inicial — só entra se ainda não houver nada salvo neste navegador
-const PROJETOS_SEED = ["1.1 - Gestão de ativos SW (COI)", "1.2 - Plataforma de Integração Cloud", "2.1 - Centro 1200", "2.2 - Compliance de Emissão de Documentos", "2.3 - Expansão da Unidade de Faturamento (QUAR)", "3.1 - Automação de Recebimento Fiscal (Inbound)", "3.2 - Planejamento reforma 2027 (etapa 2)", "3.3 - Implementação do split payment", "3.4 - Transferência digital trib. (Aastax)", "3.5 - CNPJ Alfanumérico", "4.1 - Cartões de Crédito", "4.2 - Wflow governança contab. (Lct direto)", "4.3 - Integração de despesas (Concur)", "4.4 - Compensação de Documentos Bloqueados", "5.1 - Governança de Acessos (GRC/IAG)", "5.2 - Modernização de Vendas/Distr. (SD)", "5.3 - Segurança das Informações Comerciais (Revisão de Perfis)", "5.4 - Eficiência Wflow reembolso (user SAP)", "6.1 - Gestão Estratégica de Armazéns (EWM)", "6.2 - Gestão de Compliance de Fornecedores", "7.1 - Digitalização de Processos de P&D (Lote Piloto SAP)", "8.1 - Interligação dados financeiros (Credinfar)", "8.2 - Padronização de Relatórios de Qualidade", "8.3 - Transparência em Custos de Produção", "8.4 - Melhoria em Relatórios Comerciais", "8.5 - Gestão inteligente devoluções", "8.6 - Saneamento Contábil (uso/consumo)", "8.7 - Gestão Contábil de Bonificações", "8.8 - Compliance ANVISA (Produtos Controlados)", "8.9 - Controle de Qualidade em Liberação de Lote", "9.1 - Segurança em conectividade bancária (Bank Manager)", "9.2 - Gestão de Prazos e Cash flow", "10.1 - Saneamento Mestre de Materiais (PDM)", "11.1 - Integração e Planejamento Integrado (S&OP)", "11.2 - Otimização de Documentação de Produção"];
-if(PROJETOS.length===0 && localStorage.getItem(LS_PROJ)===null){
-  PROJETOS = PROJETOS_SEED.map(nome=>({id:novoId(), nome, faseAtual:"", prazoPrevisto:null, responsavel:"", bloqueio:""}));
-  salvar();
-}
+// ATENÇÃO: esta carga inicial de projetos-exemplo foi DESLIGADA de propósito (ver motivo abaixo) —
+// NÃO reativar sem antes atualizar os nomes, que já estão desatualizados (ex.: "(COI)" virou
+// "(CPI)", "Cloud" virou "Cloud BTP" depois que o portfólio foi renomeado).
+//
+// Era pra só entrar na PRIMEIRA vez que alguém abrisse a ferramenta num navegador 100% zerado
+// (nunca tinha salvo nada aqui ainda), criando um portfólio de exemplo com esses ~35 nomes. Só que
+// isso virou o motivo real por trás de um bug relatado várias vezes como "duplicata que não some,
+// mesmo depois de unir/apagar": sempre que ALGUÉM abria a ferramenta pela primeira vez num
+// computador/navegador novo (colega novo, cache limpo, outro navegador) — mesmo com a sincronização
+// do GitHub já configurada — essa lista rodava ANTES da primeira busca no GitHub terminar, criando
+// de novo, em branco, projetos como "1.1 - Gestão de ativos SW (COI)" e "1.2 - Plataforma de
+// Integração Cloud" (sem "BTP") com ID novo. Na sincronização seguinte, esses nomes ANTIGOS não
+// batiam com o nome ATUAL (renomeado) do projeto de verdade, então entravam como projeto "novo" —
+// ressuscitando a dupla indefinidamente, não importa quantas vezes fosse unida/apagada numa máquina
+// só. Os projetos de verdade já vivem no repositório compartilhado do GitHub; não há mais motivo
+// pra inventar um portfólio de exemplo sozinho num navegador novo — ele simplesmente começa vazio
+// até a sincronização trazer os dados reais.
 
 /* ---------- farol ---------- */
 function diasUteisEntre(a, b){ // dias úteis (seg-sex) estritamente após 'a' até 'b', inclusive
@@ -1670,6 +1681,7 @@ const STATUS_MANUAL_ESTEIRA = {
   critico: {label:"Crítico", cor:"vermelho"},
   impedido: {label:"Impedido", cor:"laranja"},
   bloqueado: {label:"Bloqueado", cor:"vermelho"},
+  finalizado: {label:"Finalizado", cor:"verde"},
 };
 
 function nomeProjeto(id){ const p = PROJETOS.find(x=>x.id===id); return p?p.nome:"(projeto removido)"; }
@@ -3961,6 +3973,14 @@ function renderListaCampoEsteira(sel, campo, subprojetos){
   const grupos = agruparItensPorProjeto(itens, subprojetos)
     .filter(g=> !filtroTimelineProjeto[sel] || !g.temProjeto || g.ids.includes(filtroTimelineProjeto[sel]));
 
+  // "irmãos" de um item pra fins de mover pra cima/baixo: os outros itens PRINCIPAIS do mesmo
+  // grupo (mesmas tags de projeto), ou — se for sub-item — os outros sub-itens do MESMO pai. Nunca
+  // mistura os dois níveis, senão mover um sub-item poderia pular pra cima do item principal dele
+  function irmaosParaMover(item, todosDoGrupo){
+    return item.paiId
+      ? todosDoGrupo.filter(x=> x.paiId===item.paiId)
+      : todosDoGrupo.filter(x=> !x.paiId || !todosDoGrupo.some(y=>y.id===x.paiId));
+  }
   const linhaItemHTML = (item, todosDoGrupo, ehSubitem)=>{
     const preenchido = !!(item.texto && item.texto.trim());
     // pais possíveis: qualquer outro item do MESMO grupo que ainda não seja, ele próprio, um sub-item
@@ -3970,6 +3990,12 @@ function renderListaCampoEsteira(sel, campo, subprojetos){
         <option value="">— item principal —</option>
         ${paisPossiveis.map(x=>`<option value="${x.id}" ${item.paiId===x.id?"selected":""}>sub-item de: ${esc((x.texto||"(sem texto)").slice(0,30))}</option>`).join("")}
       </select>`;
+    const irmaos = irmaosParaMover(item, todosDoGrupo);
+    const idxIrmao = irmaos.findIndex(x=>x.id===item.id);
+    const ehPrimeiro = idxIrmao<=0;
+    const ehUltimo = idxIrmao<0 || idxIrmao>=irmaos.length-1;
+    const botoesMoverHTML = `<button class="icon-btn no-print" data-act="mover-item-esteira" data-id="${item.id}" data-dir="-1" title="Mover pra cima" ${ehPrimeiro?"disabled":""} style="flex-shrink:0;margin-top:1px;font-size:9px;line-height:1;padding:2px 4px">▲</button>
+        <button class="icon-btn no-print" data-act="mover-item-esteira" data-id="${item.id}" data-dir="1" title="Mover pra baixo" ${ehUltimo?"disabled":""} style="flex-shrink:0;margin-top:1px;font-size:9px;line-height:1;padding:2px 4px">▼</button>`;
     return `<li class="item-esteira-linha${preenchido?" compacto":""}" data-id="${item.id}" style="margin-bottom:10px${ehSubitem?";margin-left:22px":""}">
       <div class="chips-projeto-esteira no-print" style="display:flex;gap:4px;flex-wrap:wrap;margin:0 0 4px 16px">
         ${subprojetos.map(p=>{
@@ -3983,6 +4009,7 @@ function renderListaCampoEsteira(sel, campo, subprojetos){
       <div style="display:flex;align-items:flex-start;gap:6px">
         <span style="color:var(--gray);flex-shrink:0;margin-top:3px">${ehSubitem?"◦":"•"}</span>
         <textarea class="ei-texto" data-id="${item.id}" rows="1" placeholder="descreva..." style="flex:1;border:none;padding:1px 2px;font-size:12.5px;background:transparent;resize:vertical;font-family:inherit;line-height:1.3;field-sizing:content;min-height:18px;max-height:52px;overflow-y:auto">${esc(item.texto)}</textarea>
+        ${botoesMoverHTML}
         <button class="icon-btn no-print" data-act="del-item-esteira" data-id="${item.id}" title="Excluir" style="flex-shrink:0;margin-top:1px">✕</button>
       </div>
       <div class="chips-projeto-esteira no-print" style="margin-left:16px">${seletorPaiHTML}</div>
@@ -4012,12 +4039,43 @@ function renderListaCampoEsteira(sel, campo, subprojetos){
     const li = inp.closest(".item-esteira-linha");
     inp.onfocus = ()=> li.classList.add("aberto");
     inp.onblur = ()=>{
-      li.classList.remove("aberto");
-      li.classList.toggle("compacto", !!inp.value.trim());
+      // espera um instante antes de fechar: se o foco foi pra outro campo DESSE MESMO item (o
+      // seletor "sub-item de", por exemplo), não fecha — senão o seletor sumiria (CSS: .compacto
+      // .chips-projeto-esteira{display:none}) no meio do clique, antes da pessoa conseguir
+      // escolher uma opção (mesma causa do bug dos chips de projeto, corrigido com preventDefault
+      // no mousedown deles; aqui não dá pra usar o mesmo truque porque um <select> precisa do
+      // mousedown padrão pra abrir a lista nativa de opções)
+      setTimeout(()=>{
+        if(li.contains(document.activeElement)) return;
+        li.classList.remove("aberto");
+        li.classList.toggle("compacto", !!inp.value.trim());
+      }, 150);
     };
     inp.onchange = e=>{
       const item = itens.find(x=>x.id===e.target.dataset.id);
       if(item){ item.texto = e.target.value.trim(); item.atualizadoEm = Date.now(); salvar(); }
+    };
+  });
+  container.querySelectorAll('[data-act="mover-item-esteira"]').forEach(btn=>{
+    btn.onclick = ()=>{
+      const item = itens.find(x=>x.id===btn.dataset.id);
+      if(!item) return;
+      // acha o grupo (mesmas tags de projeto) a que esse item pertence AGORA, pra saber quem são
+      // os irmãos certos — reaproveita o "grupos" já calculado no início desta função
+      const grupo = grupos.find(g=> g.itens.some(x=>x.id===item.id));
+      if(!grupo) return;
+      const irmaos = irmaosParaMover(item, grupo.itens);
+      const idx = irmaos.findIndex(x=>x.id===item.id);
+      const direcao = parseInt(btn.dataset.dir, 10);
+      const alvo = irmaos[idx+direcao];
+      if(!alvo) return; // já é o primeiro/último — nada a fazer
+      // troca as DUAS posições no array de verdade (ESTEIRAS[sel][campo], a mesma referência de
+      // "itens") — só troca o que está nesses dois lugares, não desloca nada que esteja no meio
+      const idxA = itens.indexOf(item), idxB = itens.indexOf(alvo);
+      if(idxA<0 || idxB<0) return;
+      itens[idxA] = alvo; itens[idxB] = item;
+      item.atualizadoEm = Date.now(); alvo.atualizadoEm = Date.now();
+      salvar(); renderListaCampoEsteira(sel, campo, subprojetos);
     };
   });
   container.querySelectorAll('[data-act="del-item-esteira"]').forEach(btn=>{
@@ -4030,6 +4088,14 @@ function renderListaCampoEsteira(sel, campo, subprojetos){
     };
   });
   container.querySelectorAll(".chip-projeto-esteira").forEach(chip=>{
+    // o botão do chip tira o foco da <textarea> do texto ao ser clicado (mousedown acontece ANTES
+    // do click) — isso disparava o onblur da textarea, que esconde esse mesmo botão (CSS:
+    // .compacto .chips-projeto-esteira{display:none}) no meio do clique, antes do evento "click"
+    // terminar de acontecer. Resultado: o clique "morria" e o projeto nunca mudava — exatamente o
+    // "hoje não deixa editar pra qual projeto é" relatado. preventDefault no mousedown impede o
+    // botão de roubar o foco, então a textarea nunca perde o foco e o chip continua visível e
+    // clicável normalmente.
+    chip.addEventListener("mousedown", e=> e.preventDefault());
     chip.onclick = ()=>{
       const item = itens.find(x=>x.id===chip.dataset.item);
       if(!item) return;
