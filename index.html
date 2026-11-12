@@ -4785,14 +4785,22 @@ function construirLinhasImportacao(linhasBrutas, cab){
     const inicioRepac = mapa.inicio2!==undefined ? celulaParaISO(linha[mapa.inicio2]) : null;
     const fimRepac = mapa.fim2!==undefined ? celulaParaISO(linha[mapa.fim2]) : null;
     const resp = mapa.resp!==undefined ? String(linha[mapa.resp]||"").trim() : "";
+    // uma linha de cabeçalho de fase/seção (ID "3", "4"...) às vezes TEM data própria preenchida
+    // na planilha (ex.: "Ambiente DEV/QAS" com início/fim da fase inteira, às vezes até
+    // responsável) — nesse caso ela representa um período de verdade, não só um rótulo
+    // organizacional, e a pessoa pode querer importar ela também como uma linha no Cronograma.
+    // Só fica de fora mesmo quando não tem NENHUMA data (aí não tem com o que desenhar uma barra).
+    const temDataPropria = !!(inicioPlan || fimPlan || inicioRepac || fimRepac);
+    const ehImportavel = (ehSubtarefa || temDataPropria) && !!nomeTxt;
     linhas.push({
       codigo: idTxt, nome: nomeTxt, resp, statusRaw,
       inicioPlan, fimPlan, inicioRepac, fimRepac,
-      fase: faseAtual, milestoneSugerido: ehSubtarefa ? milestoneParaEtapa(faseAtual) : "",
-      ehTarefa: ehSubtarefa && !!nomeTxt,
-      motivoExcluido: !ehSubtarefa ? "cabeçalho de fase/seção — não é uma tarefa" : (!nomeTxt ? "sem descrição" : ""),
+      fase: faseAtual, milestoneSugerido: (ehSubtarefa || temDataPropria) ? milestoneParaEtapa(faseAtual) : "",
+      ehTarefa: ehImportavel,
+      motivoExcluido: !nomeTxt ? "sem descrição"
+        : (!ehSubtarefa && !temDataPropria ? "cabeçalho de fase/seção — sem data própria, não dá pra importar como tarefa" : ""),
     });
-    if(ehSubtarefa && nomeTxt) achouTarefa = true;
+    if(ehImportavel) achouTarefa = true;
   }
   return linhas;
 }
